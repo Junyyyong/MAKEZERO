@@ -12,44 +12,87 @@
   </head>
   <body>
     <div id="app">
-      <header class="hud">
-        <button class="icon-btn" id="btn-restart" aria-label="새 게임">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M20 12a8 8 0 1 1-2.34-5.66" />
-            <path d="M20 4v5h-5" stroke-linejoin="round" />
-          </svg>
-        </button>
-        <div class="score-block">
-          <div class="score" id="score">0</div>
+      <!-- ── title ─────────────────────────────────────────────── -->
+      <section class="screen title-screen" id="screen-title">
+        <div class="brand-block">
+          <h1 class="brand">MAKEZERO</h1>
+          <p class="tagline">이어서 10 만들기</p>
         </div>
-        <button class="icon-btn" id="btn-help" aria-label="규칙">?</button>
-      </header>
 
-      <div class="sub-hud">
-        <div class="chip" id="chip-games">게임 1</div>
-        <div class="chip" id="chip-best">오늘 <b id="best">0</b> <span class="crown">&#9819;</span></div>
-      </div>
+        <nav class="mode-list">
+          <button class="mode-btn" id="mode-story" data-mode="story">
+            <span class="mode-name">스토리</span>
+            <span class="mode-desc" id="desc-story">스테이지 1</span>
+          </button>
+          <button class="mode-btn" id="mode-timeAttack" data-mode="timeAttack">
+            <span class="mode-name">타임어택</span>
+            <span class="mode-desc" id="desc-timeAttack">60초 도전</span>
+          </button>
+          <button class="mode-btn" id="mode-endless" data-mode="endless">
+            <span class="mode-name">무제한</span>
+            <span class="mode-desc" id="desc-endless">끝까지 지우기</span>
+          </button>
+        </nav>
 
-      <div class="board-wrap" id="board-wrap">
-        <div class="board" id="board"></div>
-      </div>
+        <button class="text-btn" id="btn-title-rules">규칙 보기</button>
+      </section>
 
-      <p class="notice" id="notice" role="status" aria-live="polite"></p>
+      <!-- ── game ──────────────────────────────────────────────── -->
+      <section class="screen game-screen hidden" id="screen-game">
+        <header class="hud">
+          <button class="icon-btn" id="btn-back" aria-label="모드 선택으로">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div class="score-block">
+            <div class="score" id="score">0</div>
+          </div>
+          <button class="icon-btn" id="btn-help" aria-label="규칙">?</button>
+        </header>
 
-      <footer class="actions">
-        <button class="round-btn" id="btn-add" aria-label="숫자 추가">
-          <span class="glyph">&#43;</span><span class="badge" id="badge-add">6</span>
-        </button>
-        <button class="round-btn" id="btn-hint" aria-label="힌트">
-          <span class="glyph">&#128161;</span><span class="badge" id="badge-hint">3</span>
-        </button>
-      </footer>
+        <div class="sub-hud">
+          <div class="chip" id="chip-left">게임 1</div>
+          <div class="chip" id="chip-right">오늘 <b>0</b></div>
+        </div>
+
+        <div class="timer-bar hidden" id="timer-bar"><span id="timer-fill"></span></div>
+
+        <div class="board-wrap" id="board-wrap">
+          <div class="board" id="board"></div>
+        </div>
+
+        <p class="notice" id="notice" role="status" aria-live="polite"></p>
+
+        <footer class="actions">
+          <button class="round-btn" id="btn-add" aria-label="숫자 추가">
+            <span class="glyph">&#43;</span><span class="badge" id="badge-add">6</span>
+          </button>
+          <button class="round-btn" id="btn-hint" aria-label="힌트">
+            <span class="glyph">&#128161;</span><span class="badge" id="badge-hint">3</span>
+          </button>
+        </footer>
+      </section>
+
+      <!-- ── story beat ────────────────────────────────────────── -->
+      <section class="screen story-screen hidden" id="screen-story">
+        <div class="story-card">
+          <img class="story-portrait" id="story-portrait" alt="" />
+          <h2 class="story-title" id="story-title"></h2>
+          <p class="story-name" id="story-name"></p>
+          <p class="story-line" id="story-line"></p>
+          <button class="wood-btn" id="btn-story-next">다음</button>
+        </div>
+      </section>
 
       <div class="overlay hidden" id="overlay">
         <div class="panel">
           <h1 class="panel-title" id="overlay-title">게임 종료</h1>
           <p class="panel-body" id="overlay-body"></p>
-          <button class="wood-btn" id="btn-again">다시 하기</button>
+          <div class="panel-actions">
+            <button class="wood-btn" id="btn-primary">다시 하기</button>
+            <button class="wood-btn ghost" id="btn-secondary">모드 선택</button>
+          </div>
         </div>
       </div>
     </div>

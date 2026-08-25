@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 160" role="img" aria-label="sprout">
+  <!-- Placeholder art. Replace this file with your own character at the same
+       path and viewBox; nothing else in the game has to change. -->
+  <defs>
+    <linearGradient id="body-sprout" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#d9b47c" /><stop offset="1" stop-color="#b98f56" />
+    </linearGradient>
+  </defs>
+  <ellipse cx="64" cy="150" rx="34" ry="7" fill="#000" opacity="0.22" />
+  <rect x="34" y="72" width="60" height="74" rx="18" fill="url(#body-sprout)" />
+  <circle cx="64" cy="52" r="26" fill="url(#body-sprout)" />
+  <g fill="#5a3a1a">
+    <circle cx="55" cy="50" r="3.4" />
+    <circle cx="73" cy="50" r="3.4" />
+    <path d="M57 61q7 6 14 0" stroke="#5a3a1a" stroke-width="2.6" stroke-linecap="round" fill="none" />
+  </g>
+  <g opacity="0.28" fill="#7a4f24">
+    <rect x="40" y="86" width="48" height="2" rx="1" />
+    <rect x="40" y="112" width="48" height="2" rx="1" />
+  </g>
+
+      <path d="M64 22c0-9 7-16 16-16 0 9-7 16-16 16z" fill="#7ac74f" />
+      <path d="M64 22c0-9-7-16-16-16 0 9 7 16 16 16z" fill="#7ac74f" opacity="0.75" />
+      <path d="M64 22v10" stroke="#7ac74f" stroke-width="3" stroke-linecap="round" fill="none" />
+</svg>

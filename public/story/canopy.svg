@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 160" role="img" aria-label="canopy">
+  <!-- Placeholder art. Replace this file with your own character at the same
+       path and viewBox; nothing else in the game has to change. -->
+  <defs>
+    <linearGradient id="body-canopy" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0" stop-color="#e6c489" /><stop offset="1" stop-color="#c19a58" />
+    </linearGradient>
+  </defs>
+  <ellipse cx="64" cy="150" rx="34" ry="7" fill="#000" opacity="0.22" />
+  <rect x="34" y="72" width="60" height="74" rx="18" fill="url(#body-canopy)" />
+  <circle cx="64" cy="52" r="26" fill="url(#body-canopy)" />
+  <g fill="#5a3a1a">
+    <circle cx="55" cy="50" r="3.4" />
+    <circle cx="73" cy="50" r="3.4" />
+    <path d="M57 61q7 6 14 0" stroke="#5a3a1a" stroke-width="2.6" stroke-linecap="round" fill="none" />
+  </g>
+  <g opacity="0.28" fill="#7a4f24">
+    <rect x="40" y="86" width="48" height="2" rx="1" />
+    <rect x="40" y="112" width="48" height="2" rx="1" />
+  </g>
+
+      <g fill="#f0a91e">
+        <path d="M64 8l7 13H57l7-13z" />
+        <path d="M44 16l8 10-11 4 3-14z" opacity="0.85" />
+        <path d="M84 16l-8 10 11 4-3-14z" opacity="0.85" />
+      </g>
+      <path d="M46 30h36" stroke="#f0a91e" stroke-width="4" stroke-linecap="round" fill="none" />
+</svg>

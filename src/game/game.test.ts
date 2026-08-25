@@ -1,16 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { aliveCount } from "./board";
-import {
-  INITIAL_ADDS,
-  INITIAL_HINTS,
-  commitSelection,
-  newGame,
-  useAdd,
-  useHint,
-} from "./game";
+import { UNIFORM_WEIGHTS, aliveCount } from "./board";
+import { commitSelection, newGame, tick, useAdd, useHint } from "./game";
 import { evaluateSelection } from "./rules";
+import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "./story";
 import type { GameState } from "./game";
-import type { Board } from "./types";
+import type { Board, RunConfig } from "./types";
 
 function boardOf(...rows: number[][]): Board {
   const width = rows[0]!.length;
@@ -19,30 +13,41 @@ function boardOf(...rows: number[][]): Board {
 }
 
 function stateWith(board: Board, overrides: Partial<GameState> = {}): GameState {
+  const config: RunConfig = overrides.config ?? ENDLESS_CONFIG;
   return {
+    config,
     board,
     score: 0,
-    addsLeft: INITIAL_ADDS,
-    hintsLeft: INITIAL_HINTS,
+    addsLeft: config.adds,
+    hintsLeft: config.hints,
     status: "playing",
-    seed: 1,
+    remainingMs: config.timeLimitMs ?? 0,
+    nextSeed: 1,
     ...overrides,
   };
 }
 
 describe("newGame", () => {
   it("is reproducible from a seed", () => {
-    expect(newGame(42).board).toEqual(newGame(42).board);
+    expect(newGame(ENDLESS_CONFIG, 42).board).toEqual(newGame(ENDLESS_CONFIG, 42).board);
   });
 
-  it("opens with 27 tiles and a playable board", () => {
+  it("opens endless with 27 tiles and a playable board", () => {
     for (const seed of [1, 2, 3, 99, 12345]) {
-      const game = newGame(seed);
+      const game = newGame(ENDLESS_CONFIG, seed);
       expect(game.board.cells).toHaveLength(27);
       expect(aliveCount(game.board)).toBe(27);
       expect(game.status).toBe("playing");
       expect(useHint(game).indices).not.toBeNull();
     }
+  });
+
+  it("takes its resources from the config", () => {
+    const game = newGame(stageConfig(7), 5);
+    const config = stageConfig(7);
+    expect(game.addsLeft).toBe(config.adds);
+    expect(game.hintsLeft).toBe(config.hints);
+    expect(game.board.cells).toHaveLength(config.rows * 9);
   });
 });
 
@@ -87,16 +92,57 @@ describe("commitSelection", () => {
   });
 });
 
+describe("time attack", () => {
+  const timed = (board: Board, overrides: Partial<GameState> = {}) =>
+    stateWith(board, { config: TIME_ATTACK_CONFIG, ...overrides });
+
+  it("starts with a full minute on the clock", () => {
+    expect(newGame(TIME_ATTACK_CONFIG, 3).remainingMs).toBe(60_000);
+  });
+
+  it("runs the clock down and ends at zero", () => {
+    const start = newGame(TIME_ATTACK_CONFIG, 3);
+    const mid = tick(start, 59_000);
+    expect(mid.remainingMs).toBe(1_000);
+    expect(mid.status).toBe("playing");
+    const done = tick(mid, 1_000);
+    expect(done.remainingMs).toBe(0);
+    expect(done.status).toBe("timeUp");
+  });
+
+  it("never overshoots zero and stops ticking once time is up", () => {
+    const done = tick(newGame(TIME_ATTACK_CONFIG, 3), 99_999);
+    expect(done.remainingMs).toBe(0);
+    expect(tick(done, 1_000)).toBe(done);
+  });
+
+  it("deals a fresh board instead of winning when the last tile goes", () => {
+    const { state } = commitSelection(timed(boardOf([4, 6])), [0, 1]);
+    expect(state.status).toBe("playing");
+    expect(aliveCount(state.board)).toBeGreaterThan(0);
+  });
+
+  it("tops the board up instead of losing on a deadlock", () => {
+    const { state } = commitSelection(timed(boardOf([4, 6, 9, 8])), [0, 1]);
+    expect(state.status).toBe("playing");
+    expect(useHint({ ...state, hintsLeft: 1 }).indices).not.toBeNull();
+  });
+
+  it("keeps the score across a refill", () => {
+    const { state } = commitSelection(timed(boardOf([4, 6])), [0, 1]);
+    expect(state.score).toBe(10);
+  });
+});
+
 describe("useAdd", () => {
   it("appends the survivors and spends one add", () => {
     const before = stateWith(boardOf([9, 0, 8]));
     const after = useAdd(before);
-    expect(after.addsLeft).toBe(INITIAL_ADDS - 1);
+    expect(after.addsLeft).toBe(ENDLESS_CONFIG.adds - 1);
     expect(after.board.cells.map((c) => c.value)).toEqual([9, 1, 8, 9, 8]);
   });
 
   it("can revive a stuck board", () => {
-    // 9 and 8 alone are dead, but a second 9 next to the first is a pair.
     const before = stateWith(boardOf([9, 8]));
     expect(useHint(before).indices).toBeNull();
     expect(useHint(useAdd(before)).indices).not.toBeNull();
@@ -114,18 +160,32 @@ describe("useHint", () => {
     const { state, indices } = useHint(before);
     expect(indices).not.toBeNull();
     expect(evaluateSelection(before.board, indices!).ok).toBe(true);
-    expect(state.hintsLeft).toBe(INITIAL_HINTS - 1);
+    expect(state.hintsLeft).toBe(ENDLESS_CONFIG.hints - 1);
   });
 
   it("does not spend a hint when the board is stuck", () => {
     const before = stateWith(boardOf([9, 8]));
     const { state, indices } = useHint(before);
     expect(indices).toBeNull();
-    expect(state.hintsLeft).toBe(INITIAL_HINTS);
+    expect(state.hintsLeft).toBe(ENDLESS_CONFIG.hints);
   });
 
   it("does nothing once hints run out", () => {
     const before = stateWith(boardOf([4, 6]), { hintsLeft: 0 });
     expect(useHint(before).indices).toBeNull();
+  });
+});
+
+describe("weighted spawning", () => {
+  it("leans on high numbers as stages climb", () => {
+    const share = (config: RunConfig) => {
+      const board = newGame(config, 7).board;
+      const big = board.cells.filter((c) => c.value >= 7).length;
+      return big / board.cells.length;
+    };
+    const early = share({ ...stageConfig(1), rows: 12 });
+    const late = share({ ...stageConfig(20), rows: 12 });
+    expect(stageConfig(1).weights).toEqual(UNIFORM_WEIGHTS);
+    expect(late).toBeGreaterThan(early);
   });
 });

@@ -1,18 +1,20 @@
-import { aliveCount, areConnected, isAlive } from "../game/board";
-import {
-  commitSelection,
-  isStuck,
-  newGame,
-  useAdd,
-  useHint,
-} from "../game/game";
+import { aliveCount, areConnected } from "../game/board";
+import { commitSelection, isStuck, newGame, tick, useAdd, useHint } from "../game/game";
 import type { GameState } from "../game/game";
-import { MAX_SELECTION, evaluateSelection } from "../game/rules";
-import { loadDaily, saveDaily } from "./storage";
-import type { DailyStats } from "./storage";
-
-const HINT_MS = 2700;
-const EDGE_SCROLL_PX = 56;
+import {
+  ENDLESS_CONFIG,
+  TIME_ATTACK_CONFIG,
+  TOTAL_STAGES,
+  chapterFor,
+  isChapterFinale,
+  stageConfig,
+} from "../game/story";
+import type { Chapter } from "../game/story";
+import { isSelectionValid } from "../game/rules";
+import type { GameMode, RunConfig } from "../game/types";
+import { BoardView } from "./boardView";
+import { loadDaily, loadProgress, saveDaily, saveProgress } from "./storage";
+import type { DailyStats, Progress } from "./storage";
 
 const RULES_TEXT = `같은 수 두 개, 또는 합이 10이 되도록 이어서 지웁니다.
 3개부터 5개까지 이어도 되고, 길수록 점수가 큽니다.
@@ -26,21 +28,38 @@ function el<T extends HTMLElement>(id: string): T {
   return found as T;
 }
 
+function formatClock(ms: number): string {
+  const total = Math.ceil(ms / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
+
+type Screen = "title" | "game" | "story";
+
 export class App {
   private state: GameState;
   private daily: DailyStats;
-  private selection: number[] = [];
-  private hinted: number[] = [];
-  private hintTimer: number | undefined;
+  private progress: Progress;
+  private readonly view: BoardView;
 
-  private dragging = false;
-  private dragMoved = false;
+  /** Story beat playback: the chapter being read and how far through it we are. */
+  private pendingChapter: Chapter | null = null;
+  private storyLine = 0;
+  private storyReturn: "title" | "nextStage" = "title";
 
-  private readonly boardEl = el<HTMLDivElement>("board");
-  private readonly boardWrap = el<HTMLDivElement>("board-wrap");
+  private frame: number | undefined;
+  private lastFrameMs = 0;
+
+  private readonly screens: Record<Screen, HTMLElement> = {
+    title: el("screen-title"),
+    game: el("screen-game"),
+    story: el("screen-story"),
+  };
+
   private readonly scoreEl = el<HTMLDivElement>("score");
-  private readonly bestEl = el<HTMLElement>("best");
-  private readonly gamesEl = el<HTMLDivElement>("chip-games");
+  private readonly chipLeft = el<HTMLDivElement>("chip-left");
+  private readonly chipRight = el<HTMLDivElement>("chip-right");
+  private readonly timerBar = el<HTMLDivElement>("timer-bar");
+  private readonly timerFill = el<HTMLSpanElement>("timer-fill");
   private readonly noticeEl = el<HTMLParagraphElement>("notice");
   private readonly addBtn = el<HTMLButtonElement>("btn-add");
   private readonly hintBtn = el<HTMLButtonElement>("btn-hint");
@@ -49,277 +68,197 @@ export class App {
   private readonly overlay = el<HTMLDivElement>("overlay");
   private readonly overlayTitle = el<HTMLHeadingElement>("overlay-title");
   private readonly overlayBody = el<HTMLParagraphElement>("overlay-body");
-  private readonly againBtn = el<HTMLButtonElement>("btn-again");
-
-  private tiles: HTMLButtonElement[] = [];
+  private readonly primaryBtn = el<HTMLButtonElement>("btn-primary");
+  private readonly secondaryBtn = el<HTMLButtonElement>("btn-secondary");
 
   constructor() {
     this.daily = loadDaily();
-    this.daily.games += 1;
-    saveDaily(this.daily);
-    this.state = newGame();
+    this.progress = loadProgress();
+    this.state = newGame(ENDLESS_CONFIG, 1);
+
+    this.view = new BoardView({
+      wrap: el("board-wrap"),
+      grid: el("board"),
+      isConnected: (a, b) => areConnected(this.state.board, a, b),
+      isValid: (selection) => isSelectionValid(this.state.board, selection),
+      onCommit: (selection) => this.commit(selection),
+    });
+
     this.bindEvents();
-    this.render();
+    this.showTitle();
   }
 
   private bindEvents(): void {
-    this.boardEl.addEventListener("pointerdown", this.onPointerDown);
-    this.boardEl.addEventListener("pointermove", this.onPointerMove);
-    this.boardEl.addEventListener("pointerup", this.onPointerUp);
-    this.boardEl.addEventListener("pointercancel", this.onPointerCancel);
-    this.boardEl.addEventListener("contextmenu", (e) => e.preventDefault());
-
+    for (const mode of ["story", "timeAttack", "endless"] as const) {
+      el<HTMLButtonElement>(`mode-${mode}`).addEventListener("click", () => this.startMode(mode));
+    }
+    el<HTMLButtonElement>("btn-title-rules").addEventListener("click", () => this.showRules());
+    el<HTMLButtonElement>("btn-help").addEventListener("click", () => this.showRules());
+    el<HTMLButtonElement>("btn-back").addEventListener("click", () => this.showTitle());
+    el<HTMLButtonElement>("btn-story-next").addEventListener("click", () => this.advanceStory());
     this.addBtn.addEventListener("click", () => this.onAdd());
     this.hintBtn.addEventListener("click", () => this.onHint());
-    this.againBtn.addEventListener("click", () => this.restart());
-    el<HTMLButtonElement>("btn-restart").addEventListener("click", () => this.restart());
-    el<HTMLButtonElement>("btn-help").addEventListener("click", () => this.showRules());
-    window.addEventListener("resize", () => this.syncPitch());
   }
 
-  // ---- input -------------------------------------------------------------
+  // ---- screens -----------------------------------------------------------
 
-  private tileIndexFrom(target: EventTarget | null): number | null {
-    const tile = (target as HTMLElement | null)?.closest?.(".tile") as HTMLElement | null;
-    if (!tile?.dataset.i) return null;
-    const i = Number(tile.dataset.i);
-    return isAlive(this.state.board, i) ? i : null;
+  private show(screen: Screen): void {
+    for (const [name, node] of Object.entries(this.screens)) {
+      node.classList.toggle("hidden", name !== screen);
+    }
+    this.overlay.classList.add("hidden");
   }
 
-  private tileIndexAtPoint(x: number, y: number): number | null {
-    return this.tileIndexFrom(document.elementFromPoint(x, y));
+  private showTitle(): void {
+    this.stopClock();
+    this.view.setInteractive(false);
+    this.daily = loadDaily();
+    this.progress = loadProgress();
+
+    const stage = this.progress.stage;
+    el("desc-story").textContent =
+      stage > TOTAL_STAGES
+        ? "모두 클리어"
+        : `스테이지 ${stage} · ${chapterFor(stage).title}`;
+    el("desc-timeAttack").textContent = this.progress.bestTimeAttack
+      ? `60초 · 최고 ${this.progress.bestTimeAttack}점`
+      : "60초 도전";
+    el("desc-endless").textContent = this.progress.bestEndless
+      ? `최고 ${this.progress.bestEndless}점`
+      : "끝까지 지우기";
+
+    this.show("title");
   }
 
-  private readonly onPointerDown = (event: PointerEvent): void => {
-    if (this.state.status !== "playing") return;
-    const i = this.tileIndexFrom(event.target);
-    if (i === null) return;
-    event.preventDefault();
-    this.boardEl.setPointerCapture(event.pointerId);
-    this.dragging = true;
-    this.dragMoved = false;
-    this.clearHint();
-
-    const at = this.selection.indexOf(i);
-    if (at >= 0) {
-      // Tapping a tile already in the chain rewinds the chain to just before it.
-      this.selection = this.selection.slice(0, at);
-      this.render();
+  private startMode(mode: GameMode): void {
+    if (mode === "story") {
+      this.startStage(Math.min(this.progress.stage, TOTAL_STAGES));
       return;
     }
-    if (!this.extend(i)) this.selection = [i];
-    this.render();
-    // Only taps settle on their own; a drag waits for the finger to lift.
-    this.tryAutoCommit();
-  };
-
-  private readonly onPointerMove = (event: PointerEvent): void => {
-    if (!this.dragging) return;
-    event.preventDefault();
-    this.autoScroll(event.clientY);
-    const i = this.tileIndexAtPoint(event.clientX, event.clientY);
-    if (i === null || i === this.selection[this.selection.length - 1]) return;
-    this.dragMoved = true;
-    if (i === this.selection[this.selection.length - 2]) {
-      this.selection.pop();
-      this.render();
-      return;
+    if (mode === "endless") {
+      this.daily = { ...loadDaily(), games: loadDaily().games + 1 };
+      saveDaily(this.daily);
     }
-    if (this.extend(i)) this.render();
-  };
-
-  private readonly onPointerUp = (event: PointerEvent): void => {
-    if (!this.dragging) return;
-    this.dragging = false;
-    this.boardEl.releasePointerCapture?.(event.pointerId);
-    if (!this.dragMoved) return; // a tap keeps its selection on screen
-    this.settleDrag();
-  };
-
-  private readonly onPointerCancel = (): void => {
-    this.dragging = false;
-    this.selection = [];
-    this.render();
-  };
-
-  /** Adds `i` to the chain when the rules allow it. */
-  private extend(i: number): boolean {
-    if (this.selection.length === 0) return false;
-    if (this.selection.length >= MAX_SELECTION) return false;
-    if (this.selection.includes(i)) return false;
-    const last = this.selection[this.selection.length - 1]!;
-    if (!areConnected(this.state.board, last, i)) return false;
-    this.selection.push(i);
-    return true;
+    this.beginRun(mode === "timeAttack" ? TIME_ATTACK_CONFIG : ENDLESS_CONFIG);
   }
 
-  private autoScroll(clientY: number): void {
-    const box = this.boardWrap.getBoundingClientRect();
-    if (clientY < box.top + EDGE_SCROLL_PX) this.boardWrap.scrollTop -= 10;
-    else if (clientY > box.bottom - EDGE_SCROLL_PX) this.boardWrap.scrollTop += 10;
+  private startStage(stage: number): void {
+    this.beginRun(stageConfig(stage));
+  }
+
+  private beginRun(config: RunConfig): void {
+    this.state = newGame(config);
+    this.view.setBoard(this.state.board);
+    this.view.setInteractive(true);
+    this.view.scrollToTop();
+    this.show("game");
+    this.render();
+    if (config.timeLimitMs !== undefined) this.startClock();
+  }
+
+  // ---- clock -------------------------------------------------------------
+
+  private startClock(): void {
+    this.stopClock();
+    this.lastFrameMs = performance.now();
+    const step = (now: number) => {
+      const delta = now - this.lastFrameMs;
+      this.lastFrameMs = now;
+      const next = tick(this.state, delta);
+      if (next !== this.state) {
+        this.state = next;
+        this.render();
+      }
+      if (this.state.status === "playing") this.frame = requestAnimationFrame(step);
+    };
+    this.frame = requestAnimationFrame(step);
+  }
+
+  private stopClock(): void {
+    if (this.frame !== undefined) cancelAnimationFrame(this.frame);
+    this.frame = undefined;
   }
 
   // ---- moves -------------------------------------------------------------
 
-  private tryAutoCommit(): void {
-    if (evaluateSelection(this.state.board, this.selection).ok) this.commit();
-  }
-
-  private settleDrag(): void {
-    if (evaluateSelection(this.state.board, this.selection).ok) {
-      this.commit();
-      return;
-    }
-    if (this.selection.length >= 2) this.rejectSelection();
-    this.selection = [];
-    this.render();
-  }
-
-  private commit(): void {
-    const anchor = this.selection[this.selection.length - 1]!;
-    const { state, result } = commitSelection(this.state, this.selection);
+  private commit(selection: readonly number[]): void {
+    const anchor = selection[selection.length - 1]!;
+    const { state, result } = commitSelection(this.state, selection);
     if (!result.ok) return;
-    this.popScore(anchor, result.score);
+    this.view.popScore(anchor, result.score);
     this.state = state;
-    this.selection = [];
-    this.syncBest();
+    this.view.setBoard(state.board);
+    this.recordScore();
     this.render();
-  }
-
-  private rejectSelection(): void {
-    this.boardEl.classList.remove("shake");
-    void this.boardEl.offsetWidth; // restart the animation
-    this.boardEl.classList.add("shake");
   }
 
   private onAdd(): void {
     if (this.state.addsLeft === 0 || this.state.status !== "playing") return;
-    this.selection = [];
-    this.clearHint();
+    this.view.clearHint();
     const before = this.state.board.cells.length;
     this.state = useAdd(this.state);
+    this.view.setBoard(this.state.board);
     this.render();
-    if (this.state.board.cells.length > before) {
-      this.boardWrap.scrollTo({ top: this.boardWrap.scrollHeight, behavior: "smooth" });
-    }
+    if (this.state.board.cells.length > before) this.view.scrollToBottom();
   }
 
   private onHint(): void {
     if (this.state.hintsLeft === 0 || this.state.status !== "playing") return;
     const { state, indices } = useHint(this.state);
     this.state = state;
-    if (!indices) {
-      this.render();
-      return;
+    if (indices) this.view.showHint(indices);
+    this.render();
+  }
+
+  private recordScore(): void {
+    const { mode } = this.state.config;
+    if (mode === "endless") {
+      if (this.state.score > this.daily.best) {
+        this.daily = { ...this.daily, best: this.state.score };
+        saveDaily(this.daily);
+      }
+      if (this.state.score > this.progress.bestEndless) {
+        this.progress = { ...this.progress, bestEndless: this.state.score };
+        saveProgress(this.progress);
+      }
+    } else if (mode === "timeAttack" && this.state.score > this.progress.bestTimeAttack) {
+      this.progress = { ...this.progress, bestTimeAttack: this.state.score };
+      saveProgress(this.progress);
     }
-    this.selection = [];
-    this.hinted = indices;
-    this.render();
-    const first = this.tiles[indices[0]!];
-    first?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    window.clearTimeout(this.hintTimer);
-    this.hintTimer = window.setTimeout(() => {
-      this.hinted = [];
-      this.render();
-    }, HINT_MS);
-  }
-
-  private clearHint(): void {
-    if (this.hinted.length === 0) return;
-    window.clearTimeout(this.hintTimer);
-    this.hinted = [];
-  }
-
-  private restart(): void {
-    this.daily = loadDaily();
-    this.daily.games += 1;
-    saveDaily(this.daily);
-    this.state = newGame();
-    this.selection = [];
-    this.clearHint();
-    this.overlay.classList.add("hidden");
-    this.boardWrap.scrollTop = 0;
-    this.render();
-  }
-
-  private syncBest(): void {
-    if (this.state.score <= this.daily.best) return;
-    this.daily = { ...this.daily, best: this.state.score };
-    saveDaily(this.daily);
   }
 
   // ---- rendering ---------------------------------------------------------
 
-  private popScore(anchor: number, score: number): void {
-    const tile = this.tiles[anchor];
-    if (!tile) return;
-    const box = tile.getBoundingClientRect();
-    const wrap = this.boardWrap.getBoundingClientRect();
-    const pop = document.createElement("div");
-    pop.className = "pop";
-    pop.textContent = `+${score}`;
-    pop.style.left = `${box.left - wrap.left + box.width / 2}px`;
-    pop.style.top = `${box.top - wrap.top}px`;
-    this.boardWrap.appendChild(pop);
-    pop.addEventListener("animationend", () => pop.remove());
-  }
-
-  private rebuildTiles(): void {
-    const frag = document.createDocumentFragment();
-    this.tiles = this.state.board.cells.map((_, i) => {
-      const tile = document.createElement("button");
-      tile.type = "button";
-      tile.className = "tile";
-      tile.dataset.i = String(i);
-      frag.appendChild(tile);
-      return tile;
-    });
-    this.boardEl.replaceChildren(frag);
-    this.syncPitch();
-  }
-
-  /** Publishes the rendered tile pitch so the CSS can rule the empty squares. */
-  private syncPitch(): void {
-    const first = this.tiles[0];
-    if (!first) {
-      this.boardWrap.classList.remove("ruled");
-      return;
-    }
-    const gap = parseFloat(getComputedStyle(this.boardEl).gap) || 0;
-    const size = first.getBoundingClientRect().width;
-    if (size <= 0) return;
-    this.boardWrap.style.setProperty("--pitch", `${size + gap}px`);
-    this.boardWrap.classList.add("ruled");
-  }
-
   private render(): void {
-    const { board, score, addsLeft, hintsLeft, status } = this.state;
-    if (this.tiles.length !== board.cells.length) this.rebuildTiles();
-
-    const selected = new Set(this.selection);
-    const hinted = new Set(this.hinted);
-    board.cells.forEach((cell, i) => {
-      const tile = this.tiles[i]!;
-      tile.textContent = String(cell.value);
-      tile.className = [
-        "tile",
-        cell.cleared ? "cleared" : "",
-        selected.has(i) ? "sel" : "",
-        hinted.has(i) ? "hint" : "",
-      ]
-        .filter(Boolean)
-        .join(" ");
-      tile.disabled = cell.cleared;
-    });
-
-    this.boardEl.classList.toggle("ok", evaluateSelection(board, this.selection).ok);
+    const { config, score, addsLeft, hintsLeft, status, remainingMs } = this.state;
+    this.view.render();
     this.scoreEl.textContent = String(score);
-    this.bestEl.textContent = String(Math.max(this.daily.best, score));
-    this.gamesEl.textContent = `게임 ${this.daily.games}`;
     this.addBadge.textContent = String(addsLeft);
     this.hintBadge.textContent = String(hintsLeft);
     this.addBtn.disabled = addsLeft === 0 || status !== "playing";
     this.hintBtn.disabled = hintsLeft === 0 || status !== "playing";
+    this.addBtn.classList.toggle("hidden", config.mode === "timeAttack");
+    this.hintBtn.classList.toggle("hidden", config.hints === 0);
+
+    const timed = config.timeLimitMs !== undefined;
+    this.timerBar.classList.toggle("hidden", !timed);
+    if (timed) {
+      const ratio = Math.max(0, remainingMs / config.timeLimitMs!);
+      this.timerFill.style.transform = `scaleX(${ratio})`;
+      this.timerBar.classList.toggle("urgent", remainingMs <= 10_000);
+    }
+
+    if (config.mode === "story") {
+      const stage = config.stage ?? 1;
+      this.chipLeft.textContent = `스테이지 ${stage}`;
+      this.chipRight.textContent = chapterFor(stage).title;
+    } else if (config.mode === "timeAttack") {
+      this.chipLeft.textContent = "타임어택";
+      this.chipRight.textContent = formatClock(remainingMs);
+    } else {
+      this.chipLeft.textContent = `게임 ${this.daily.games}`;
+      this.chipRight.textContent = `오늘 ${Math.max(this.daily.best, score)} ♛`;
+    }
 
     const stuck = isStuck(this.state);
     this.addBtn.classList.toggle("urge", stuck && addsLeft > 0);
@@ -327,30 +266,162 @@ export class App {
       ? addsLeft > 0
         ? "이을 수 있는 조합이 없어요. ＋ 로 숫자를 더하세요."
         : "더 이상 이을 수 없어요."
-      : `${aliveCount(board)}개 남음`;
+      : `${aliveCount(this.state.board)}개 남음`;
 
-    if (status !== "playing") this.showResult();
+    if (status !== "playing") this.finishRun();
   }
 
-  private showResult(): void {
-    const cleared = this.state.status === "won";
-    this.overlayTitle.textContent = cleared ? "클리어!" : "게임 종료";
-    this.overlayBody.textContent = cleared
-      ? `보드를 모두 지웠습니다.\n점수 ${this.state.score}점\n오늘 최고 ${this.daily.best}점`
-      : `점수 ${this.state.score}점\n오늘 최고 ${this.daily.best}점\n남은 숫자 ${aliveCount(this.state.board)}개`;
-    this.againBtn.textContent = "다시 하기";
+  private finishRun(): void {
+    this.stopClock();
+    this.view.setInteractive(false);
+    const { config, status, score } = this.state;
+
+    if (config.mode === "story" && status === "won") {
+      this.finishStage(config.stage ?? 1);
+      return;
+    }
+    if (config.mode === "story") {
+      const stage = config.stage ?? 1;
+      this.openOverlay({
+        title: "실패",
+        body: `스테이지 ${stage}\n${aliveCount(this.state.board)}개가 남았어요.`,
+        primary: { label: "다시 도전", action: () => this.startStage(stage) },
+      });
+      return;
+    }
+    if (config.mode === "timeAttack") {
+      this.openOverlay({
+        title: "시간 종료",
+        body: `점수 ${score}점\n최고 ${this.progress.bestTimeAttack}점`,
+        primary: { label: "다시 하기", action: () => this.startMode("timeAttack") },
+      });
+      return;
+    }
+    this.openOverlay({
+      title: status === "won" ? "클리어!" : "게임 종료",
+      body:
+        status === "won"
+          ? `보드를 모두 지웠습니다.\n점수 ${score}점`
+          : `점수 ${score}점\n오늘 최고 ${this.daily.best}점`,
+      primary: { label: "다시 하기", action: () => this.startMode("endless") },
+    });
+  }
+
+  /** Unlocks the next stage, then either plays the chapter beat or moves on. */
+  private finishStage(stage: number): void {
+    if (stage >= this.progress.stage) {
+      this.progress = { ...this.progress, stage: Math.min(stage + 1, TOTAL_STAGES + 1) };
+      saveProgress(this.progress);
+    }
+
+    const chapter = chapterFor(stage);
+    if (isChapterFinale(stage) && !this.progress.seenChapters.includes(chapter.id)) {
+      this.progress = {
+        ...this.progress,
+        seenChapters: [...this.progress.seenChapters, chapter.id],
+      };
+      saveProgress(this.progress);
+      this.storyReturn = stage >= TOTAL_STAGES ? "title" : "nextStage";
+      this.playChapter(chapter);
+      return;
+    }
+
+    if (stage >= TOTAL_STAGES) {
+      this.openOverlay({
+        title: "완주!",
+        body: "모든 스테이지를 끝냈습니다.",
+        primary: { label: "모드 선택", action: () => this.showTitle() },
+      });
+      return;
+    }
+    this.openOverlay({
+      title: "스테이지 클리어",
+      body: `스테이지 ${stage} 완료\n점수 ${this.state.score}점`,
+      primary: { label: "다음 스테이지", action: () => this.startStage(stage + 1) },
+    });
+  }
+
+  // ---- story beats -------------------------------------------------------
+
+  private playChapter(chapter: Chapter): void {
+    this.pendingChapter = chapter;
+    this.storyLine = 0;
+    this.show("story");
+    this.renderStory();
+  }
+
+  private renderStory(): void {
+    const chapter = this.pendingChapter;
+    if (!chapter) return;
+    const portrait = el<HTMLImageElement>("story-portrait");
+    portrait.src = chapter.character;
+    portrait.alt = chapter.characterName;
+    el("story-title").textContent = chapter.title;
+    el("story-name").textContent = chapter.characterName;
+    el("story-line").textContent = chapter.lines[this.storyLine] ?? "";
+    const last = this.storyLine >= chapter.lines.length - 1;
+    el<HTMLButtonElement>("btn-story-next").textContent = last ? "계속하기" : "다음";
+  }
+
+  private advanceStory(): void {
+    const chapter = this.pendingChapter;
+    if (!chapter) return;
+    if (this.storyLine < chapter.lines.length - 1) {
+      this.storyLine += 1;
+      this.renderStory();
+      return;
+    }
+    this.pendingChapter = null;
+    const stage = this.state.config.stage ?? 1;
+    if (this.storyReturn === "nextStage" && stage < TOTAL_STAGES) {
+      this.startStage(stage + 1);
+      return;
+    }
+    this.showTitle();
+  }
+
+  // ---- overlay -----------------------------------------------------------
+
+  private openOverlay(spec: {
+    title: string;
+    body: string;
+    html?: boolean;
+    primary: { label: string; action: () => void };
+    secondary?: { label: string; action: () => void };
+  }): void {
+    this.overlayTitle.textContent = spec.title;
+    if (spec.html) this.overlayBody.innerHTML = spec.body;
+    else this.overlayBody.textContent = spec.body;
+
+    this.primaryBtn.textContent = spec.primary.label;
+    this.primaryBtn.onclick = () => {
+      this.overlay.classList.add("hidden");
+      spec.primary.action();
+    };
+
+    const secondary = spec.secondary ?? { label: "모드 선택", action: () => this.showTitle() };
+    this.secondaryBtn.textContent = secondary.label;
+    this.secondaryBtn.onclick = () => {
+      this.overlay.classList.add("hidden");
+      secondary.action();
+    };
     this.overlay.classList.remove("hidden");
   }
 
   private showRules(): void {
-    this.overlayTitle.textContent = "규칙";
-    this.overlayBody.innerHTML = RULES_TEXT;
-    this.againBtn.textContent = "닫기";
-    this.overlay.classList.remove("hidden");
-    this.againBtn.onclick = () => {
-      this.againBtn.onclick = null;
-      this.overlay.classList.add("hidden");
-      if (this.state.status !== "playing") this.showResult();
-    };
+    const onTitle = !this.screens.title.classList.contains("hidden");
+    this.openOverlay({
+      title: "규칙",
+      body: RULES_TEXT,
+      html: true,
+      primary: {
+        label: "닫기",
+        action: () => {
+          // A finished run keeps its result panel; the rules just sat on top.
+          if (!onTitle && this.state.status !== "playing") this.finishRun();
+        },
+      },
+      secondary: { label: "모드 선택", action: () => this.showTitle() },
+    });
   }
 }

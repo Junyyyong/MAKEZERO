@@ -6,6 +6,9 @@ export const INITIAL_ROWS = 3;
 export const MIN_VALUE = 1;
 export const MAX_VALUE = 9;
 
+/** Every value equally likely — the baseline the story stages skew away from. */
+export const UNIFORM_WEIGHTS: readonly number[] = [1, 1, 1, 1, 1, 1, 1, 1, 1];
+
 export function rowOf(board: Board, i: number): number {
   return Math.floor(i / board.width);
 }
@@ -47,15 +50,29 @@ export function aliveCount(board: Board): number {
   return n;
 }
 
+/** Draws one value in 1..9, honouring the relative weights of a stage. */
+export function pickValue(rng: Rng, weights: readonly number[] = UNIFORM_WEIGHTS): number {
+  let total = 0;
+  for (let v = MIN_VALUE; v <= MAX_VALUE; v++) total += weights[v - MIN_VALUE] ?? 0;
+  if (total <= 0) return MIN_VALUE + Math.floor(rng() * (MAX_VALUE - MIN_VALUE + 1));
+
+  let roll = rng() * total;
+  for (let v = MIN_VALUE; v <= MAX_VALUE; v++) {
+    roll -= weights[v - MIN_VALUE] ?? 0;
+    if (roll < 0) return v;
+  }
+  return MAX_VALUE;
+}
+
 export function createBoard(
   rng: Rng,
   rows: number = INITIAL_ROWS,
+  weights: readonly number[] = UNIFORM_WEIGHTS,
   width: number = BOARD_WIDTH,
 ): Board {
-  const span = MAX_VALUE - MIN_VALUE + 1;
   const cells: Cell[] = [];
   for (let i = 0; i < rows * width; i++) {
-    cells.push({ value: MIN_VALUE + Math.floor(rng() * span), cleared: false });
+    cells.push({ value: pickValue(rng, weights), cleared: false });
   }
   return { width, cells };
 }
