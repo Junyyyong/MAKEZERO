@@ -1,0 +1,415 @@
+:root {
+  --wood-dark: #4a2f18;
+  --wood-mid: #7a4f24;
+  --wood-light: #b5813f;
+  --tile-face: #f0d5a8;
+  --tile-face-low: #dfbb80;
+  --tile-ink: #6b431c;
+  --tile-sel: #ffe9a8;
+  --ring-sel: #f0a91e;
+  --ring-ok: #79c05a;
+  --ring-bad: #d9563f;
+  --gap: 3px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "Trebuchet MS", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  color: #fff3df;
+  background: var(--wood-mid);
+  overscroll-behavior: none;
+  user-select: none;
+}
+
+/* Plank grain, drawn rather than shipped as an image. */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+  background:
+    linear-gradient(115deg, rgba(255, 240, 200, 0.16) 0%, rgba(255, 240, 200, 0) 42%),
+    repeating-linear-gradient(
+      92deg,
+      rgba(74, 47, 24, 0.16) 0px,
+      rgba(74, 47, 24, 0) 2px,
+      rgba(255, 226, 176, 0.06) 5px,
+      rgba(74, 47, 24, 0.12) 9px
+    ),
+    radial-gradient(120% 90% at 50% 0%, var(--wood-light) 0%, var(--wood-mid) 55%, #5f3c1b 100%);
+}
+
+.hud {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 2px;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #5c3a17;
+  cursor: pointer;
+  background: linear-gradient(#f3dcb4, #d8b076);
+  border: none;
+  border-radius: 12px;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -3px 0 rgba(103, 64, 25, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+.icon-btn:active {
+  transform: translateY(1px);
+}
+
+.score-block {
+  text-align: center;
+}
+
+.score {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-shadow: 0 2px 3px rgba(60, 34, 12, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+
+.sub-hud {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 14px 10px;
+}
+
+.chip {
+  padding: 6px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #5c3a17;
+  background: linear-gradient(#f3dcb4, #dcb87f);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.5),
+    0 2px 3px rgba(0, 0, 0, 0.25);
+}
+
+.chip b {
+  font-variant-numeric: tabular-nums;
+}
+
+.crown {
+  color: #d99a1a;
+}
+
+.board-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 0 12px;
+  overflow-y: auto;
+  background-color: rgba(48, 28, 12, 0.55);
+  border-radius: 8px;
+  box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.45);
+  scrollbar-width: thin;
+}
+
+/*
+ * Empty squares below the tiles, so a short board still reads as a full
+ * playfield. --pitch is measured from a real tile after every rebuild, and
+ * `local` keeps the lines glued to the tiles while the board scrolls.
+ */
+.board-wrap.ruled {
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      rgba(255, 226, 176, 0.08) 0 1px,
+      transparent 1px var(--pitch)
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 226, 176, 0.08) 0 1px,
+      transparent 1px var(--pitch)
+    );
+  background-attachment: local;
+  background-position: var(--gap) var(--gap);
+}
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: var(--gap);
+  padding: var(--gap);
+  touch-action: none;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  padding: 0;
+  font-family: inherit;
+  font-size: clamp(15px, 4.4vw, 26px);
+  font-weight: 800;
+  color: var(--tile-ink);
+  cursor: pointer;
+  background: linear-gradient(160deg, var(--tile-face) 0%, var(--tile-face-low) 100%);
+  border: none;
+  border-radius: 5px;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -3px 0 rgba(120, 76, 30, 0.3),
+    0 1px 2px rgba(0, 0, 0, 0.35);
+  transition:
+    transform 90ms ease,
+    box-shadow 90ms ease,
+    background 140ms ease;
+}
+
+.tile.cleared {
+  color: rgba(255, 226, 176, 0.13);
+  background: linear-gradient(160deg, #40270f 0%, #573716 100%);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
+  cursor: default;
+}
+
+.tile.sel {
+  z-index: 1;
+  background: linear-gradient(160deg, #fff2cd 0%, var(--tile-sel) 100%);
+  transform: scale(1.08);
+  box-shadow:
+    0 0 0 3px var(--ring-sel),
+    0 3px 8px rgba(0, 0, 0, 0.45);
+}
+
+.board.ok .tile.sel {
+  box-shadow:
+    0 0 0 3px var(--ring-ok),
+    0 3px 10px rgba(0, 0, 0, 0.45);
+}
+
+.tile.hint {
+  animation: hint-pulse 900ms ease-in-out 3;
+}
+
+.board.shake {
+  animation: shake 260ms ease;
+}
+
+@keyframes hint-pulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.6),
+      0 1px 2px rgba(0, 0, 0, 0.35);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px var(--ring-ok),
+      0 0 12px rgba(121, 192, 90, 0.8);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+.pop {
+  position: absolute;
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff6dd;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  animation: pop-up 700ms ease-out forwards;
+}
+
+@keyframes pop-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.7);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -14px) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -52px) scale(1);
+  }
+}
+
+.notice {
+  min-height: 20px;
+  margin: 8px 14px 0;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  color: #ffe2ac;
+  text-shadow: 0 1px 2px rgba(60, 34, 12, 0.6);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 44px;
+  padding: 10px 0 18px;
+}
+
+.round-btn {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  font-size: 30px;
+  color: #5c3a17;
+  cursor: pointer;
+  background: radial-gradient(circle at 35% 28%, #f3dcb4 0%, #cfa469 68%, #a87c42 100%);
+  border: none;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -4px 0 rgba(103, 64, 25, 0.4),
+    0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+.round-btn:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+.round-btn:disabled {
+  cursor: default;
+  filter: grayscale(0.6);
+  opacity: 0.5;
+}
+
+.round-btn .glyph {
+  font-weight: 800;
+  line-height: 1;
+}
+
+.round-btn.urge {
+  animation: hint-pulse 900ms ease-in-out infinite;
+}
+
+.badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 24px;
+  padding: 2px 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  background: #3fae5a;
+  border: 2px solid #f0dcb6;
+  border-radius: 12px;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(30, 17, 6, 0.72);
+  backdrop-filter: blur(3px);
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.panel {
+  width: min(360px, 100%);
+  padding: 26px 22px;
+  text-align: center;
+  background: linear-gradient(160deg, #8b5c2b 0%, #6d451f 100%);
+  border: 3px solid #c79a5c;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+
+.panel-title {
+  margin: 0 0 10px;
+  font-size: 26px;
+}
+
+.panel-body {
+  margin: 0 0 20px;
+  font-size: 15px;
+  line-height: 1.7;
+  white-space: pre-line;
+  color: #ffe9c6;
+}
+
+.panel-body .rule-num {
+  font-weight: 800;
+  color: #ffd27a;
+}
+
+.wood-btn {
+  width: 100%;
+  padding: 14px;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  color: #5c3a17;
+  cursor: pointer;
+  background: linear-gradient(#f3dcb4, #d8b076);
+  border: none;
+  border-radius: 12px;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -3px 0 rgba(103, 64, 25, 0.35);
+}
+
+.wood-btn:active {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
