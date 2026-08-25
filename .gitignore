@@ -3,10 +3,15 @@ dist/
 *.local
 .DS_Store
 
-# Capacitor / Android
-android/
+# Capacitor — the native project is committed, its build output is not
 ios/
 .gradle/
 local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+# Signing material must never be committed
 *.keystore
 *.jks
+keystore.properties

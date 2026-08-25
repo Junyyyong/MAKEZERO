@@ -382,6 +382,8 @@ body {
 }
 
 .panel-body .rule-num {
+  display: block;
+  margin: 4px 0;
   font-weight: 800;
   color: #ffd27a;
 }

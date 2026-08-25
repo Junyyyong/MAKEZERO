@@ -14,8 +14,13 @@
     "android:bundle": "npm run cap:sync && cd android && ./gradlew bundleRelease"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
     "typescript": "^5.9.2",
     "vite": "^7.1.3",
     "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.5.0"
   }
 }
