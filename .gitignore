@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+
+# Capacitor / Android
+android/
+ios/
+.gradle/
+local.properties
+*.keystore
+*.jks
