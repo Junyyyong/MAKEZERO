@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { aliveCount } from "./board";
-import { commitSelection, newGame, stars, tick, useHint } from "./game";
+import { aliveCount, emptyIndices } from "./board";
+import { commitSelection, newGame, spawnIntervalMs, stars, tick, useHint } from "./game";
 import { evaluateSelection } from "./rules";
 import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
+
+/** An untimed run with no tiles arriving — the simplest case to reason about. */
+const PLAIN = stageConfig(1);
 import type { GameState } from "./game";
 import type { Board, RunConfig } from "./types";
 
@@ -13,7 +16,7 @@ function boardOf(...rows: number[][]): Board {
 }
 
 function stateWith(board: Board, overrides: Partial<GameState> = {}): GameState {
-  const config: RunConfig = overrides.config ?? ENDLESS_CONFIG;
+  const config: RunConfig = overrides.config ?? PLAIN;
   return {
     config,
     board,
@@ -22,6 +25,8 @@ function stateWith(board: Board, overrides: Partial<GameState> = {}): GameState 
     status: "playing",
     startingCells: board.cells.length,
     remainingMs: config.timeLimitMs ?? 0,
+    untilSpawnMs: Infinity,
+    spawnCount: 0,
     nextSeed: 1,
     ...overrides,
   };
@@ -29,13 +34,13 @@ function stateWith(board: Board, overrides: Partial<GameState> = {}): GameState 
 
 describe("newGame", () => {
   it("is reproducible from a seed", () => {
-    expect(newGame(ENDLESS_CONFIG, 42).board).toEqual(newGame(ENDLESS_CONFIG, 42).board);
+    expect(newGame(PLAIN, 42).board).toEqual(newGame(PLAIN, 42).board);
   });
 
   it("deals the configured board, full and playable", () => {
     for (const seed of [1, 2, 3, 99, 12345]) {
-      const game = newGame(ENDLESS_CONFIG, seed);
-      expect(game.board.cells).toHaveLength(ENDLESS_CONFIG.width * ENDLESS_CONFIG.rows);
+      const game = newGame(PLAIN, seed);
+      expect(game.board.cells).toHaveLength(PLAIN.width * PLAIN.rows);
       expect(aliveCount(game.board)).toBe(game.board.cells.length);
       expect(game.status).toBe("playing");
       expect(useHint(game).indices).not.toBeNull();
@@ -95,7 +100,7 @@ describe("stars", () => {
   const graded = (left: number) =>
     stars(
       stateWith(boardOf(Array.from({ length: Math.max(left, 1) }, () => (left ? 9 : 0))), {
-        config: { ...ENDLESS_CONFIG, starTargets: [16, 10, 5] },
+        config: { ...PLAIN, starTargets: [16, 10, 5] },
       }),
     );
 
@@ -148,13 +153,89 @@ describe("useHint", () => {
     const { state, indices } = useHint(before);
     expect(indices).not.toBeNull();
     expect(evaluateSelection(before.board, indices!).ok).toBe(true);
-    expect(state.hintsLeft).toBe(ENDLESS_CONFIG.hints - 1);
+    expect(state.hintsLeft).toBe(PLAIN.hints - 1);
   });
 
   it("does not spend a hint when the board is dead", () => {
     const before = stateWith(boardOf([9, 8]));
     const { state, indices } = useHint(before);
     expect(indices).toBeNull();
-    expect(state.hintsLeft).toBe(ENDLESS_CONFIG.hints);
+    expect(state.hintsLeft).toBe(PLAIN.hints);
+  });
+});
+
+describe("endless survival", () => {
+  const spawn = ENDLESS_CONFIG.spawn!;
+
+  it("deals only part of the board, leaving room to land in", () => {
+    const game = newGame(ENDLESS_CONFIG, 4);
+    const capacity = ENDLESS_CONFIG.width * ENDLESS_CONFIG.rows;
+    expect(game.board.cells).toHaveLength(capacity);
+    expect(aliveCount(game.board)).toBeLessThan(capacity);
+    expect(emptyIndices(game.board).length).toBeGreaterThan(0);
+  });
+
+  it("drops a batch once the timer runs out", () => {
+    const game = newGame(ENDLESS_CONFIG, 4);
+    const before = aliveCount(game.board);
+    const waiting = tick(game, spawn.startIntervalMs - 1);
+    expect(aliveCount(waiting.board)).toBe(before);
+    const landed = tick(waiting, 2);
+    expect(aliveCount(landed.board)).toBeGreaterThan(before);
+    expect(landed.spawnCount).toBe(1);
+  });
+
+  it("keeps every batch a whole group, so the board stays clearable", () => {
+    let game = newGame(ENDLESS_CONFIG, 4);
+    for (let i = 0; i < 12; i++) game = tick(game, spawn.startIntervalMs);
+    const total = game.board.cells.filter((c) => !c.cleared).reduce((a, c) => a + c.value, 0);
+    expect(total % 10).toBe(0);
+  });
+
+  it("shortens the gap between batches, down to a floor", () => {
+    expect(spawnIntervalMs(ENDLESS_CONFIG, 0)).toBe(spawn.startIntervalMs);
+    expect(spawnIntervalMs(ENDLESS_CONFIG, 1)).toBeLessThan(spawn.startIntervalMs);
+    expect(spawnIntervalMs(ENDLESS_CONFIG, 500)).toBe(spawn.minIntervalMs);
+  });
+
+  it("never grows or shrinks the board, so cleared squares stay open", () => {
+    const game = newGame(ENDLESS_CONFIG, 4);
+    const capacity = game.board.cells.length;
+    const hint = useHint(game).indices!;
+    const { state: after, rowsRemoved } = commitSelection(game, hint);
+    expect(after.board.cells).toHaveLength(capacity);
+    expect(rowsRemoved).toBe(0);
+  });
+
+  it("plays on with an empty board rather than declaring a win", () => {
+    const almost = stateWith(boardOf([4, 6, 0, 0]), { config: ENDLESS_CONFIG });
+    const { state } = commitSelection(almost, [0, 1]);
+    expect(aliveCount(state.board)).toBe(0);
+    expect(state.status).toBe("playing");
+  });
+
+  it("plays on when nothing can make ten, since a batch may fix it", () => {
+    const stuck = stateWith(boardOf([9, 8, 0, 0]), { config: ENDLESS_CONFIG });
+    const { state } = commitSelection(stuck, [0, 1]);
+    expect(state.status).toBe("playing");
+  });
+
+  it("ends when a batch has nowhere to land", () => {
+    // A full board with one hole cannot take even the smallest group.
+    const packed = stateWith(boardOf([9, 9, 9], [9, 9, 0]), {
+      config: ENDLESS_CONFIG,
+      untilSpawnMs: 10,
+    });
+    expect(tick(packed, 20).status).toBe("lost");
+  });
+
+  it("survives a long run without the board silently overflowing", () => {
+    let game = newGame(ENDLESS_CONFIG, 9);
+    const capacity = game.board.cells.length;
+    for (let i = 0; i < 200 && game.status === "playing"; i++) {
+      game = tick(game, spawnIntervalMs(ENDLESS_CONFIG, game.spawnCount));
+      expect(game.board.cells).toHaveLength(capacity);
+    }
+    expect(game.status).toBe("lost"); // nobody was clearing anything
   });
 });

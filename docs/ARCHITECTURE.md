@@ -57,6 +57,7 @@ ui  →  content  →  core
 | 조합 성립 조건 | `core/rules.ts` |
 | 점수 | `core/rules.ts` 의 `SCORE_BY_COUNT` |
 | 스테이지 난이도 | `content/stages.ts` 의 `EASIEST` / `HARDEST` |
+| 무제한 블록 속도 | `content/stages.ts` 의 `ENDLESS_CONFIG.spawn` |
 | 캐릭터 · 대사 | `content/chapters.ts` |
 | 색·폰트 등 스킨 | `ui/styles/tokens.css` 부터 |
 | 보드 화면 배치 | `ui/boardView.ts` 의 `layout()` |
@@ -73,5 +74,6 @@ npm run dev       # 개발 서버
 - `core/game.test.ts` — 상태 전이, 타이머, 별
 - `content/content.test.ts` — 챕터 데이터, 스테이지 곡선의 형태
 - `content/balance.test.ts` — **봇으로 20 스테이지를 전부 플레이해서** 통과 못 할 스테이지가 없는지, 난이도가 실제로 우상향하는지 검사
+- `content/pacing.test.ts` — 무제한 모드를 시간까지 시뮬레이션해서, 모든 판이 끝나는지·빨리 칠수록 오래 버티는지 검사
 
 밸런스 숫자를 바꾸면 마지막 테스트가 먼저 알려줍니다.

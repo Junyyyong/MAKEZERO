@@ -51,10 +51,28 @@ export class BoardView {
     });
   }
 
+  /** Starts on a new board: nothing selected, measured from scratch. */
   setBoard(board: Board): void {
     this.board = board;
     this.selection = [];
     this.laidOut = "";
+    this.render();
+  }
+
+  /**
+   * Points the view at the current board without disturbing the player.
+   *
+   * Called on every render, because the board is a fresh object whenever
+   * anything changes it — including tiles arriving on their own timer, which
+   * must not cancel a selection the player is halfway through building.
+   */
+  sync(board: Board): void {
+    const reshaped =
+      board.width !== this.board.width || board.cells.length !== this.board.cells.length;
+    this.board = board;
+    const kept = this.selection.filter((i) => isAlive(board, i));
+    if (kept.length !== this.selection.length) this.selection = kept;
+    if (reshaped) this.laidOut = "";
     this.render();
   }
 
@@ -258,7 +276,7 @@ export class BoardView {
     const hinted = new Set(this.hinted);
     this.board.cells.forEach((cell, i) => {
       const tile = this.tiles[i]!;
-      tile.textContent = String(cell.value);
+      tile.textContent = cell.value > 0 ? String(cell.value) : "";
       tile.className = [
         "tile",
         cell.cleared ? "cleared" : "",

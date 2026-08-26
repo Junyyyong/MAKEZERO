@@ -49,11 +49,27 @@ export const TIME_ATTACK_CONFIG: RunConfig = {
   autoRefill: true,
 };
 
+/**
+ * Endless is a survival mode: tiles keep landing and the run ends when a batch
+ * has nowhere to go. The gap between batches shrinks as the run goes on, which
+ * is the whole difficulty curve — see docs/BALANCE.md before retuning.
+ */
 export const ENDLESS_CONFIG: RunConfig = {
   mode: "endless",
   width: 7,
   rows: 11,
   groupWeights: [3, 3, 2, 1],
   hints: 3,
-  starTargets: [16, 10, 5],
+  starTargets: [0, 0, 0],
+  spawn: {
+    initialFill: 0.45,
+    startIntervalMs: 3200,
+    // The floor has to sit just *below* how fast a person can actually play.
+    // Above it, a quick player clears faster than tiles land and never dies;
+    // far below it, the floor kills everyone at the same rate and skill stops
+    // mattering. At 650ms a simulated player who moves every 3s lasts about a
+    // minute and a half, one moving every second lasts three minutes.
+    minIntervalMs: 650,
+    rampMs: 55,
+  },
 };

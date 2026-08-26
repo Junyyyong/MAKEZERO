@@ -1,7 +1,8 @@
-import { aliveCount, collapseRows, createBoard } from "./board";
+import { aliveCount, collapseRows, createBoard, createSparseBoard, emptyIndices, placeGroup } from "./board";
 import { findHint, hasAnyMove } from "./solver";
 import { mulberry32, randomSeed } from "./rng";
 import { evaluateSelection } from "./rules";
+import { MIN_SELECTION } from "./rules";
 import type { Board, MatchResult, RunConfig } from "./types";
 
 export type GameStatus = "playing" | "won" | "lost" | "timeUp";
@@ -16,6 +17,10 @@ export interface GameState {
   startingCells: number;
   /** Time attack only; milliseconds still on the clock. */
   remainingMs: number;
+  /** Spawn modes only; milliseconds until the next batch of tiles arrives. */
+  untilSpawnMs: number;
+  /** Batches delivered so far, which is what shortens the gap between them. */
+  spawnCount: number;
   /** Consumed and advanced whenever fresh tiles are needed. */
   nextSeed: number;
 }
@@ -28,15 +33,26 @@ export interface CommitOutcome {
 
 const MAX_DEAL_ATTEMPTS = 20;
 
+function deal(config: RunConfig, rngSeed: number): Board {
+  const rng = mulberry32(rngSeed);
+  return config.spawn
+    ? createSparseBoard(rng, config.width, config.rows, config.spawn.initialFill, config.groupWeights)
+    : createBoard(rng, config.width, config.rows, config.groupWeights);
+}
+
 function dealBoard(config: RunConfig, seed: number): { board: Board; nextSeed: number } {
   for (let attempt = 0; attempt < MAX_DEAL_ATTEMPTS; attempt++) {
-    const board = createBoard(mulberry32(seed + attempt), config.width, config.rows, config.groupWeights);
+    const board = deal(config, seed + attempt);
     if (hasAnyMove(board)) return { board, nextSeed: seed + attempt + 1 };
   }
-  return {
-    board: createBoard(mulberry32(seed), config.width, config.rows, config.groupWeights),
-    nextSeed: seed + MAX_DEAL_ATTEMPTS,
-  };
+  return { board: deal(config, seed), nextSeed: seed + MAX_DEAL_ATTEMPTS };
+}
+
+/** How long until the next batch, given how many have already landed. */
+export function spawnIntervalMs(config: RunConfig, spawnCount: number): number {
+  const spawn = config.spawn;
+  if (!spawn) return Infinity;
+  return Math.max(spawn.minIntervalMs, spawn.startIntervalMs - spawn.rampMs * spawnCount);
 }
 
 function settleStatus(state: GameState): GameState {
@@ -46,6 +62,11 @@ function settleStatus(state: GameState): GameState {
       const dealt = dealBoard(state.config, state.nextSeed);
       return { ...state, board: dealt.board, nextSeed: dealt.nextSeed, status: "playing" };
     }
+    return { ...state, status: "playing" };
+  }
+  if (state.config.spawn) {
+    // More tiles are always on the way, so an empty board is a good moment
+    // rather than a win, and having no move right now may be temporary.
     return { ...state, status: "playing" };
   }
   if (aliveCount(state.board) === 0) return { ...state, status: "won" };
@@ -64,17 +85,57 @@ export function newGame(config: RunConfig, seed: number = randomSeed()): GameSta
     status: "playing",
     startingCells: board.cells.length,
     remainingMs: config.timeLimitMs ?? 0,
+    untilSpawnMs: spawnIntervalMs(config, 0),
+    spawnCount: 0,
     nextSeed,
   };
 }
 
-/** Advances the time-attack clock. A no-op in the untimed modes. */
+/**
+ * Advances whatever is running on a clock: the time-attack countdown, and the
+ * timer that drops fresh tiles onto the board. A no-op in the untimed modes.
+ */
 export function tick(state: GameState, deltaMs: number): GameState {
-  if (state.status !== "playing" || state.config.timeLimitMs === undefined) return state;
-  const remainingMs = Math.max(0, state.remainingMs - deltaMs);
-  if (remainingMs === state.remainingMs) return state;
-  if (remainingMs === 0) return { ...state, remainingMs, status: "timeUp" };
-  return { ...state, remainingMs };
+  if (state.status !== "playing") return state;
+  let next = state;
+
+  if (next.config.timeLimitMs !== undefined) {
+    const remainingMs = Math.max(0, next.remainingMs - deltaMs);
+    if (remainingMs !== next.remainingMs) {
+      next = remainingMs === 0 ? { ...next, remainingMs, status: "timeUp" } : { ...next, remainingMs };
+    }
+    if (next.status !== "playing") return next;
+  }
+
+  if (next.config.spawn) {
+    const untilSpawnMs = next.untilSpawnMs - deltaMs;
+    next = untilSpawnMs > 0 ? { ...next, untilSpawnMs } : spawnBatch(next);
+  }
+  return next;
+}
+
+/**
+ * Drops the next batch of tiles. The run ends here, and only here: once the
+ * board is packed tightly enough that a batch has nowhere to land.
+ */
+function spawnBatch(state: GameState): GameState {
+  const config = state.config;
+  const cells = state.board.cells.map((cell) => ({ ...cell }));
+  const board: Board = { width: state.board.width, cells };
+
+  if (emptyIndices(board).length < MIN_SELECTION) {
+    return { ...state, untilSpawnMs: 0, status: "lost" };
+  }
+  placeGroup(board, mulberry32(state.nextSeed), config.groupWeights);
+
+  const spawnCount = state.spawnCount + 1;
+  return {
+    ...state,
+    board,
+    spawnCount,
+    untilSpawnMs: spawnIntervalMs(config, spawnCount),
+    nextSeed: state.nextSeed + 1,
+  };
 }
 
 export function commitSelection(state: GameState, indices: readonly number[]): CommitOutcome {
@@ -84,7 +145,11 @@ export function commitSelection(state: GameState, indices: readonly number[]): C
   }
   const cells = state.board.cells.map((cell) => ({ ...cell }));
   for (const i of indices) cells[i]!.cleared = true;
-  const { board, removed } = collapseRows({ width: state.board.width, cells });
+  // A board that tiles keep landing on is a fixed frame: cleared squares stay
+  // put as landing room instead of closing up.
+  const { board, removed } = state.config.spawn
+    ? { board: { width: state.board.width, cells }, removed: 0 }
+    : collapseRows({ width: state.board.width, cells });
   const next = settleStatus({ ...state, board, score: state.score + result.score });
   return { state: next, result, rowsRemoved: removed };
 }

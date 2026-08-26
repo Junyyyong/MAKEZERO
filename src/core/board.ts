@@ -124,6 +124,66 @@ export function createBoard(
   return { width, cells: values.map((value) => ({ value, cleared: false })) };
 }
 
+/** The indices of squares nothing is standing on. */
+export function emptyIndices(board: Board): number[] {
+  const out: number[] = [];
+  for (let i = 0; i < board.cells.length; i++) if (!isAlive(board, i)) out.push(i);
+  return out;
+}
+
+/**
+ * Deals only part of the board, leaving the rest open. Used by the modes where
+ * tiles keep arriving: the empty squares are the room those tiles land in.
+ */
+export function createSparseBoard(
+  rng: Rng,
+  width: number,
+  rows: number,
+  fill: number,
+  groupWeights: readonly number[] = EASY_GROUPS,
+): Board {
+  const capacity = width * rows;
+  // Value 0 marks a square nothing has ever stood on, so it renders blank
+  // rather than showing the ghost of a tile that was never there.
+  const cells: Cell[] = Array.from({ length: capacity }, () => ({ value: 0, cleared: true }));
+  const wanted = Math.max(MIN_SELECTION, Math.round(capacity * fill));
+  const board = { width, cells };
+
+  while (aliveCount(board) < wanted) {
+    const room = capacity - aliveCount(board);
+    if (room < MIN_SELECTION) break;
+    if (!placeGroup(board, rng, groupWeights)) break;
+  }
+  return board;
+}
+
+/**
+ * Drops one whole group of tiles onto free squares.
+ *
+ * Whole groups only: the board is dealt so its values split exactly into tens,
+ * and adding a partial group would break that and strand the leftovers.
+ * Returns false when there is no longer room for even the smallest group.
+ */
+export function placeGroup(
+  board: Board,
+  rng: Rng,
+  groupWeights: readonly number[] = EASY_GROUPS,
+): boolean {
+  const free = emptyIndices(board);
+  if (free.length < MIN_SELECTION) return false;
+
+  const wanted = MIN_SELECTION + weightedPick(rng, groupWeights);
+  const parts = Math.min(wanted, MAX_SELECTION, free.length);
+  const values = makeGroup(rng, parts);
+
+  for (const value of values) {
+    const pick = Math.floor(rng() * free.length);
+    const [index] = free.splice(pick, 1);
+    board.cells[index!] = { value, cleared: false };
+  }
+  return true;
+}
+
 /** Drops any row whose cells are all cleared, pulling the rest up. */
 export function collapseRows(board: Board): { board: Board; removed: number } {
   const kept: Cell[] = [];

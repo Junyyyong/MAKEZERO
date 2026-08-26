@@ -107,7 +107,7 @@ export class App {
     this.view.setBoard(this.state.board);
     this.view.setInteractive(true);
     this.render();
-    if (config.timeLimitMs !== undefined) this.startClock();
+    if (config.timeLimitMs !== undefined || config.spawn) this.startClock();
   }
 
   // ---- clock -------------------------------------------------------------
@@ -141,7 +141,6 @@ export class App {
     if (!result.ok) return;
     this.view.popScore(anchor, result.score);
     this.state = state;
-    this.view.setBoard(state.board);
     this.recordScore();
     this.render();
   }
@@ -174,7 +173,9 @@ export class App {
   // ---- results -----------------------------------------------------------
 
   private render(): void {
-    this.view.render();
+    // The board is a new object whenever anything changes it, tiles arriving
+    // on their own timer included, so the view is re-pointed every render.
+    this.view.sync(this.state.board);
     this.hud.gamesToday = this.daily.games;
     this.hud.bestToday = this.daily.best;
     this.hud.render(this.state);
@@ -184,7 +185,7 @@ export class App {
   private finishRun(): void {
     this.stopClock();
     this.view.setInteractive(false);
-    const { config, status, score } = this.state;
+    const { config, score } = this.state;
 
     if (config.mode === "story") {
       this.finishStage(config.stage ?? 1, stars(this.state));
@@ -199,11 +200,8 @@ export class App {
       return;
     }
     this.overlay.open({
-      title: status === "won" ? "클리어!" : "게임 종료",
-      body:
-        status === "won"
-          ? `보드를 모두 지웠습니다.\n점수 ${score}점`
-          : `점수 ${score}점\n오늘 최고 ${this.daily.best}점`,
+      title: "보드가 가득 찼어요",
+      body: `점수 ${score}점\n오늘 최고 ${this.daily.best}점\n최고 기록 ${this.progress.bestEndless}점`,
       primary: { label: "다시 하기", action: () => this.startMode("endless") },
     });
   }
