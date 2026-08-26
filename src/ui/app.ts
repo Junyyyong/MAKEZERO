@@ -203,12 +203,15 @@ export class App {
   // ---- results -----------------------------------------------------------
 
   private render(): void {
-    // The board is a new object whenever anything changes it, tiles arriving
-    // on their own timer included, so the view is re-pointed every render.
-    this.view.sync(this.state.board);
+    // The HUD goes first: it decides whether the timer bar shows and how many
+    // lines the notice takes, which is how much room the board is left with.
+    // Measuring the board before that sizes its tiles against a stale box.
     this.hud.gamesToday = this.daily.games;
     this.hud.bestToday = this.daily.best;
     this.hud.render(this.state);
+    // The board is a new object whenever anything changes it, tiles arriving
+    // on their own timer included, so the view is re-pointed every render.
+    this.view.sync(this.state.board);
     if (this.state.status !== "playing") this.finishRun();
   }
 

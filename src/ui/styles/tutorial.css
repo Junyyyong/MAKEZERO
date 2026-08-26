@@ -45,13 +45,10 @@
 }
 
 .tutorial-board-wrap {
-  /* The teaching boards are small, so the frame hugs them instead of
-     stretching a nine-tile layout across the whole screen. */
-  flex: 0 1 auto;
-  /* Sits in the middle of whatever room is left between the instruction and
-     the lesson, so the board does not cling to the top of the screen. */
-  margin: auto 0;
-  padding: 10px;
+  /* Same as the game: a plain centring box whose height comes from flex, with
+     the frame on the board itself. The teaching boards are small, so
+     TutorialScreen caps the tile size to stop them ballooning. */
+  margin: 0;
 }
 
 .tutorial-foot {

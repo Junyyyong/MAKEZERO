@@ -66,6 +66,7 @@ ui  →  content  →  core
 | 튜토리얼 내용 | `content/tutorial.ts` |
 | 색·폰트 등 스킨 | `ui/styles/tokens.css` 부터 |
 | 보드 화면 배치 | `ui/boardView.ts` 의 `layout()` |
+| 작은 화면 대응 | `ui/styles/game.css` 하단 `@media (max-height: ...)` |
 
 ## 테스트
 
@@ -81,5 +82,12 @@ npm run dev       # 개발 서버
 - `content/balance.test.ts` — **봇으로 20 스테이지를 전부 플레이해서** 통과 못 할 스테이지가 없는지, 난이도가 실제로 우상향하는지 검사
 - `content/pacing.test.ts` — 무제한 모드를 시간까지 시뮬레이션해서, 모든 판이 끝나는지·빨리 칠수록 오래 버티는지 검사
 - `content/tutorial.test.ts` — 튜토리얼 보드마다 **정답이 정확히 하나뿐인지** 검사
+
+화면 배치는 유닛 테스트로 못 잡습니다. 보드가 자기가 받은 공간을 재서 타일 크기를 정하기 때문입니다. `tests/browser/responsive.mjs` 가 기기 10종과 회전에서 보드가 잘리지 않는지 검사합니다 ([README](../tests/browser/README.md)).
+
+```bash
+npm run preview        # 다른 터미널
+npm run test:layout
+```
 
 밸런스 숫자를 바꾸면 마지막 테스트가 먼저 알려줍니다.

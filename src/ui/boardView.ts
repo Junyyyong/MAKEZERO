@@ -3,8 +3,12 @@ import { MAX_SELECTION, TARGET_SUM } from "../core/rules";
 import type { Board } from "../core/types";
 
 const HINT_MS = 2700;
-/** Below this a tile is too small to hit reliably with a thumb. */
-const MIN_TILE_PX = 22;
+/**
+ * Below this a tile is too small to hit reliably with a thumb. It is a floor
+ * of last resort: the chrome shrinks first (see the short-screen rules in
+ * game.css), so tiles only get here on a genuinely cramped viewport.
+ */
+const MIN_TILE_PX = 16;
 
 export interface BoardViewOptions {
   wrap: HTMLElement;
@@ -39,6 +43,7 @@ export class BoardView {
   private interactive = true;
   /** Cleared whenever the board must be measured again. */
   private laidOut = "";
+  private readonly resizeObserver: ResizeObserver | undefined;
 
   constructor(private readonly options: BoardViewOptions) {
     const { grid } = options;
@@ -50,10 +55,26 @@ export class BoardView {
     options.wrap.addEventListener("pointerdown", (event) => {
       if (this.tileIndexFrom(event.target) === null) this.clearSelection();
     });
-    window.addEventListener("resize", () => {
-      this.laidOut = "";
-      this.layout();
-    });
+
+    /*
+     * The board refits whenever the space it has changes, whatever the cause:
+     * a rotation, the browser's own bars sliding in and out, a notice wrapping
+     * onto a second line, the on-screen keyboard, a foldable opening. Watching
+     * `window.resize` alone misses most of those, because the window stays the
+     * same size while this box does not.
+     *
+     * Safe from feedback because the wrap's height comes from flex layout, not
+     * from the board inside it — resizing the tiles never resizes the wrap.
+     */
+    if (typeof ResizeObserver !== "undefined") {
+      this.resizeObserver = new ResizeObserver(() => this.layout());
+      this.resizeObserver.observe(options.wrap);
+    } else {
+      window.addEventListener("resize", () => {
+        this.laidOut = "";
+        this.layout();
+      });
+    }
   }
 
   /** Starts on a new board: nothing selected, measured from scratch. */
@@ -243,6 +264,7 @@ export class BoardView {
     const { width } = this.board;
     const rows = Math.ceil(this.board.cells.length / width);
     if (rows === 0) return;
+    const gridStyles = getComputedStyle(this.options.grid);
 
     const box = this.options.wrap.getBoundingClientRect();
     // The screen may still be hidden when a run is set up; leave the board
@@ -252,15 +274,19 @@ export class BoardView {
       return;
     }
 
-    const styles = getComputedStyle(this.options.grid);
-    const gap = parseFloat(styles.gap) || 0;
-    const padX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
-    const padY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
+    const gap = parseFloat(gridStyles.gap) || 0;
+    const padX = parseFloat(gridStyles.paddingLeft) + parseFloat(gridStyles.paddingRight);
+    const padY = parseFloat(gridStyles.paddingTop) + parseFloat(gridStyles.paddingBottom);
 
     const byWidth = (box.width - padX - gap * (width - 1)) / width;
     const byHeight = (box.height - padY - gap * (rows - 1)) / rows;
     const cap = this.options.maxTilePx ?? Infinity;
     const tile = Math.max(MIN_TILE_PX, Math.floor(Math.min(byWidth, byHeight, cap)));
+
+    // Re-measuring on every observer callback is cheap; re-writing the styles
+    // is what must not happen when nothing has actually moved.
+    const signature = `${width}x${rows}@${tile}`;
+    if (signature === this.laidOut) return;
 
     this.options.grid.style.setProperty("--tile", `${tile}px`);
     // repeat() will not take its count from a custom property, so the track
@@ -271,7 +297,7 @@ export class BoardView {
     // Only a board too big even at the minimum tile size may scroll.
     const overflows = rows * (tile + gap) + padY > box.height + 1;
     this.options.wrap.classList.toggle("scrolls", overflows);
-    this.laidOut = `${width}x${rows}@${Math.round(box.width)}x${Math.round(box.height)}`;
+    this.laidOut = signature;
   }
 
   render(): void {

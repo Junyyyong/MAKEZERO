@@ -54,6 +54,7 @@ npm test           # 규칙 · 상태 · 밸런스 · 페이싱 · 튜토리얼 
 npm run typecheck
 npm run build      # dist/
 npm run build:single   # 단일 HTML 파일 하나로 (dist-single/)
+npm run test:layout    # 기기 10종에서 화면 배치 검사 (preview 실행 필요)
 ```
 
 구조는 `src/core`(규칙 · DOM 없음) → `src/content`(밸런스 · 스토리) → `src/ui`(화면) 한 방향으로만 의존합니다. 자세한 건 [ARCHITECTURE.md](./docs/ARCHITECTURE.md).

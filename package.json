@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "cap:sync": "npm run build && cap sync android",
     "android:bundle": "npm run cap:sync && cd android && ./gradlew bundleRelease",
-    "build:single": "npm run build && node scripts/build-single-file.mjs"
+    "build:single": "npm run build && node scripts/build-single-file.mjs",
+    "test:layout": "node tests/browser/responsive.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.0",
