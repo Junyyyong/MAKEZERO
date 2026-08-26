@@ -2,8 +2,9 @@ import { isAlive } from "../game/board";
 import { MAX_SELECTION } from "../game/rules";
 import type { Board } from "../game/types";
 
-const EDGE_SCROLL_PX = 56;
 const HINT_MS = 2700;
+/** Below this a tile is too small to hit reliably with a thumb. */
+const MIN_TILE_PX = 22;
 
 export interface BoardViewOptions {
   wrap: HTMLElement;
@@ -30,6 +31,8 @@ export class BoardView {
   private dragging = false;
   private dragMoved = false;
   private interactive = true;
+  /** Cleared whenever the board must be measured again. */
+  private laidOut = "";
 
   constructor(private readonly options: BoardViewOptions) {
     const { grid } = options;
@@ -38,12 +41,16 @@ export class BoardView {
     grid.addEventListener("pointerup", this.onPointerUp);
     grid.addEventListener("pointercancel", this.onPointerCancel);
     grid.addEventListener("contextmenu", (event) => event.preventDefault());
-    window.addEventListener("resize", () => this.syncPitch());
+    window.addEventListener("resize", () => {
+      this.laidOut = "";
+      this.layout();
+    });
   }
 
   setBoard(board: Board): void {
     this.board = board;
     this.selection = [];
+    this.laidOut = "";
     this.render();
   }
 
@@ -66,7 +73,6 @@ export class BoardView {
     this.selection = [];
     this.hinted = indices;
     this.render();
-    this.tiles[indices[0]!]?.scrollIntoView({ block: "nearest", behavior: "smooth" });
     window.clearTimeout(this.hintTimer);
     this.hintTimer = window.setTimeout(() => {
       this.hinted = [];
@@ -78,14 +84,6 @@ export class BoardView {
     if (this.hinted.length === 0) return;
     window.clearTimeout(this.hintTimer);
     this.hinted = [];
-  }
-
-  scrollToBottom(): void {
-    this.options.wrap.scrollTo({ top: this.options.wrap.scrollHeight, behavior: "smooth" });
-  }
-
-  scrollToTop(): void {
-    this.options.wrap.scrollTop = 0;
   }
 
   reject(): void {
@@ -144,7 +142,6 @@ export class BoardView {
   private readonly onPointerMove = (event: PointerEvent): void => {
     if (!this.dragging) return;
     event.preventDefault();
-    this.autoScroll(event.clientY);
     const i = this.tileIndexFrom(document.elementFromPoint(event.clientX, event.clientY));
     if (i === null || i === this.selection[this.selection.length - 1]) return;
     this.dragMoved = true;
@@ -186,12 +183,6 @@ export class BoardView {
     return true;
   }
 
-  private autoScroll(clientY: number): void {
-    const box = this.options.wrap.getBoundingClientRect();
-    if (clientY < box.top + EDGE_SCROLL_PX) this.options.wrap.scrollTop -= 10;
-    else if (clientY > box.bottom - EDGE_SCROLL_PX) this.options.wrap.scrollTop += 10;
-  }
-
   // ---- rendering ---------------------------------------------------------
 
   private rebuildTiles(): void {
@@ -205,25 +196,50 @@ export class BoardView {
       return tile;
     });
     this.options.grid.replaceChildren(frag);
-    this.syncPitch();
+    this.laidOut = "";
   }
 
-  /** Publishes the rendered tile pitch so the CSS can rule the empty squares. */
-  private syncPitch(): void {
-    const first = this.tiles[0];
-    if (!first) {
-      this.options.wrap.classList.remove("ruled");
+  /**
+   * Sizes the tiles so the whole board fits the space it has, in both
+   * directions. The board never grows during a run, so this settles once and
+   * the player never has to scroll to see the rest of the puzzle.
+   */
+  private layout(): void {
+    const { width } = this.board;
+    const rows = Math.ceil(this.board.cells.length / width);
+    if (rows === 0) return;
+
+    const box = this.options.wrap.getBoundingClientRect();
+    // The screen may still be hidden when a run is set up; leave the board
+    // unmeasured so the next render tries again once it has a size.
+    if (box.width <= 0 || box.height <= 0) {
+      this.laidOut = "";
       return;
     }
-    const gap = parseFloat(getComputedStyle(this.options.grid).gap) || 0;
-    const size = first.getBoundingClientRect().width;
-    if (size <= 0) return;
-    this.options.wrap.style.setProperty("--pitch", `${size + gap}px`);
-    this.options.wrap.classList.add("ruled");
+
+    const styles = getComputedStyle(this.options.grid);
+    const gap = parseFloat(styles.gap) || 0;
+    const padX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
+    const padY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
+
+    const byWidth = (box.width - padX - gap * (width - 1)) / width;
+    const byHeight = (box.height - padY - gap * (rows - 1)) / rows;
+    const tile = Math.max(MIN_TILE_PX, Math.floor(Math.min(byWidth, byHeight)));
+
+    this.options.grid.style.setProperty("--tile", `${tile}px`);
+    // repeat() will not take its count from a custom property, so the track
+    // list has to be written out here rather than left to the stylesheet.
+    this.options.grid.style.gridTemplateColumns = `repeat(${width}, ${tile}px)`;
+    this.options.grid.dataset.cols = String(width);
+    // Only a board too big even at the minimum tile size may scroll.
+    const overflows = rows * (tile + gap) + padY > box.height + 1;
+    this.options.wrap.classList.toggle("scrolls", overflows);
+    this.laidOut = `${width}x${rows}@${Math.round(box.width)}x${Math.round(box.height)}`;
   }
 
   render(): void {
     if (this.tiles.length !== this.board.cells.length) this.rebuildTiles();
+    if (this.laidOut === "") this.layout();
     const selected = new Set(this.selection);
     const hinted = new Set(this.hinted);
     this.board.cells.forEach((cell, i) => {

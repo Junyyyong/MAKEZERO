@@ -249,41 +249,32 @@ body {
 }
 
 .board-wrap {
+  /* The board is dealt at a fixed size and never grows, so it is laid out to
+     fit the space it has. Scrolling is a fallback for boards that would need
+     tiles too small to hit. */
   position: relative;
+  display: flex;
   flex: 1;
+  align-items: center;
+  justify-content: center;
   min-height: 0;
   margin: 0 12px;
-  overflow-y: auto;
+  overflow: hidden;
   background-color: rgba(48, 28, 12, 0.55);
   border-radius: 8px;
   box-shadow: inset 0 3px 10px rgba(0, 0, 0, 0.45);
+}
+
+.board-wrap.scrolls {
+  align-items: start;
+  overflow-y: auto;
   scrollbar-width: thin;
 }
 
-/*
- * Empty squares below the tiles, so a short board still reads as a full
- * playfield. --pitch is measured from a real tile after every rebuild, and
- * `local` keeps the lines glued to the tiles while the board scrolls.
- */
-.board-wrap.ruled {
-  background-image:
-    repeating-linear-gradient(
-      to right,
-      rgba(255, 226, 176, 0.08) 0 1px,
-      transparent 1px var(--pitch)
-    ),
-    repeating-linear-gradient(
-      to bottom,
-      rgba(255, 226, 176, 0.08) 0 1px,
-      transparent 1px var(--pitch)
-    );
-  background-attachment: local;
-  background-position: var(--gap) var(--gap);
-}
-
 .board {
+  /* The track list is written from JS, which sizes the tiles to the space the
+     board has; repeat() cannot take its count from a custom property. */
   display: grid;
-  grid-template-columns: repeat(9, 1fr);
   gap: var(--gap);
   padding: var(--gap);
   touch-action: none;
@@ -291,13 +282,14 @@ body {
 
 .tile {
   position: relative;
+  width: var(--tile, 38px);
+  height: var(--tile, 38px);
   display: flex;
   align-items: center;
   justify-content: center;
-  aspect-ratio: 1;
   padding: 0;
   font-family: inherit;
-  font-size: clamp(15px, 4.4vw, 26px);
+  font-size: calc(var(--tile, 38px) * 0.58);
   font-weight: 800;
   color: var(--tile-ink);
   cursor: pointer;
@@ -417,6 +409,9 @@ body {
   position: relative;
   width: 68px;
   height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 30px;
   color: #5c3a17;
   cursor: pointer;
@@ -442,6 +437,15 @@ body {
 .round-btn .glyph {
   font-weight: 800;
   line-height: 1;
+}
+
+.round-btn svg.glyph {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
 }
 
 .round-btn.urge {

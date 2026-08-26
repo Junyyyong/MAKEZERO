@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { newGame, useHint } from "./game";
 import {
   CHAPTERS,
+  starsFor,
   STAGES_PER_CHAPTER,
   TOTAL_STAGES,
   chapterFor,
@@ -48,27 +49,35 @@ describe("difficulty curve", () => {
     for (let stage = 2; stage <= TOTAL_STAGES; stage++) {
       const prev = stageConfig(stage - 1);
       const next = stageConfig(stage);
-      expect(next.adds).toBeLessThanOrEqual(prev.adds);
+      expect(next.width).toBeGreaterThanOrEqual(prev.width);
       expect(next.rows).toBeGreaterThanOrEqual(prev.rows);
-      expect(next.weights[8]!).toBeGreaterThanOrEqual(prev.weights[8]!);
+      expect(next.shuffles).toBeLessThanOrEqual(prev.shuffles);
+      // Later stages deal more plain pairs, which spreads the values out and
+      // leaves rigid 8s and 9s stranded — that is what makes a board hard.
+      expect(next.groupWeights[0]!).toBeGreaterThanOrEqual(prev.groupWeights[0]!);
     }
   });
 
-  it("always leaves enough adds and a sane board", () => {
+  it("keeps every board a sane shape for a phone screen", () => {
     for (const stage of everyStage) {
       const config = stageConfig(stage);
-      expect(config.adds).toBeGreaterThanOrEqual(2);
-      expect(config.rows).toBeGreaterThanOrEqual(3);
-      expect(config.rows).toBeLessThanOrEqual(7);
-      expect(config.weights).toHaveLength(9);
+      expect(config.width).toBeGreaterThanOrEqual(5);
+      expect(config.width).toBeLessThanOrEqual(10);
+      expect(config.rows).toBeGreaterThanOrEqual(config.width);
+      // Tiles are square and the board fills the screen, so the shape has to
+      // stay near the phone's own ratio or it ends up a thin ribbon.
+      expect(config.rows / config.width).toBeLessThan(2);
+      expect(config.shuffles).toBeGreaterThanOrEqual(1);
       expect(config.stage).toBe(stage);
       expect(config.mode).toBe("story");
     }
   });
 
   it("actually tightens between the first and last stage", () => {
-    expect(stageConfig(TOTAL_STAGES).adds).toBeLessThan(stageConfig(1).adds);
-    expect(stageConfig(TOTAL_STAGES).rows).toBeGreaterThan(stageConfig(1).rows);
+    const first = stageConfig(1);
+    const last = stageConfig(TOTAL_STAGES);
+    expect(last.width * last.rows).toBeGreaterThan(first.width * first.rows * 2);
+    expect(last.shuffles).toBeLessThan(first.shuffles);
   });
 
   it("deals a playable opening board on every stage", () => {
@@ -76,6 +85,39 @@ describe("difficulty curve", () => {
       const game = newGame(stageConfig(stage), stage * 977);
       expect(game.status).toBe("playing");
       expect(useHint({ ...game, hintsLeft: 1 }).indices).not.toBeNull();
+    }
+  });
+});
+
+describe("star grading", () => {
+  const targets = [16, 10, 5] as [number, number, number];
+
+  it("grades on the boundaries of each target", () => {
+    expect(starsFor(targets, 0)).toBe(3);
+    expect(starsFor(targets, 5)).toBe(3);
+    expect(starsFor(targets, 6)).toBe(2);
+    expect(starsFor(targets, 10)).toBe(2);
+    expect(starsFor(targets, 11)).toBe(1);
+    expect(starsFor(targets, 16)).toBe(1);
+    expect(starsFor(targets, 17)).toBe(0);
+  });
+
+  it("keeps every stage's targets ordered and reachable", () => {
+    for (const stage of everyStage) {
+      const [one, two, three] = stageConfig(stage).starTargets;
+      expect(one).toBeGreaterThan(two);
+      expect(two).toBeGreaterThan(three);
+      expect(three).toBeGreaterThan(0); // a perfect clear is deal-dependent
+    }
+  });
+
+  it("tightens the share of the board allowed to survive, stage by stage", () => {
+    const share = (stage: number, tier: number) => {
+      const c = stageConfig(stage);
+      return c.starTargets[tier]! / (c.width * c.rows);
+    };
+    for (let tier = 0; tier < 3; tier++) {
+      expect(share(TOTAL_STAGES, tier)).toBeLessThan(share(1, tier));
     }
   });
 });

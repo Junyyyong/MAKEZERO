@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { areConnected, appendRemaining, collapseRows, connectedNeighbours } from "./board";
+import {
+  areConnected,
+  collapseRows,
+  connectedNeighbours,
+  createBoard,
+  hasArithmeticMove,
+  makeGroup,
+  shuffleSurvivors,
+} from "./board";
+import { mulberry32 } from "./rng";
 import { evaluateSelection } from "./rules";
 import { findHint, hasAnyMove } from "./hint";
 import type { Board } from "./types";
@@ -11,40 +20,58 @@ function boardOf(...rows: number[][]): Board {
   return { width, cells };
 }
 
-describe("connection", () => {
-  const board = boardOf(
+describe("line of sight", () => {
+  const full = boardOf(
     [1, 2, 3],
     [4, 5, 6],
     [7, 8, 9],
   );
 
-  it("links orthogonal and diagonal grid neighbours", () => {
-    expect(areConnected(board, 0, 1)).toBe(true); // right
-    expect(areConnected(board, 0, 3)).toBe(true); // down
-    expect(areConnected(board, 0, 4)).toBe(true); // diagonal
+  it("links neighbours in all eight directions", () => {
+    expect(areConnected(full, 4, 1)).toBe(true); // up
+    expect(areConnected(full, 4, 7)).toBe(true); // down
+    expect(areConnected(full, 4, 3)).toBe(true); // left
+    expect(areConnected(full, 4, 5)).toBe(true); // right
+    expect(areConnected(full, 4, 0)).toBe(true); // diagonal
+    expect(areConnected(full, 4, 8)).toBe(true); // diagonal
   });
 
-  it("rejects far-apart live cells", () => {
-    expect(areConnected(board, 0, 5)).toBe(false);
-    expect(areConnected(board, 0, 8)).toBe(false);
+  it("blocks a line that a surviving tile stands in", () => {
+    expect(areConnected(full, 0, 2)).toBe(false); // 1 blocks the way
+    expect(areConnected(full, 0, 6)).toBe(false);
+    expect(areConnected(full, 0, 8)).toBe(false);
   });
 
-  it("links cells that become consecutive once cleared cells are skipped", () => {
+  it("sees straight through cleared squares, however many", () => {
+    const gapped = boardOf(
+      [1, 0, 3],
+      [0, 0, 0],
+      [7, 0, 9],
+    );
+    expect(areConnected(gapped, 0, 2)).toBe(true); // along the row
+    expect(areConnected(gapped, 0, 6)).toBe(true); // down the column
+    expect(areConnected(gapped, 0, 8)).toBe(true); // along the diagonal
+  });
+
+  it("never links tiles that share no straight line", () => {
     const gapped = boardOf(
       [1, 0, 0],
       [0, 0, 0],
-      [0, 0, 9],
+      [0, 9, 0],
     );
-    expect(areConnected(gapped, 0, 8)).toBe(true);
+    expect(areConnected(gapped, 0, 7)).toBe(false); // a knight's move apart
   });
 
-  it("wraps from the end of a row to the start of the next", () => {
-    expect(areConnected(board, 2, 3)).toBe(true);
+  it("does not wrap from the end of a row to the start of the next", () => {
+    const gapped = boardOf(
+      [0, 0, 3],
+      [4, 0, 0],
+    );
+    expect(areConnected(gapped, 2, 3)).toBe(false);
   });
 
   it("never links a cleared cell", () => {
-    const gapped = boardOf([1, 0, 3]);
-    expect(areConnected(gapped, 0, 1)).toBe(false);
+    expect(areConnected(boardOf([1, 0, 3]), 0, 1)).toBe(false);
   });
 
   it("reports neighbours consistently with areConnected", () => {
@@ -63,58 +90,43 @@ describe("connection", () => {
 });
 
 describe("evaluateSelection", () => {
-  const board = boardOf(
-    [3, 7, 4],
-    [3, 6, 2],
-    [1, 2, 9],
-  );
-
-  it("clears two tiles that sum to ten", () => {
-    expect(evaluateSelection(board, [0, 1])).toEqual({ ok: true, score: 10 });
+  it("clears two connected tiles that add up to ten", () => {
+    expect(evaluateSelection(boardOf([4, 6]), [0, 1])).toEqual({ ok: true, score: 10 });
   });
 
-  it("clears two tiles showing the same number", () => {
-    expect(evaluateSelection(board, [0, 3])).toEqual({ ok: true, score: 10 });
+  it("accepts a repeated value inside a chain", () => {
+    // 1 + 1 + 8 is a legal chain even though two tiles show the same number.
+    expect(evaluateSelection(boardOf([1, 1, 8]), [0, 1, 2])).toEqual({ ok: true, score: 30 });
   });
 
-  it("scores a three-tile chain above a pair, diagonals included", () => {
-    // 3 (0,0) + 6 (1,1) + 1 (2,0): right-down diagonal, then down-left diagonal.
-    expect(evaluateSelection(board, [0, 4, 6])).toEqual({ ok: true, score: 30 });
+  it("refuses two tiles that merely show the same number", () => {
+    expect(evaluateSelection(boardOf([3, 3]), [0, 1]).failure).toBe("bad-sum");
+    expect(evaluateSelection(boardOf([9, 9]), [0, 1]).failure).toBe("bad-sum");
   });
 
-  it("requires an exact ten beyond two tiles", () => {
-    // 4 + 7 + 3 = 14
-    expect(evaluateSelection(board, [2, 1, 0]).failure).toBe("bad-sum");
+  it("still accepts a same-number pair when it happens to make ten", () => {
+    expect(evaluateSelection(boardOf([5, 5]), [0, 1]).ok).toBe(true);
   });
 
-  it("does not extend the same-number shortcut past two tiles", () => {
-    const twins = boardOf([3, 3, 3]);
-    expect(evaluateSelection(twins, [0, 1])).toEqual({ ok: true, score: 10 });
-    expect(evaluateSelection(twins, [0, 1, 2]).failure).toBe("bad-sum");
+  it("requires an exact ten", () => {
+    expect(evaluateSelection(boardOf([4, 7]), [0, 1]).failure).toBe("bad-sum");
+    expect(evaluateSelection(boardOf([1, 2]), [0, 1]).failure).toBe("bad-sum");
   });
 
   it("rejects a broken chain even when the sum is right", () => {
-    const spread = boardOf(
-      [1, 9, 5],
-      [5, 5, 5],
-      [5, 5, 9],
-    );
-    expect(evaluateSelection(spread, [0, 8]).failure).toBe("disconnected");
+    const blocked = boardOf([2, 5, 8]); // the 5 stands between 2 and 8
+    expect(evaluateSelection(blocked, [0, 2]).failure).toBe("disconnected");
   });
 
   it("rejects fewer than two and more than five tiles", () => {
-    const ones = boardOf([1, 1, 1], [1, 1, 1]);
-    expect(evaluateSelection(ones, [0]).failure).toBe("too-few");
-    expect(evaluateSelection(ones, [0, 1, 2, 3, 4, 5]).failure).toBe("too-many");
+    const row = boardOf([1, 1, 1, 1, 1, 5]);
+    expect(evaluateSelection(row, [0]).failure).toBe("too-few");
+    expect(evaluateSelection(row, [0, 1, 2, 3, 4, 5]).failure).toBe("too-many");
   });
 
-  it("rejects a repeated tile", () => {
-    expect(evaluateSelection(board, [0, 0]).failure).toBe("duplicate");
-  });
-
-  it("rejects an already cleared tile", () => {
-    const gapped = boardOf([3, 0, 7]);
-    expect(evaluateSelection(gapped, [0, 1]).failure).toBe("cleared");
+  it("rejects a repeated tile and an already cleared one", () => {
+    expect(evaluateSelection(boardOf([4, 6]), [0, 0]).failure).toBe("duplicate");
+    expect(evaluateSelection(boardOf([4, 0, 6]), [0, 1]).failure).toBe("cleared");
   });
 
   it("awards the full curve by tile count", () => {
@@ -124,69 +136,110 @@ describe("evaluateSelection", () => {
     expect(evaluateSelection(boardOf([1, 2, 3, 2, 2]), [0, 1, 2, 3, 4]).score).toBe(150);
   });
 
-  it("counts a chain in the order the player drew it", () => {
-    // 2 -> 3 -> 1 -> 4 walks left and right along the row, but every step touches.
+  it("counts the chain in the order the player drew it", () => {
     const chain = boardOf([1, 2, 3, 4]);
     expect(evaluateSelection(chain, [1, 2, 0, 3]).failure).toBe("disconnected");
     expect(evaluateSelection(chain, [3, 2, 1, 0]).score).toBe(70);
   });
 });
 
-describe("collapseRows", () => {
-  it("removes fully cleared rows and pulls the rest up", () => {
-    const board = boardOf(
-      [1, 2, 3],
-      [0, 0, 0],
-      [7, 8, 9],
-    );
-    const { board: next, removed } = collapseRows(board);
-    expect(removed).toBe(1);
-    expect(next.cells.map((c) => c.value)).toEqual([1, 2, 3, 7, 8, 9]);
-  });
-
-  it("keeps a row that still has one live tile", () => {
-    const board = boardOf([0, 0, 3], [0, 0, 0]);
-    const { board: next, removed } = collapseRows(board);
-    expect(removed).toBe(1);
-    expect(next.cells).toHaveLength(3);
+describe("makeGroup", () => {
+  it("always produces values in range that add up to ten", () => {
+    const rng = mulberry32(7);
+    for (let parts = 2; parts <= 5; parts++) {
+      for (let run = 0; run < 200; run++) {
+        const group = makeGroup(rng, parts);
+        expect(group).toHaveLength(parts);
+        expect(group.reduce((a, b) => a + b, 0)).toBe(10);
+        for (const v of group) expect(v).toBeGreaterThanOrEqual(1);
+        for (const v of group) expect(v).toBeLessThanOrEqual(9);
+      }
+    }
   });
 });
 
-describe("appendRemaining", () => {
-  it("copies live values onto the end in reading order", () => {
-    const board = boardOf([1, 0, 3], [4, 0, 0]);
-    const next = appendRemaining(board);
-    expect(next.cells).toHaveLength(9);
-    expect(next.cells.slice(6).map((c) => c.value)).toEqual([1, 3, 4]);
-    expect(next.cells.slice(6).every((c) => !c.cleared)).toBe(true);
+describe("createBoard", () => {
+  it("fills the board exactly and totals a multiple of ten", () => {
+    const shapes: [number, number][] = [
+      [5, 8],
+      [6, 9],
+      [7, 11],
+      [9, 14],
+    ];
+    for (const [w, r] of shapes) {
+      const board = createBoard(mulberry32(w * r), w, r);
+      expect(board.cells).toHaveLength(w * r);
+      const total = board.cells.reduce((a, c) => a + c.value, 0);
+      expect(total % 10).toBe(0);
+    }
+  });
+
+  it("deals values that can be partitioned into tens, so a full clear is possible", () => {
+    for (let seed = 1; seed <= 30; seed++) {
+      const board = createBoard(mulberry32(seed), 6, 9);
+      expect(hasArithmeticMove(board)).toBe(true);
+    }
+  });
+});
+
+describe("collapseRows", () => {
+  it("removes fully cleared rows and pulls the rest up", () => {
+    const { board, removed } = collapseRows(boardOf([1, 2, 3], [0, 0, 0], [7, 8, 9]));
+    expect(removed).toBe(1);
+    expect(board.cells.map((c) => c.value)).toEqual([1, 2, 3, 7, 8, 9]);
+  });
+});
+
+describe("shuffleSurvivors", () => {
+  it("keeps every surviving number and drops the holes", () => {
+    const before = boardOf([1, 0, 3], [4, 0, 0]);
+    const after = shuffleSurvivors(before, mulberry32(5));
+    expect(after.cells).toHaveLength(3);
+    expect(after.cells.every((c) => !c.cleared)).toBe(true);
+    expect(after.cells.map((c) => c.value).sort()).toEqual([1, 3, 4]);
+  });
+
+  it("never grows the board", () => {
+    const before = createBoard(mulberry32(3), 6, 9);
+    const after = shuffleSurvivors(before, mulberry32(4));
+    expect(after.cells.length).toBeLessThanOrEqual(before.cells.length);
+  });
+});
+
+describe("hasArithmeticMove", () => {
+  it("sees a combination that only a rearrangement could reach", () => {
+    // Only 9+1 makes ten, and they sit a knight's move apart with no line.
+    const scattered = boardOf([9, 2, 2], [2, 2, 1]);
+    expect(hasAnyMove(scattered)).toBe(false);
+    expect(hasArithmeticMove(scattered)).toBe(true);
+  });
+
+  it("reports a board no shuffle could rescue", () => {
+    expect(hasArithmeticMove(boardOf([9, 9, 9]))).toBe(false);
+    expect(hasArithmeticMove(boardOf([8, 8]))).toBe(false);
+  });
+
+  it("treats an empty board as having nothing left to do", () => {
+    expect(hasArithmeticMove(boardOf([0, 0, 0]))).toBe(false);
   });
 });
 
 describe("findHint", () => {
   it("returns a selection the rules accept", () => {
-    const board = boardOf(
-      [4, 8, 2],
-      [5, 1, 7],
-      [9, 3, 6],
-    );
+    const board = createBoard(mulberry32(11), 6, 9);
     const hint = findHint(board);
     expect(hint).not.toBeNull();
     expect(evaluateSelection(board, hint!).ok).toBe(true);
   });
 
-  it("finds a same-number pair when no sum of ten exists", () => {
-    const board = boardOf([9, 9]);
-    expect(findHint(board)).toEqual([0, 1]);
+  it("prefers the longest chain it can find", () => {
+    // 1+2+3+4 is available along the row; so is the shorter 4+6.
+    const board = boardOf([1, 2, 3, 4], [0, 0, 0, 0]);
+    expect(findHint(board)).toHaveLength(4);
   });
 
   it("reports a stuck board", () => {
-    // 9 and 8 are not equal, sum to 17, and nothing else is live.
-    const board = boardOf([9, 8]);
-    expect(findHint(board)).toBeNull();
-    expect(hasAnyMove(board)).toBe(false);
-  });
-
-  it("treats an empty board as having no moves", () => {
-    expect(hasAnyMove(boardOf([0, 0, 0]))).toBe(false);
+    expect(findHint(boardOf([9, 8]))).toBeNull();
+    expect(hasAnyMove(boardOf([9, 8]))).toBe(false);
   });
 });

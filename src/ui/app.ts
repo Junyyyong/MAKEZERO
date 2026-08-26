@@ -1,5 +1,5 @@
 import { aliveCount, areConnected } from "../game/board";
-import { commitSelection, isStuck, newGame, tick, useAdd, useHint } from "../game/game";
+import { commitSelection, isStuck, newGame, stars, tick, useHint, useShuffle } from "../game/game";
 import type { GameState } from "../game/game";
 import {
   ENDLESS_CONFIG,
@@ -16,11 +16,11 @@ import { BoardView } from "./boardView";
 import { loadDaily, loadProgress, saveDaily, saveProgress } from "./storage";
 import type { DailyStats, Progress } from "./storage";
 
-const RULES_TEXT = `같은 수 두 개, 또는 합이 10이 되도록 이어서 지웁니다.
-3개부터 5개까지 이어도 되고, 길수록 점수가 큽니다.
+const RULES_TEXT = `숫자를 이어서 합이 <b>정확히 10</b>이 되면 지워집니다.
+2개부터 5개까지 이을 수 있고, 길수록 점수가 큽니다.
 <span class="rule-num">2개 10점 · 3개 30점<br />4개 70점 · 5개 150점</span>
-가로·세로·대각선으로 붙어 있거나, 지워진 칸을 건너뛰어 순서상 이웃이면 이을 수 있습니다.
-막히면 ＋ 로 남은 숫자를 아래에 더하세요.`;
+가로·세로·대각선으로 <b>직선</b>을 그어 사이에 남은 숫자가 없으면 이어집니다. 지워진 칸은 몇 칸이든 통과합니다.
+막히면 섞기로 남은 숫자의 자리를 바꾸세요.`;
 
 function el<T extends HTMLElement>(id: string): T {
   const found = document.getElementById(id);
@@ -61,9 +61,9 @@ export class App {
   private readonly timerBar = el<HTMLDivElement>("timer-bar");
   private readonly timerFill = el<HTMLSpanElement>("timer-fill");
   private readonly noticeEl = el<HTMLParagraphElement>("notice");
-  private readonly addBtn = el<HTMLButtonElement>("btn-add");
+  private readonly shuffleBtn = el<HTMLButtonElement>("btn-shuffle");
   private readonly hintBtn = el<HTMLButtonElement>("btn-hint");
-  private readonly addBadge = el<HTMLSpanElement>("badge-add");
+  private readonly shuffleBadge = el<HTMLSpanElement>("badge-shuffle");
   private readonly hintBadge = el<HTMLSpanElement>("badge-hint");
   private readonly overlay = el<HTMLDivElement>("overlay");
   private readonly overlayTitle = el<HTMLHeadingElement>("overlay-title");
@@ -96,7 +96,7 @@ export class App {
     el<HTMLButtonElement>("btn-help").addEventListener("click", () => this.showRules());
     el<HTMLButtonElement>("btn-back").addEventListener("click", () => this.showTitle());
     el<HTMLButtonElement>("btn-story-next").addEventListener("click", () => this.advanceStory());
-    this.addBtn.addEventListener("click", () => this.onAdd());
+    this.shuffleBtn.addEventListener("click", () => this.onShuffle());
     this.hintBtn.addEventListener("click", () => this.onHint());
   }
 
@@ -150,7 +150,6 @@ export class App {
     this.state = newGame(config);
     this.view.setBoard(this.state.board);
     this.view.setInteractive(true);
-    this.view.scrollToTop();
     this.show("game");
     this.render();
     if (config.timeLimitMs !== undefined) this.startClock();
@@ -192,14 +191,12 @@ export class App {
     this.render();
   }
 
-  private onAdd(): void {
-    if (this.state.addsLeft === 0 || this.state.status !== "playing") return;
+  private onShuffle(): void {
+    if (this.state.shufflesLeft === 0 || this.state.status !== "playing") return;
     this.view.clearHint();
-    const before = this.state.board.cells.length;
-    this.state = useAdd(this.state);
+    this.state = useShuffle(this.state);
     this.view.setBoard(this.state.board);
     this.render();
-    if (this.state.board.cells.length > before) this.view.scrollToBottom();
   }
 
   private onHint(): void {
@@ -230,14 +227,14 @@ export class App {
   // ---- rendering ---------------------------------------------------------
 
   private render(): void {
-    const { config, score, addsLeft, hintsLeft, status, remainingMs } = this.state;
+    const { config, score, shufflesLeft, hintsLeft, status, remainingMs } = this.state;
     this.view.render();
     this.scoreEl.textContent = String(score);
-    this.addBadge.textContent = String(addsLeft);
+    this.shuffleBadge.textContent = String(shufflesLeft);
     this.hintBadge.textContent = String(hintsLeft);
-    this.addBtn.disabled = addsLeft === 0 || status !== "playing";
+    this.shuffleBtn.disabled = shufflesLeft === 0 || status !== "playing";
     this.hintBtn.disabled = hintsLeft === 0 || status !== "playing";
-    this.addBtn.classList.toggle("hidden", config.mode === "timeAttack");
+    this.shuffleBtn.classList.toggle("hidden", config.shuffles === 0);
     this.hintBtn.classList.toggle("hidden", config.hints === 0);
 
     const timed = config.timeLimitMs !== undefined;
@@ -260,13 +257,21 @@ export class App {
       this.chipRight.textContent = `오늘 ${Math.max(this.daily.best, score)} ♛`;
     }
 
+    const left = aliveCount(this.state.board);
     const stuck = isStuck(this.state);
-    this.addBtn.classList.toggle("urge", stuck && addsLeft > 0);
-    this.noticeEl.textContent = stuck
-      ? addsLeft > 0
-        ? "이을 수 있는 조합이 없어요. ＋ 로 숫자를 더하세요."
-        : "더 이상 이을 수 없어요."
-      : `${aliveCount(this.state.board)}개 남음`;
+    this.shuffleBtn.classList.toggle("urge", stuck && shufflesLeft > 0);
+    if (stuck) {
+      this.noticeEl.textContent =
+        shufflesLeft > 0 ? "이을 수 있는 게 없어요. 섞어보세요." : "더 이상 이을 수 없어요.";
+    } else if (config.mode === "story") {
+      const [one, two, three] = config.starTargets;
+      const earned = stars(this.state);
+      this.noticeEl.textContent =
+        `${left}개 남음 · ${App.starLine(earned)} ` +
+        `(★ ${one} · ★★ ${two} · ★★★ ${three} 이하)`;
+    } else {
+      this.noticeEl.textContent = `${left}개 남음`;
+    }
 
     if (status !== "playing") this.finishRun();
   }
@@ -276,17 +281,8 @@ export class App {
     this.view.setInteractive(false);
     const { config, status, score } = this.state;
 
-    if (config.mode === "story" && status === "won") {
-      this.finishStage(config.stage ?? 1);
-      return;
-    }
     if (config.mode === "story") {
-      const stage = config.stage ?? 1;
-      this.openOverlay({
-        title: "실패",
-        body: `스테이지 ${stage}\n${aliveCount(this.state.board)}개가 남았어요.`,
-        primary: { label: "다시 도전", action: () => this.startStage(stage) },
-      });
+      this.finishStage(config.stage ?? 1, stars(this.state));
       return;
     }
     if (config.mode === "timeAttack") {
@@ -307,8 +303,24 @@ export class App {
     });
   }
 
-  /** Unlocks the next stage, then either plays the chapter beat or moves on. */
-  private finishStage(stage: number): void {
+  private static starLine(earned: number): string {
+    return "★★★".slice(0, earned) + "☆☆☆".slice(0, 3 - earned);
+  }
+
+  /** Grades the stage, unlocks the next one, then plays any chapter beat. */
+  private finishStage(stage: number, earned: number): void {
+    const left = aliveCount(this.state.board);
+    const targets = this.state.config.starTargets;
+
+    if (earned === 0) {
+      this.openOverlay({
+        title: "아쉬워요",
+        body: `${App.starLine(0)}\n${left}개가 남았어요.\n별 하나까지 ${targets[0]}개 이하로 줄여야 해요.`,
+        primary: { label: "다시 도전", action: () => this.startStage(stage) },
+      });
+      return;
+    }
+
     if (stage >= this.progress.stage) {
       this.progress = { ...this.progress, stage: Math.min(stage + 1, TOTAL_STAGES + 1) };
       saveProgress(this.progress);
@@ -326,18 +338,23 @@ export class App {
       return;
     }
 
+    const summary = `${App.starLine(earned)}\n${left}개 남음 · 점수 ${this.state.score}점`;
     if (stage >= TOTAL_STAGES) {
       this.openOverlay({
         title: "완주!",
-        body: "모든 스테이지를 끝냈습니다.",
+        body: `${summary}\n모든 스테이지를 끝냈습니다.`,
         primary: { label: "모드 선택", action: () => this.showTitle() },
       });
       return;
     }
     this.openOverlay({
-      title: "스테이지 클리어",
-      body: `스테이지 ${stage} 완료\n점수 ${this.state.score}점`,
+      title: earned === 3 ? "완벽해요!" : "스테이지 클리어",
+      body: summary,
       primary: { label: "다음 스테이지", action: () => this.startStage(stage + 1) },
+      secondary:
+        earned < 3
+          ? { label: "다시 도전", action: () => this.startStage(stage) }
+          : undefined,
     });
   }
 

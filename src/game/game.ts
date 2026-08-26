@@ -1,8 +1,8 @@
-import { aliveCount, appendRemaining, collapseRows, createBoard } from "./board";
+import { aliveCount, collapseRows, createBoard, hasArithmeticMove, shuffleSurvivors } from "./board";
 import { findHint, hasAnyMove } from "./hint";
 import { mulberry32, randomSeed } from "./rng";
 import { evaluateSelection } from "./rules";
-import { ENDLESS_CONFIG } from "./story";
+import { ENDLESS_CONFIG, starsFor } from "./story";
 import type { Board, MatchResult, RunConfig } from "./types";
 
 export type GameStatus = "playing" | "won" | "lost" | "timeUp";
@@ -11,9 +11,11 @@ export interface GameState {
   config: RunConfig;
   board: Board;
   score: number;
-  addsLeft: number;
+  shufflesLeft: number;
   hintsLeft: number;
   status: GameStatus;
+  /** Tiles the board started with, so grades stay comparable across sizes. */
+  startingCells: number;
   /** Time attack only; milliseconds still on the clock. */
   remainingMs: number;
   /** Consumed and advanced whenever fresh tiles are needed. */
@@ -27,50 +29,35 @@ export interface CommitOutcome {
 }
 
 const MAX_DEAL_ATTEMPTS = 20;
-const MAX_REFILL_ATTEMPTS = 3;
 
-/** Deals a playable board, rerolling the rare opening with no legal move. */
 function dealBoard(config: RunConfig, seed: number): { board: Board; nextSeed: number } {
   for (let attempt = 0; attempt < MAX_DEAL_ATTEMPTS; attempt++) {
-    const board = createBoard(mulberry32(seed + attempt), config.rows, config.weights);
+    const board = createBoard(mulberry32(seed + attempt), config.width, config.rows, config.groupWeights);
     if (hasAnyMove(board)) return { board, nextSeed: seed + attempt + 1 };
   }
   return {
-    board: createBoard(mulberry32(seed), config.rows, config.weights),
+    board: createBoard(mulberry32(seed), config.width, config.rows, config.groupWeights),
     nextSeed: seed + MAX_DEAL_ATTEMPTS,
   };
-}
-
-/**
- * Time attack never ends early: a deadlock is topped up with the survivors, and
- * a board cleared outright is replaced with a fresh deal. Copying can leave the
- * board just as stuck, so give up after a few tries and deal instead.
- */
-function refill(state: GameState): GameState {
-  if (aliveCount(state.board) === 0) {
-    const { board, nextSeed } = dealBoard(state.config, state.nextSeed);
-    return { ...state, board, nextSeed };
-  }
-  let board = state.board;
-  for (let attempt = 0; attempt < MAX_REFILL_ATTEMPTS; attempt++) {
-    board = appendRemaining(board);
-    if (hasAnyMove(board)) return { ...state, board };
-  }
-  const dealt = dealBoard(state.config, state.nextSeed);
-  return { ...state, board: dealt.board, nextSeed: dealt.nextSeed };
 }
 
 function settleStatus(state: GameState): GameState {
   if (state.config.mode === "timeAttack") {
     if (state.remainingMs <= 0) return { ...state, status: "timeUp" };
     if (aliveCount(state.board) === 0 || !hasAnyMove(state.board)) {
-      return { ...refill(state), status: "playing" };
+      const dealt = dealBoard(state.config, state.nextSeed);
+      return { ...state, board: dealt.board, nextSeed: dealt.nextSeed, status: "playing" };
     }
     return { ...state, status: "playing" };
   }
   if (aliveCount(state.board) === 0) return { ...state, status: "won" };
-  if (state.addsLeft === 0 && !hasAnyMove(state.board)) return { ...state, status: "lost" };
-  return { ...state, status: "playing" };
+  if (hasAnyMove(state.board)) return { ...state, status: "playing" };
+  // A shuffle only moves tiles, so it cannot rescue a board whose remaining
+  // numbers have no way to make ten at all.
+  if (state.shufflesLeft > 0 && hasArithmeticMove(state.board)) {
+    return { ...state, status: "playing" };
+  }
+  return { ...state, status: "lost" };
 }
 
 export function newGame(config: RunConfig = ENDLESS_CONFIG, seed: number = randomSeed()): GameState {
@@ -79,9 +66,10 @@ export function newGame(config: RunConfig = ENDLESS_CONFIG, seed: number = rando
     config,
     board,
     score: 0,
-    addsLeft: config.adds,
+    shufflesLeft: config.shuffles,
     hintsLeft: config.hints,
     status: "playing",
+    startingCells: board.cells.length,
     remainingMs: config.timeLimitMs ?? 0,
     nextSeed,
   };
@@ -101,21 +89,21 @@ export function commitSelection(state: GameState, indices: readonly number[]): C
   if (!result.ok || state.status !== "playing") {
     return { state, result, rowsRemoved: 0 };
   }
-
   const cells = state.board.cells.map((cell) => ({ ...cell }));
   for (const i of indices) cells[i]!.cleared = true;
   const { board, removed } = collapseRows({ width: state.board.width, cells });
-
   const next = settleStatus({ ...state, board, score: state.score + result.score });
   return { state: next, result, rowsRemoved: removed };
 }
 
-export function useAdd(state: GameState): GameState {
-  if (state.status !== "playing" || state.addsLeft === 0) return state;
+/** Rearranges the surviving tiles without changing which numbers are on them. */
+export function useShuffle(state: GameState): GameState {
+  if (state.status !== "playing" || state.shufflesLeft === 0) return state;
   return settleStatus({
     ...state,
-    board: appendRemaining(state.board),
-    addsLeft: state.addsLeft - 1,
+    board: shuffleSurvivors(state.board, mulberry32(state.nextSeed)),
+    shufflesLeft: state.shufflesLeft - 1,
+    nextSeed: state.nextSeed + 1,
   });
 }
 
@@ -125,15 +113,18 @@ export interface HintOutcome {
 }
 
 export function useHint(state: GameState): HintOutcome {
-  if (state.status !== "playing" || state.hintsLeft === 0) {
-    return { state, indices: null };
-  }
+  if (state.status !== "playing" || state.hintsLeft === 0) return { state, indices: null };
   const indices = findHint(state.board);
   if (!indices) return { state, indices: null };
   return { state: { ...state, hintsLeft: state.hintsLeft - 1 }, indices };
 }
 
-/** True when the player can only make progress by spending an add. */
+/** True when the player can only make progress by spending a shuffle. */
 export function isStuck(state: GameState): boolean {
   return state.status === "playing" && !hasAnyMove(state.board);
+}
+
+/** 0 to 3, from how few tiles the player left standing. */
+export function stars(state: GameState): number {
+  return starsFor(state.config.starTargets, aliveCount(state.board));
 }

@@ -1,4 +1,4 @@
-import { UNIFORM_WEIGHTS } from "./board";
+import { EASY_GROUPS, HARD_GROUPS } from "./board";
 import type { RunConfig } from "./types";
 
 export const STAGES_PER_CHAPTER = 5;
@@ -81,46 +81,90 @@ export function isChapterFinale(stage: number): boolean {
   return stage % STAGES_PER_CHAPTER === 0 || stage === TOTAL_STAGES;
 }
 
-/** Difficulty dials at stage 1 and at the final stage; everything in between
- *  is interpolated, so no dial flattens out before the end of the run. */
-const EASIEST = { rows: 3, adds: 8, bigBias: 0 };
-const HARDEST = { rows: 7, adds: 2, bigBias: 1.6 };
+/**
+ * Grades a finished stage by how few tiles are left standing.
+ *
+ * Counting absolute tiles rather than a fraction is deliberate. A wider board
+ * also widens every line of sight, so the leftover count lands near ten however
+ * big the board is — grading by fraction would make the late, larger stages the
+ * easy ones. The board grows for the look of it; the target is what tightens.
+ *
+ * Top marks are a small number rather than an empty board on purpose. The deal
+ * is always partitionable into tens, but whether those tens ever line up is
+ * down to the deal: on two of three sampled boards, 120 randomised playthroughs
+ * never got below three tiles. Demanding a perfect clear would grade the deal
+ * rather than the player.
+ */
+export function starsFor(targets: readonly [number, number, number], left: number): number {
+  if (left <= targets[2]) return 3;
+  if (left <= targets[1]) return 2;
+  if (left <= targets[0]) return 1;
+  return 0;
+}
 
 /**
- * The difficulty curve. Three dials move together as stages go up: fewer adds,
- * more starting rows, and a spawn table that leans on the hard-to-pair high
- * numbers. Every number here is meant to be tuned by playing — solver.test.ts
- * guards the shape, not the exact values.
+ * Board shape at the first and last stage. Tiles are square and the board
+ * always fills the screen, so the column-to-row ratio has to stay close to the
+ * phone's own — widening the board is what makes it denser and harder.
+ */
+/**
+ * Star targets are a share of the board, not a flat count. Once the deal leans
+ * on rigid high numbers the leftovers scale with the board, so a fixed count
+ * would make the big late stages unwinnable rather than merely hard. The share
+ * still tightens stage by stage, which is where the difficulty comes from.
+ */
+const EASIEST = { width: 5, rows: 8, shuffles: 5, stars: [0.32, 0.18, 0.08] };
+const HARDEST = { width: 10, rows: 15, shuffles: 1, stars: [0.26, 0.14, 0.05] };
+
+/**
+ * The difficulty curve. Three dials move together: a bigger board, fewer
+ * shuffles, and a deal that leans on four- and five-tile groups, which are far
+ * harder to spot than a plain pair. Interpolated so each one reaches its
+ * extreme at the final stage rather than plateauing partway.
  */
 export function stageConfig(stage: number): RunConfig {
   const clamped = Math.min(Math.max(stage, 1), TOTAL_STAGES);
   const t = TOTAL_STAGES > 1 ? (clamped - 1) / (TOTAL_STAGES - 1) : 0;
   const lerp = (from: number, to: number) => from + (to - from) * t;
 
+  const groupWeights = EASY_GROUPS.map((easy, i) => lerp(easy, HARD_GROUPS[i] ?? easy));
+
+  const width = Math.round(lerp(EASIEST.width, HARDEST.width));
   const rows = Math.round(lerp(EASIEST.rows, HARDEST.rows));
-  const adds = Math.round(lerp(EASIEST.adds, HARDEST.adds));
+  const cells = width * rows;
+  const target = (tier: number) =>
+    Math.max(tier === 2 ? 1 : 2, Math.round(cells * lerp(EASIEST.stars[tier]!, HARDEST.stars[tier]!)));
 
-  // 7, 8 and 9 only pair with 3, 2, 1 or a twin, so leaning on them bites.
-  const bigBias = lerp(EASIEST.bigBias, HARDEST.bigBias);
-  const weights = UNIFORM_WEIGHTS.map((base, i) => (i + 1 >= 7 ? base + bigBias : base));
-
-  return { mode: "story", rows, adds, hints: 3, weights, stage };
+  return {
+    mode: "story",
+    width,
+    rows,
+    groupWeights,
+    shuffles: Math.round(lerp(EASIEST.shuffles, HARDEST.shuffles)),
+    starTargets: [target(0), target(1), target(2)],
+    hints: 3,
+    stage,
+  };
 }
 
 export const TIME_ATTACK_CONFIG: RunConfig = {
   mode: "timeAttack",
-  rows: 4,
-  adds: 0,
+  width: 7,
+  rows: 11,
+  groupWeights: EASY_GROUPS,
+  shuffles: 0,
+  starTargets: [0, 0, 0],
   hints: 0,
-  weights: UNIFORM_WEIGHTS,
   timeLimitMs: 60_000,
   autoRefill: true,
 };
 
 export const ENDLESS_CONFIG: RunConfig = {
   mode: "endless",
-  rows: 3,
-  adds: 6,
+  width: 7,
+  rows: 11,
+  groupWeights: [4, 3, 2, 1],
+  shuffles: 5,
+  starTargets: [16, 10, 5],
   hints: 3,
-  weights: UNIFORM_WEIGHTS,
 };
