@@ -1,8 +1,7 @@
-import { aliveCount, collapseRows, createBoard, hasArithmeticMove, shuffleSurvivors } from "./board";
-import { findHint, hasAnyMove } from "./hint";
+import { aliveCount, collapseRows, createBoard } from "./board";
+import { findHint, hasAnyMove } from "./solver";
 import { mulberry32, randomSeed } from "./rng";
 import { evaluateSelection } from "./rules";
-import { ENDLESS_CONFIG, starsFor } from "./story";
 import type { Board, MatchResult, RunConfig } from "./types";
 
 export type GameStatus = "playing" | "won" | "lost" | "timeUp";
@@ -11,10 +10,9 @@ export interface GameState {
   config: RunConfig;
   board: Board;
   score: number;
-  shufflesLeft: number;
   hintsLeft: number;
   status: GameStatus;
-  /** Tiles the board started with, so grades stay comparable across sizes. */
+  /** Tiles the board was dealt with, before anything was cleared. */
   startingCells: number;
   /** Time attack only; milliseconds still on the clock. */
   remainingMs: number;
@@ -51,22 +49,17 @@ function settleStatus(state: GameState): GameState {
     return { ...state, status: "playing" };
   }
   if (aliveCount(state.board) === 0) return { ...state, status: "won" };
-  if (hasAnyMove(state.board)) return { ...state, status: "playing" };
-  // A shuffle only moves tiles, so it cannot rescue a board whose remaining
-  // numbers have no way to make ten at all.
-  if (state.shufflesLeft > 0 && hasArithmeticMove(state.board)) {
-    return { ...state, status: "playing" };
-  }
-  return { ...state, status: "lost" };
+  // Position does not matter, so a run ends exactly when no values left on the
+  // board can make ten. There is nothing a rearrangement could rescue.
+  return { ...state, status: hasAnyMove(state.board) ? "playing" : "lost" };
 }
 
-export function newGame(config: RunConfig = ENDLESS_CONFIG, seed: number = randomSeed()): GameState {
+export function newGame(config: RunConfig, seed: number = randomSeed()): GameState {
   const { board, nextSeed } = dealBoard(config, seed);
   return {
     config,
     board,
     score: 0,
-    shufflesLeft: config.shuffles,
     hintsLeft: config.hints,
     status: "playing",
     startingCells: board.cells.length,
@@ -96,17 +89,6 @@ export function commitSelection(state: GameState, indices: readonly number[]): C
   return { state: next, result, rowsRemoved: removed };
 }
 
-/** Rearranges the surviving tiles without changing which numbers are on them. */
-export function useShuffle(state: GameState): GameState {
-  if (state.status !== "playing" || state.shufflesLeft === 0) return state;
-  return settleStatus({
-    ...state,
-    board: shuffleSurvivors(state.board, mulberry32(state.nextSeed)),
-    shufflesLeft: state.shufflesLeft - 1,
-    nextSeed: state.nextSeed + 1,
-  });
-}
-
 export interface HintOutcome {
   state: GameState;
   indices: number[] | null;
@@ -119,12 +101,12 @@ export function useHint(state: GameState): HintOutcome {
   return { state: { ...state, hintsLeft: state.hintsLeft - 1 }, indices };
 }
 
-/** True when the player can only make progress by spending a shuffle. */
-export function isStuck(state: GameState): boolean {
-  return state.status === "playing" && !hasAnyMove(state.board);
-}
-
 /** 0 to 3, from how few tiles the player left standing. */
 export function stars(state: GameState): number {
-  return starsFor(state.config.starTargets, aliveCount(state.board));
+  const left = aliveCount(state.board);
+  const [one, two, three] = state.config.starTargets;
+  if (left <= three) return 3;
+  if (left <= two) return 2;
+  if (left <= one) return 1;
+  return 0;
 }

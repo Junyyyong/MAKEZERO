@@ -4,13 +4,13 @@ export interface Cell {
   cleared: boolean;
 }
 
-/** Flat, reading-order cell list. */
+/** Flat, reading-order cell list. Width is presentation only — see rules.ts. */
 export interface Board {
   width: number;
   cells: Cell[];
 }
 
-export type MatchFailure = "too-few" | "too-many" | "duplicate" | "cleared" | "bad-sum" | "disconnected";
+export type MatchFailure = "too-few" | "too-many" | "duplicate" | "cleared" | "bad-sum";
 
 export interface MatchResult {
   ok: boolean;
@@ -31,11 +31,9 @@ export interface RunConfig {
   rows: number;
   /** Relative chance of dealing a group of 2, 3, 4 or 5 tiles. */
   groupWeights: readonly number[];
-  /** Reshuffles the player may spend to break a deadlock. */
-  shuffles: number;
+  hints: number;
   /** Most tiles that may remain for one, two and three stars. */
   starTargets: readonly [number, number, number];
-  hints: number;
   timeLimitMs?: number;
   /** Time attack only: redeal instead of ending. */
   autoRefill?: boolean;

@@ -1,4 +1,4 @@
-import { TOTAL_STAGES } from "../game/story";
+import { TOTAL_STAGES } from "../content/chapters";
 
 const DAILY_KEY = "makezero.daily.v1";
 const PROGRESS_KEY = "makezero.progress.v1";

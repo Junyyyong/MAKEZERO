@@ -1,0 +1,46 @@
+/* ── story ─────────────────────────────────────────────────────── */
+
+.story-screen {
+  align-items: center;
+  justify-content: center;
+  padding: 26px;
+}
+
+.story-card {
+  width: min(360px, 100%);
+  padding: 24px 22px;
+  text-align: center;
+  background: linear-gradient(160deg, #8b5c2b 0%, #6d451f 100%);
+  border: 3px solid #c79a5c;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+
+.story-portrait {
+  width: 148px;
+  height: 148px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+.story-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #e8c48a;
+}
+
+.story-name {
+  margin: 10px 0 2px;
+  font-size: 19px;
+  font-weight: 800;
+  color: #ffd27a;
+}
+
+.story-line {
+  min-height: 76px;
+  margin: 0 0 18px;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #fff3df;
+}

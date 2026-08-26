@@ -1,0 +1,11 @@
+/*
+ * Style entry point. Each file owns one screen or concern so a skin change
+ * touches as few of them as possible — palette and shared surfaces live in
+ * tokens.css. See docs/ARCHITECTURE.md.
+ */
+@import "./tokens.css";
+@import "./title.css";
+@import "./game.css";
+@import "./story.css";
+@import "./overlay.css";
+@import "./motion.css";

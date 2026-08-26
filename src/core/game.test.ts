@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { aliveCount, createBoard } from "./board";
-import { commitSelection, newGame, stars, tick, useHint, useShuffle } from "./game";
-import { mulberry32 } from "./rng";
+import { aliveCount } from "./board";
+import { commitSelection, newGame, stars, tick, useHint } from "./game";
 import { evaluateSelection } from "./rules";
-import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "./story";
+import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
 import type { GameState } from "./game";
 import type { Board, RunConfig } from "./types";
 
@@ -19,7 +18,6 @@ function stateWith(board: Board, overrides: Partial<GameState> = {}): GameState 
     config,
     board,
     score: 0,
-    shufflesLeft: config.shuffles,
     hintsLeft: config.hints,
     status: "playing",
     startingCells: board.cells.length,
@@ -49,7 +47,7 @@ describe("newGame", () => {
     const game = newGame(config, 5);
     expect(game.board.width).toBe(config.width);
     expect(game.board.cells).toHaveLength(config.width * config.rows);
-    expect(game.shufflesLeft).toBe(config.shuffles);
+    expect(game.hintsLeft).toBe(config.hints);
     expect(game.startingCells).toBe(config.width * config.rows);
   });
 });
@@ -64,7 +62,7 @@ describe("commitSelection", () => {
 
   it("leaves the state untouched on an illegal selection", () => {
     const before = stateWith(boardOf([4, 6, 2], [1, 3, 5]));
-    const { state, result } = commitSelection(before, [0, 2]);
+    const { state, result } = commitSelection(before, [0, 3]); // 4 + 1
     expect(result.ok).toBe(false);
     expect(state).toBe(before);
   });
@@ -81,46 +79,23 @@ describe("commitSelection", () => {
     expect(stars(state)).toBe(3);
   });
 
-  it("can still earn three stars without emptying the board", () => {
-    // Only 9+1 makes ten and no line joins them, so four tiles survive.
-    const stranded = stateWith(boardOf([9, 4, 6, 2], [2, 2, 2, 1]), {
-      config: { ...ENDLESS_CONFIG, starTargets: [16, 10, 5] },
-      shufflesLeft: 0,
-    });
-    const { state } = commitSelection(stranded, [1, 2]);
-    expect(state.status).toBe("lost");
-    expect(aliveCount(state.board)).toBe(6);
-    expect(stars(state)).toBe(2);
-  });
-
-  it("ends the run when nothing can make ten any more", () => {
-    // 9 and 8 can never make ten, so shuffling is pointless and the run is over.
-    const before = stateWith(boardOf([4, 6, 9, 8]));
-    const { state } = commitSelection(before, [0, 1]);
+  it("ends the run exactly when nothing left can make ten", () => {
+    const { state } = commitSelection(stateWith(boardOf([4, 6, 9, 8])), [0, 1]);
     expect(state.status).toBe("lost");
   });
 
-  // Once 4+6 goes, only 9+1 makes ten, and they sit three columns and a row
-  // apart — no straight line joins them, so only a shuffle can save the board.
-  const strandedPair = () => boardOf([9, 4, 6, 2], [2, 2, 2, 1]);
-
-  it("keeps playing while a shuffle could still line something up", () => {
-    const { state } = commitSelection(stateWith(strandedPair(), { shufflesLeft: 1 }), [1, 2]);
+  it("keeps playing while a combination survives anywhere on the board", () => {
+    // The 9 and the 1 are at opposite ends, which no longer matters.
+    const { state } = commitSelection(stateWith(boardOf([9, 4, 6, 2], [2, 2, 2, 1])), [1, 2]);
     expect(state.status).toBe("playing");
-  });
-
-  it("ends the run when the shuffles are gone", () => {
-    const { state } = commitSelection(stateWith(strandedPair(), { shufflesLeft: 0 }), [1, 2]);
-    expect(state.status).toBe("lost");
   });
 });
 
 describe("stars", () => {
-  const targets = [16, 10, 5] as [number, number, number];
   const graded = (left: number) =>
     stars(
       stateWith(boardOf(Array.from({ length: Math.max(left, 1) }, () => (left ? 9 : 0))), {
-        config: { ...ENDLESS_CONFIG, starTargets: targets },
+        config: { ...ENDLESS_CONFIG, starTargets: [16, 10, 5] },
       }),
     );
 
@@ -133,29 +108,8 @@ describe("stars", () => {
   });
 });
 
-describe("shuffle", () => {
-  it("rearranges the survivors and spends one charge", () => {
-    const before = stateWith(boardOf([9, 2, 2], [2, 2, 1]));
-    const after = useShuffle(before);
-    expect(after.shufflesLeft).toBe(ENDLESS_CONFIG.shuffles - 1);
-    expect(after.board.cells.map((c) => c.value).sort()).toEqual([1, 2, 2, 2, 2, 9]);
-    expect(after.board.cells).toHaveLength(before.board.cells.length);
-  });
-
-  it("never grows the board", () => {
-    const before = stateWith(createBoard(mulberry32(3), 6, 9));
-    expect(useShuffle(before).board.cells.length).toBeLessThanOrEqual(before.board.cells.length);
-  });
-
-  it("does nothing once the charges run out", () => {
-    const before = stateWith(boardOf([9, 2, 2], [2, 2, 1]), { shufflesLeft: 0 });
-    expect(useShuffle(before)).toBe(before);
-  });
-});
-
 describe("time attack", () => {
-  const timed = (board: Board, overrides: Partial<GameState> = {}) =>
-    stateWith(board, { config: TIME_ATTACK_CONFIG, ...overrides });
+  const timed = (board: Board) => stateWith(board, { config: TIME_ATTACK_CONFIG });
 
   it("starts with a full minute on the clock", () => {
     expect(newGame(TIME_ATTACK_CONFIG, 3).remainingMs).toBe(60_000);
@@ -181,7 +135,7 @@ describe("time attack", () => {
     expect(state.score).toBe(10);
   });
 
-  it("redeals instead of losing on a deadlock", () => {
+  it("redeals instead of losing on a dead board", () => {
     const { state } = commitSelection(timed(boardOf([4, 6, 9, 8])), [0, 1]);
     expect(state.status).toBe("playing");
     expect(useHint({ ...state, hintsLeft: 1 }).indices).not.toBeNull();
@@ -197,7 +151,7 @@ describe("useHint", () => {
     expect(state.hintsLeft).toBe(ENDLESS_CONFIG.hints - 1);
   });
 
-  it("does not spend a hint when the board is stuck", () => {
+  it("does not spend a hint when the board is dead", () => {
     const before = stateWith(boardOf([9, 8]));
     const { state, indices } = useHint(before);
     expect(indices).toBeNull();

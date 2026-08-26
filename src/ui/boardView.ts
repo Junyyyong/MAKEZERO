@@ -1,6 +1,6 @@
-import { isAlive } from "../game/board";
-import { MAX_SELECTION } from "../game/rules";
-import type { Board } from "../game/types";
+import { isAlive, valueAt } from "../core/board";
+import { MAX_SELECTION, TARGET_SUM } from "../core/rules";
+import type { Board } from "../core/types";
 
 const HINT_MS = 2700;
 /** Below this a tile is too small to hit reliably with a thumb. */
@@ -9,8 +9,6 @@ const MIN_TILE_PX = 22;
 export interface BoardViewOptions {
   wrap: HTMLElement;
   grid: HTMLElement;
-  /** Whether two live tiles may sit next to each other in a chain. */
-  isConnected(a: number, b: number): boolean;
   /** Whether the current selection would clear. */
   isValid(selection: readonly number[]): boolean;
   /** Fired when a selection should actually be played. */
@@ -18,9 +16,12 @@ export interface BoardViewOptions {
 }
 
 /**
- * Owns the tile grid: rendering, the pointer gestures that build a chain, and
- * the hint and score-pop flourishes. It holds the in-progress selection but no
- * game state — validity questions go back to the controller.
+ * Owns the tile grid: sizing it to the screen, the tap and drag gestures that
+ * build a selection, and the hint and score-pop flourishes. It holds the
+ * in-progress selection but no game state — validity goes back to the caller.
+ *
+ * Any tiles may be selected together, however far apart, so a drag simply
+ * sweeps up whatever it passes over.
  */
 export class BoardView {
   private board: Board = { width: 9, cells: [] };
@@ -41,6 +42,9 @@ export class BoardView {
     grid.addEventListener("pointerup", this.onPointerUp);
     grid.addEventListener("pointercancel", this.onPointerCancel);
     grid.addEventListener("contextmenu", (event) => event.preventDefault());
+    options.wrap.addEventListener("pointerdown", (event) => {
+      if (this.tileIndexFrom(event.target) === null) this.clearSelection();
+    });
     window.addEventListener("resize", () => {
       this.laidOut = "";
       this.layout();
@@ -92,7 +96,7 @@ export class BoardView {
     this.options.grid.classList.add("shake");
   }
 
-  /** Floats the earned points off the last tile of the chain. */
+  /** Floats the earned points off the last tile of the selection. */
   popScore(anchor: number, score: number): void {
     const tile = this.tiles[anchor];
     if (!tile) return;
@@ -128,14 +132,14 @@ export class BoardView {
 
     const at = this.selection.indexOf(i);
     if (at >= 0) {
-      // Tapping a tile already in the chain rewinds the chain to just before it.
+      // Tapping a selected tile drops it and everything picked after it.
       this.selection = this.selection.slice(0, at);
       this.render();
       return;
     }
     if (!this.extend(i)) this.selection = [i];
     this.render();
-    // Only taps settle on their own; a drag waits for the finger to lift.
+    // Ten is always the end of a selection, so a tap can settle on its own.
     if (this.options.isValid(this.selection)) this.options.onCommit([...this.selection]);
   };
 
@@ -173,14 +177,22 @@ export class BoardView {
     this.render();
   };
 
-  /** Adds `i` to the chain when the rules allow it. */
+  /**
+   * Adds a tile to the selection, refusing anything that could not belong to
+   * it. A selection can only ever total ten, so a tile that would overshoot
+   * starts a fresh selection instead of piling up an unclearable heap.
+   */
   private extend(i: number): boolean {
     if (this.selection.length === 0) return false;
     if (this.selection.length >= MAX_SELECTION) return false;
     if (this.selection.includes(i)) return false;
-    if (!this.options.isConnected(this.selection[this.selection.length - 1]!, i)) return false;
+    if (this.selectionSum() + valueAt(this.board, i) > TARGET_SUM) return false;
     this.selection.push(i);
     return true;
+  }
+
+  private selectionSum(): number {
+    return this.selection.reduce((total, i) => total + valueAt(this.board, i), 0);
   }
 
   // ---- rendering ---------------------------------------------------------
@@ -231,6 +243,7 @@ export class BoardView {
     // list has to be written out here rather than left to the stylesheet.
     this.options.grid.style.gridTemplateColumns = `repeat(${width}, ${tile}px)`;
     this.options.grid.dataset.cols = String(width);
+
     // Only a board too big even at the minimum tile size may scroll.
     const overflows = rows * (tile + gap) + padY > box.height + 1;
     this.options.wrap.classList.toggle("scrolls", overflows);
@@ -240,6 +253,7 @@ export class BoardView {
   render(): void {
     if (this.tiles.length !== this.board.cells.length) this.rebuildTiles();
     if (this.laidOut === "") this.layout();
+
     const selected = new Set(this.selection);
     const hinted = new Set(this.hinted);
     this.board.cells.forEach((cell, i) => {

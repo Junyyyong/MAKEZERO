@@ -1,0 +1,66 @@
+/*
+ * Palette, reset and the screen frame. A skin change starts here.
+ */
+:root {
+  --wood-dark: #4a2f18;
+  --wood-mid: #7a4f24;
+  --wood-light: #b5813f;
+  --tile-face: #f0d5a8;
+  --tile-face-low: #dfbb80;
+  --tile-ink: #6b431c;
+  --tile-sel: #ffe9a8;
+  --ring-sel: #f0a91e;
+  --ring-ok: #79c05a;
+  --ring-bad: #d9563f;
+  --gap: 3px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "Trebuchet MS", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  color: #fff3df;
+  background: var(--wood-mid);
+  overscroll-behavior: none;
+  user-select: none;
+}
+
+/* Plank grain, drawn rather than shipped as an image. */
+#app {
+  position: relative;
+  height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+  background:
+    linear-gradient(115deg, rgba(255, 240, 200, 0.16) 0%, rgba(255, 240, 200, 0) 42%),
+    repeating-linear-gradient(
+      92deg,
+      rgba(74, 47, 24, 0.16) 0px,
+      rgba(74, 47, 24, 0) 2px,
+      rgba(255, 226, 176, 0.06) 5px,
+      rgba(74, 47, 24, 0.12) 9px
+    ),
+    radial-gradient(120% 90% at 50% 0%, var(--wood-light) 0%, var(--wood-mid) 55%, #5f3c1b 100%);
+}
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+.screen.hidden,
+.round-btn.hidden {
+  display: none;
+}
