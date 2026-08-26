@@ -34,7 +34,11 @@
           </button>
         </nav>
 
-        <button class="text-btn" id="btn-title-rules">규칙 보기</button>
+        <div class="title-links">
+          <button class="text-btn" id="btn-title-tutorial">튜토리얼</button>
+          <button class="text-btn" id="btn-title-records">내 기록</button>
+          <button class="text-btn" id="btn-title-rules">규칙 보기</button>
+        </div>
       </section>
 
       <!-- ── game ──────────────────────────────────────────────── -->
@@ -69,6 +73,57 @@
             <span class="glyph">&#128161;</span><span class="badge" id="badge-hint">3</span>
           </button>
         </footer>
+      </section>
+
+      <!-- ── tutorial ──────────────────────────────────────────── -->
+      <section class="screen tutorial-screen hidden" id="screen-tutorial">
+        <header class="tutorial-head">
+          <div class="tutorial-dots" id="tutorial-dots"></div>
+          <button class="text-btn" id="btn-tutorial-skip">건너뛰기</button>
+        </header>
+
+        <p class="tutorial-instruction" id="tutorial-instruction"></p>
+
+        <div class="board-wrap tutorial-board-wrap" id="tutorial-board-wrap">
+          <div class="board" id="tutorial-board"></div>
+        </div>
+
+        <div class="tutorial-foot">
+          <p class="tutorial-reward" id="tutorial-reward"></p>
+          <button class="wood-btn hidden" id="btn-tutorial-next">다음</button>
+        </div>
+      </section>
+
+      <!-- ── records ───────────────────────────────────────────── -->
+      <section class="screen records-screen hidden" id="screen-records">
+        <header class="hud">
+          <button class="icon-btn" id="btn-records-back" aria-label="모드 선택으로">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div class="score-block"><div class="records-title">내 기록</div></div>
+          <span class="icon-spacer"></span>
+        </header>
+
+        <div class="records-body">
+          <div class="record-cards">
+            <div class="record-card">
+              <span class="record-label">타임어택 최고</span>
+              <b class="record-value" id="record-timeattack">0</b>
+            </div>
+            <div class="record-card">
+              <span class="record-label">무제한 최고</span>
+              <b class="record-value" id="record-endless">0</b>
+            </div>
+            <div class="record-card">
+              <span class="record-label">모은 별</span>
+              <b class="record-value" id="record-stars">0</b>
+            </div>
+          </div>
+          <h2 class="records-heading">스토리</h2>
+          <ol class="stage-list" id="stage-list"></ol>
+        </div>
       </section>
 
       <!-- ── story beat ────────────────────────────────────────── -->

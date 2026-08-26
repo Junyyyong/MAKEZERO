@@ -13,6 +13,11 @@ export interface BoardViewOptions {
   isValid(selection: readonly number[]): boolean;
   /** Fired when a selection should actually be played. */
   onCommit(selection: readonly number[]): void;
+  /**
+   * Largest a tile may be drawn. A game board wants to fill the screen, but a
+   * small teaching board would blow up to enormous tiles without a cap.
+   */
+  maxTilePx?: number;
 }
 
 /**
@@ -254,7 +259,8 @@ export class BoardView {
 
     const byWidth = (box.width - padX - gap * (width - 1)) / width;
     const byHeight = (box.height - padY - gap * (rows - 1)) / rows;
-    const tile = Math.max(MIN_TILE_PX, Math.floor(Math.min(byWidth, byHeight)));
+    const cap = this.options.maxTilePx ?? Infinity;
+    const tile = Math.max(MIN_TILE_PX, Math.floor(Math.min(byWidth, byHeight, cap)));
 
     this.options.grid.style.setProperty("--tile", `${tile}px`);
     // repeat() will not take its count from a custom property, so the track

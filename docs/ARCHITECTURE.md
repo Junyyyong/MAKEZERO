@@ -17,9 +17,11 @@ src/
     rules.ts              조합 판정과 점수          ← 규칙의 핵심
     solver.ts             가능한 조합 찾기 (힌트 · 막힘 감지)
     game.ts               모드별 상태 전이 (승패 · 타이머 · 별)
+    tutorialRun.ts        튜토리얼 단계 진행
   content/              밸런스와 스토리 — 기획자가 만지는 곳
     stages.ts             스테이지 난이도 곡선 · 별 기준 · 모드 프리셋
     chapters.ts           챕터 · 캐릭터 · 대사
+    tutorial.ts           튜토리얼 단계 (보드 · 안내문)
   ui/                   화면
     app.ts                화면 전환과 흐름 제어
     boardView.ts          타일 렌더링 · 탭/드래그 입력 · 화면 맞춤
@@ -27,6 +29,8 @@ src/
     storage.ts            진행 상황 저장 (localStorage)
     screens/
       titleScreen.ts        모드 선택
+      tutorialScreen.ts     직접 해보는 튜토리얼
+      recordsScreen.ts      내 기록
       hud.ts                점수 · 칩 · 타이머 · 힌트
       overlay.ts            결과 패널 · 규칙 패널
       storyScreen.ts        챕터 연출
@@ -59,6 +63,7 @@ ui  →  content  →  core
 | 스테이지 난이도 | `content/stages.ts` 의 `EASIEST` / `HARDEST` |
 | 무제한 블록 속도 | `content/stages.ts` 의 `ENDLESS_CONFIG.spawn` |
 | 캐릭터 · 대사 | `content/chapters.ts` |
+| 튜토리얼 내용 | `content/tutorial.ts` |
 | 색·폰트 등 스킨 | `ui/styles/tokens.css` 부터 |
 | 보드 화면 배치 | `ui/boardView.ts` 의 `layout()` |
 
@@ -75,5 +80,6 @@ npm run dev       # 개발 서버
 - `content/content.test.ts` — 챕터 데이터, 스테이지 곡선의 형태
 - `content/balance.test.ts` — **봇으로 20 스테이지를 전부 플레이해서** 통과 못 할 스테이지가 없는지, 난이도가 실제로 우상향하는지 검사
 - `content/pacing.test.ts` — 무제한 모드를 시간까지 시뮬레이션해서, 모든 판이 끝나는지·빨리 칠수록 오래 버티는지 검사
+- `content/tutorial.test.ts` — 튜토리얼 보드마다 **정답이 정확히 하나뿐인지** 검사
 
 밸런스 숫자를 바꾸면 마지막 테스트가 먼저 알려줍니다.

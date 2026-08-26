@@ -16,6 +16,10 @@ export interface Progress {
   bestEndless: number;
   /** Chapters whose story beat has already played. */
   seenChapters: string[];
+  /** Best star grade per stage, indexed from zero. */
+  stageStars: number[];
+  /** Whether the player has been through, or skipped, the tutorial. */
+  tutorialDone: boolean;
 }
 
 export function todayKey(now: Date = new Date()): string {
@@ -63,7 +67,14 @@ export function saveDaily(stats: DailyStats): void {
 }
 
 function blankProgress(): Progress {
-  return { stage: 1, bestTimeAttack: 0, bestEndless: 0, seenChapters: [] };
+  return {
+    stage: 1,
+    bestTimeAttack: 0,
+    bestEndless: 0,
+    seenChapters: [],
+    stageStars: [],
+    tutorialDone: false,
+  };
 }
 
 export function loadProgress(): Progress {
@@ -77,10 +88,27 @@ export function loadProgress(): Progress {
       seenChapters: Array.isArray(parsed.seenChapters)
         ? parsed.seenChapters.filter((id): id is string => typeof id === "string")
         : [],
+      stageStars: Array.isArray(parsed.stageStars)
+        ? parsed.stageStars.map((n) => Math.min(Math.max(Number(n) || 0, 0), 3))
+        : [],
+      tutorialDone: parsed.tutorialDone === true,
     };
   });
 }
 
 export function saveProgress(progress: Progress): void {
   write(PROGRESS_KEY, progress);
+}
+
+/** Keeps the best grade a stage has ever earned. */
+export function recordStageStars(progress: Progress, stage: number, earned: number): Progress {
+  const stageStars = [...progress.stageStars];
+  while (stageStars.length < stage) stageStars.push(0);
+  if (earned <= (stageStars[stage - 1] ?? 0)) return progress;
+  stageStars[stage - 1] = earned;
+  return { ...progress, stageStars };
+}
+
+export function totalStars(progress: Progress): number {
+  return progress.stageStars.reduce((a, b) => a + b, 0);
 }

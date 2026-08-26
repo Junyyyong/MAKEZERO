@@ -11,8 +11,10 @@ import { el, starLine } from "./dom";
 import { Hud } from "./screens/hud";
 import { Overlay } from "./screens/overlay";
 import { StoryScreen } from "./screens/storyScreen";
+import { RecordsScreen } from "./screens/recordsScreen";
 import { TitleScreen } from "./screens/titleScreen";
-import { loadDaily, loadProgress, saveDaily, saveProgress } from "./storage";
+import { TutorialScreen } from "./screens/tutorialScreen";
+import { loadDaily, loadProgress, recordStageStars, saveDaily, saveProgress } from "./storage";
 import type { DailyStats, Progress } from "./storage";
 
 const RULES_TEXT = `숫자를 골라 합이 <b>정확히 10</b>이 되면 지워집니다.
@@ -21,7 +23,7 @@ const RULES_TEXT = `숫자를 골라 합이 <b>정확히 10</b>이 되면 지워
 <b>어느 칸이든 상관없습니다.</b> 멀리 떨어져 있어도, 사이에 무엇이 있어도 함께 고를 수 있습니다.
 같은 숫자끼리 지우는 규칙은 없습니다. 3+3은 6이라 지워지지 않아요.`;
 
-type Screen = "title" | "game" | "story";
+type Screen = "title" | "game" | "story" | "tutorial" | "records";
 
 /** Owns the run in progress and moves between screens. */
 export class App {
@@ -34,6 +36,8 @@ export class App {
   private readonly overlay = new Overlay(() => this.showTitle());
   private readonly story = new StoryScreen();
   private readonly title: TitleScreen;
+  private readonly tutorial = new TutorialScreen();
+  private readonly records: RecordsScreen;
 
   private frame: number | undefined;
   private lastFrameMs = 0;
@@ -42,6 +46,8 @@ export class App {
     title: el("screen-title"),
     game: el("screen-game"),
     story: el("screen-story"),
+    tutorial: el("screen-tutorial"),
+    records: el("screen-records"),
   };
 
   constructor() {
@@ -60,11 +66,16 @@ export class App {
       () => this.showRules(),
     );
 
+    this.records = new RecordsScreen(() => this.showTitle());
     el<HTMLButtonElement>("btn-help").addEventListener("click", () => this.showRules());
     el<HTMLButtonElement>("btn-back").addEventListener("click", () => this.showTitle());
+    el<HTMLButtonElement>("btn-title-tutorial").addEventListener("click", () => this.showTutorial());
+    el<HTMLButtonElement>("btn-title-records").addEventListener("click", () => this.showRecords());
     this.hud.hintBtn.addEventListener("click", () => this.onHint());
 
-    this.showTitle();
+    // A first-time player gets shown the ropes before the mode picker.
+    if (this.progress.tutorialDone) this.showTitle();
+    else this.showTutorial();
   }
 
   // ---- screens -----------------------------------------------------------
@@ -83,6 +94,25 @@ export class App {
     this.progress = loadProgress();
     this.title.render(this.progress);
     this.show("title");
+  }
+
+  private showTutorial(): void {
+    this.stopClock();
+    this.view.setInteractive(false);
+    this.show("tutorial");
+    this.tutorial.start(() => {
+      if (!this.progress.tutorialDone) {
+        this.progress = { ...this.progress, tutorialDone: true };
+        saveProgress(this.progress);
+      }
+      this.showTitle();
+    });
+  }
+
+  private showRecords(): void {
+    this.progress = loadProgress();
+    this.records.render(this.progress);
+    this.show("records");
   }
 
   private startMode(mode: GameMode): void {
@@ -220,10 +250,11 @@ export class App {
       return;
     }
 
+    this.progress = recordStageStars(this.progress, stage, earned);
     if (stage >= this.progress.stage) {
       this.progress = { ...this.progress, stage: Math.min(stage + 1, TOTAL_STAGES + 1) };
-      saveProgress(this.progress);
     }
+    saveProgress(this.progress);
 
     const chapter = chapterFor(stage);
     if (isChapterFinale(stage) && !this.progress.seenChapters.includes(chapter.id)) {

@@ -28,6 +28,11 @@
 
 전체 규칙은 **[docs/RULES.md](./docs/RULES.md)** 를 보세요.
 
+## 그 외 화면
+
+- **튜토리얼** — 처음 실행하면 자동으로 나오는 5단계. 직접 눌러야 넘어가고, 건너뛸 수 있습니다
+- **내 기록** — 모드별 최고 점수, 스테이지별 별, 모은 별 총합
+
 ## 문서
 
 | 문서 | 내용 |
@@ -36,7 +41,7 @@
 | [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | 폴더 구조와 "어디를 고쳐야 하나" |
 | [DECISIONS.md](./docs/DECISIONS.md) | **왜 이렇게 되어 있는지.** 규칙 바꾸기 전 필독 |
 | [BALANCE.md](./docs/BALANCE.md) | 난이도 조정 방법 |
-| [CONTENT.md](./docs/CONTENT.md) | 캐릭터·대사 교체 방법 |
+| [CONTENT.md](./docs/CONTENT.md) | 캐릭터·대사·튜토리얼 편집 방법 |
 
 `DECISIONS.md` 에는 직관과 반대라서 모르고 되돌리면 게임이 조용히 망가지는 것들이 정리되어 있습니다. 예를 들어 **보드를 랜덤 숫자로 뿌리면 수학적으로 클리어가 불가능**하고, **큰 조각을 많이 딜하면 오히려 쉬워집니다.**
 
@@ -45,7 +50,7 @@
 ```bash
 npm install
 npm run dev        # 개발 서버
-npm test           # 규칙 · 상태 · 밸런스 · 페이싱 (70개)
+npm test           # 규칙 · 상태 · 밸런스 · 페이싱 · 튜토리얼 (78개)
 npm run typecheck
 npm run build      # dist/
 npm run build:single   # 단일 HTML 파일 하나로 (dist-single/)

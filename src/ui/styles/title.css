@@ -81,3 +81,10 @@
 }
 
 /* ── game ──────────────────────────────────────────────────────── */
+
+.title-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  justify-content: center;
+}

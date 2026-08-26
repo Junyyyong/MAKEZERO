@@ -1,0 +1,81 @@
+/* Hands-on tutorial: instruction above the board, lesson below it. */
+
+.tutorial-screen {
+  gap: 10px;
+  padding: 14px;
+}
+
+.tutorial-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.tutorial-dots {
+  display: flex;
+  gap: 7px;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  background: rgba(255, 233, 198, 0.28);
+  border-radius: 50%;
+}
+
+.dot.done {
+  background: var(--ring-ok);
+}
+
+.dot.now {
+  background: #ffe9c6;
+  transform: scale(1.25);
+}
+
+.tutorial-instruction {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.6;
+  text-align: center;
+  white-space: pre-line;
+  text-shadow: 0 1px 2px rgba(60, 34, 12, 0.6);
+}
+
+.tutorial-board-wrap {
+  /* The teaching boards are small, so the frame hugs them instead of
+     stretching a nine-tile layout across the whole screen. */
+  flex: 0 1 auto;
+  /* Sits in the middle of whatever room is left between the instruction and
+     the lesson, so the board does not cling to the top of the screen. */
+  margin: auto 0;
+  padding: 10px;
+}
+
+.tutorial-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  min-height: 96px;
+  padding-bottom: 6px;
+}
+
+.tutorial-reward {
+  min-height: 24px;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--ring-ok);
+}
+
+.tutorial-foot .wood-btn {
+  width: min(320px, 100%);
+}
+
+.tutorial-foot .wood-btn.hidden {
+  display: none;
+}
