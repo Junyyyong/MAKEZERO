@@ -1,103 +1,114 @@
-/* Mode picker: wordmark, mode buttons, rules link. */
-/* title ─────────────────────────────────────────────────────── */
+/* Mode picker: wordmark, the three modes, and the quiet links under them. */
 
 .title-screen {
+  position: relative;
   align-items: center;
   justify-content: center;
-  gap: 34px;
+  gap: 40px;
   padding: 32px 26px;
 }
 
+/* The same monument as the game screen, sitting on the bottom edge. It is
+   decoration: it never takes layout room and never eats a tap. */
+.title-screen::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 118px;
+  content: "";
+  background: var(--monument) no-repeat bottom center;
+  background-size: contain;
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+@media (max-height: 620px) {
+  .title-screen::after {
+    display: none;
+  }
+}
+
 .brand-block {
+  position: relative;
   text-align: center;
 }
 
-/* A marquee sign: brass letters with the bulbs glowing behind them. */
+/*
+ * The wordmark is set the way MV sets its own: light, very widely tracked,
+ * with the space between the letters doing the work a heavy weight would.
+ */
 .brand {
   margin: 0;
-  font-size: clamp(34px, 11vw, 52px);
-  font-weight: 800;
-  letter-spacing: 3px;
-  color: var(--marquee);
-  text-shadow:
-    0 0 6px rgba(255, 215, 130, 0.9),
-    0 0 26px rgba(255, 190, 90, 0.55),
-    0 4px 0 rgba(0, 0, 0, 0.35);
+  font-size: clamp(28px, 8.5vw, 40px);
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em; /* tracking pads the right side; centre it back */
+  color: var(--ink);
+  text-transform: uppercase;
 }
 
 .brand-to {
-  font-size: 0.52em;
-  font-weight: 700;
-  font-style: italic;
-  letter-spacing: 1px;
-  color: var(--brass);
-  text-shadow: 0 0 14px rgba(232, 180, 76, 0.6);
+  font-weight: 300;
+  color: var(--ink-soft);
 }
 
 .tagline {
-  margin: 10px 0 0;
-  font-size: 15px;
-  letter-spacing: 1px;
+  margin: 14px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
   color: var(--ink-soft);
 }
 
 .mode-list {
   display: flex;
+  width: min(330px, 100%);
   flex-direction: column;
-  gap: 14px;
-  width: min(340px, 100%);
+  gap: 12px;
 }
 
+/* One flat plane per mode. The name reads first; the line under it recedes. */
 .mode-btn {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 16px 20px;
+  gap: 5px;
+  padding: 18px 22px;
   font-family: inherit;
   text-align: left;
-  color: #5c3a17;
+  color: var(--ink);
   cursor: pointer;
-  background: linear-gradient(#f3dcb4, #d8b076);
-  border: none;
-  border-radius: 14px;
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.55),
-    inset 0 -4px 0 rgba(103, 64, 25, 0.35),
-    0 3px 6px rgba(0, 0, 0, 0.35);
+  background: rgba(251, 244, 234, 0.62);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  transition:
+    transform var(--quick) var(--ease),
+    background var(--calm) var(--ease),
+    border-color var(--calm) var(--ease);
 }
 
 .mode-btn:active {
-  transform: translateY(2px);
+  background: var(--stone-pale);
+  border-color: var(--line);
+  transform: scale(0.985);
 }
 
 .mode-name {
-  font-size: 21px;
-  font-weight: 800;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
 }
 
 .mode-desc {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   color: var(--ink-soft);
 }
-
-.text-btn {
-  padding: 8px 16px;
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--brass);
-  text-decoration: underline;
-  cursor: pointer;
-  background: none;
-  border: none;
-}
-
-/* ── game ──────────────────────────────────────────────────────── */
 
 .title-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 18px;
+  gap: 2px 12px;
   justify-content: center;
 }

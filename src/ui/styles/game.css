@@ -1,40 +1,47 @@
-/* Score row, chips, timer, board frame and action buttons. */
+/* Score row, chips, timer, the board itself and the hint button. */
+
 .hud {
   display: grid;
   grid-template-columns: 44px 1fr 44px;
   align-items: center;
   gap: 8px;
-  padding: 10px 14px 2px;
+  padding: 14px 16px 4px;
 }
 
+/* Outlined circles, the way MV draws every control: a thin ring and nothing
+   inside it. No fill, no shadow, no gradient. */
 .icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 44px;
   height: 44px;
-  font-size: 22px;
-  font-weight: 700;
-  color: #5c3a17;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--ink-soft);
   cursor: pointer;
-  color: var(--brass-bright);
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(232, 180, 76, 0.35);
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  transition:
+    transform var(--quick) var(--ease),
+    border-color var(--calm) var(--ease),
+    color var(--calm) var(--ease);
 }
 
 .icon-btn svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.4;
+  stroke-width: 1.7;
   stroke-linecap: round;
 }
 
 .icon-btn:active {
-  transform: translateY(1px);
+  color: var(--ink);
+  border-color: var(--ink-faint);
+  transform: scale(0.94);
 }
 
 .score-block {
@@ -42,11 +49,11 @@
 }
 
 .score {
-  font-size: 34px;
-  font-weight: 800;
+  font-size: 32px;
+  font-weight: 400;
   line-height: 1.1;
-  color: var(--brass-bright);
-  text-shadow: 0 0 18px rgba(255, 215, 130, 0.55);
+  letter-spacing: 0.1em;
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
@@ -54,34 +61,31 @@
   display: flex;
   justify-content: space-between;
   gap: 8px;
-  padding: 6px 14px 10px;
+  padding: 8px 18px 12px;
 }
 
+/* Not a pill and not a badge — just quiet type, tracked wide. */
 .chip {
-  padding: 6px 14px;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
   color: var(--ink-soft);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(232, 180, 76, 0.22);
-  border-radius: 999px;
+  text-transform: uppercase;
 }
 
 .chip b {
+  font-weight: 600;
+  color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 
-.crown {
-  color: #d99a1a;
-}
-
+/* A hairline that drains, not a filling bar. */
 .timer-bar {
-  height: 8px;
-  margin: 0 14px 8px;
+  height: 2px;
+  margin: 0 18px 10px;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 4px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+  background: var(--line-soft);
+  border-radius: 1px;
 }
 
 .timer-bar.hidden {
@@ -91,12 +95,13 @@
 .timer-bar span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--brass-bright), var(--brass));
+  background: var(--violet);
   transform-origin: left center;
+  transition: background var(--slow) var(--ease);
 }
 
 .timer-bar.urgent span {
-  background: linear-gradient(90deg, #ff9f4d, #ff4f7b);
+  background: var(--clay-deep);
 }
 
 /*
@@ -115,40 +120,8 @@
   align-items: flex-start;
   justify-content: center;
   min-height: 0;
-  margin: 0 12px;
+  margin: 0 14px;
   overflow: hidden;
-}
-
-/*
- * Below the board: the stage the character dances on. It takes whatever room
- * the board does not, which on a tall phone is a lot and on a short one is
- * nothing — the board always wins the argument.
- */
-.stage-floor {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  margin: 0 12px;
-  overflow: hidden;
-}
-
-.stage-floor::before {
-  position: absolute;
-  inset: auto 0 0;
-  height: 62%;
-  content: "";
-  background: radial-gradient(60% 100% at 50% 100%, rgba(255, 233, 176, 0.13) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.stage-floor img {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  max-width: 62%;
-  max-height: 100%;
-  transform: translateX(-50%);
-  object-fit: contain;
 }
 
 .board-wrap.scrolls {
@@ -157,188 +130,205 @@
   scrollbar-width: thin;
 }
 
-/* The playfield frame, sized to the tiles it holds. The track list is written
-   from JS; repeat() cannot take its count from a custom property. */
+/*
+ * Below the board: the valley the board floats over. It takes whatever room
+ * the board does not, which on a tall phone is a lot and on a short one is
+ * nothing — the board always wins the argument.
+ *
+ * The monument is drawn in CSS rather than shipped as art: two flat planes and
+ * a disc, in the same palette as everything else. Art can replace it later
+ * (see docs/CONTENT.md); until then the screen still has a horizon.
+ */
+.stage-floor {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0 14px;
+  overflow: hidden;
+}
+
+/* It stands on the bottom edge, never taller than the room it was given and
+   never bigger than it looks right at — scaled up to fill a tall phone, a
+   monument reads as a wall. */
+.stage-floor::before {
+  position: absolute;
+  inset: auto 0 0;
+  height: min(128px, 100%);
+  content: "";
+  background: var(--monument) no-repeat bottom center;
+  background-size: contain;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.stage-floor img {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  z-index: 1;
+  max-width: 58%;
+  max-height: 100%;
+  transform: translateX(-50%);
+  object-fit: contain;
+}
+
+/*
+ * The playfield: one pale plane holding the tiles, edged with a hairline
+ * rather than a frame. The track list is written from JS; repeat() cannot take
+ * its count from a custom property.
+ */
 .board {
   display: grid;
   gap: var(--gap);
-  padding: 6px;
-  background:
-    linear-gradient(180deg, var(--stage) 0%, var(--stage-edge) 100%);
-  border: 1px solid rgba(232, 180, 76, 0.25);
-  border-radius: 12px;
-  box-shadow:
-    inset 0 3px 14px rgba(0, 0, 0, 0.6),
-    0 6px 24px rgba(0, 0, 0, 0.45);
+  padding: 10px;
+  background: rgba(251, 244, 234, 0.5);
+  border: 1px solid var(--line-soft);
+  border-radius: 20px;
   touch-action: none;
 }
 
 .tile {
   position: relative;
+  display: flex;
   width: var(--tile, 38px);
   height: var(--tile, 38px);
-  display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
   font-family: inherit;
-  font-size: calc(var(--tile, 38px) * 0.58);
-  font-weight: 800;
+  font-size: calc(var(--tile, 38px) * 0.5);
+  font-weight: 500;
+  letter-spacing: 0.02em;
   color: var(--tile-ink);
   cursor: pointer;
-  background: linear-gradient(160deg, var(--tile-face) 0%, var(--tile-face-low) 100%);
+  background: var(--tile-face);
   border: none;
-  border-radius: 6px;
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.75),
-    inset 0 -3px 0 rgba(90, 60, 20, 0.28),
-    0 2px 6px rgba(0, 0, 0, 0.45);
+  border-radius: 9px;
   transition:
-    transform 90ms ease,
-    box-shadow 90ms ease,
-    background 140ms ease;
+    transform var(--calm) var(--ease),
+    background var(--calm) var(--ease),
+    color var(--calm) var(--ease),
+    opacity var(--calm) var(--ease);
 }
 
+/* A cleared square does not vanish — it becomes part of the plane it sat on. */
 .tile.cleared {
-  color: rgba(255, 233, 176, 0.1);
-  background: rgba(0, 0, 0, 0.28);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
+  color: transparent;
+  background: var(--tile-gone);
   cursor: default;
+  transform: scale(0.9);
 }
 
 .tile.sel {
   z-index: 1;
-  background: linear-gradient(160deg, #fff2cd 0%, var(--tile-sel) 100%);
-  transform: scale(1.08);
-  box-shadow:
-    0 0 0 3px var(--ring-sel),
-    0 3px 8px rgba(0, 0, 0, 0.45);
+  color: var(--tile-sel-ink);
+  background: var(--tile-sel);
+  transform: scale(1.04);
 }
 
 .board.ok .tile.sel {
-  box-shadow:
-    0 0 0 3px var(--ring-ok),
-    0 3px 10px rgba(0, 0, 0, 0.45);
+  background: var(--ring-ok);
 }
 
 .tile.hint {
-  animation: hint-pulse 900ms ease-in-out 3;
+  animation: hint-breathe 1800ms var(--ease) 2;
 }
 
 .board.shake {
-  animation: shake 260ms ease;
+  animation: sway 520ms var(--ease);
 }
 
 .pop {
   position: absolute;
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--brass-bright);
-  text-shadow: 0 0 14px rgba(255, 215, 130, 0.8);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--violet-deep);
   pointer-events: none;
-  animation: pop-up 700ms ease-out forwards;
+  animation: drift-up 1100ms var(--ease) forwards;
 }
 
 .notice {
-  min-height: 20px;
-  margin: 8px 14px 0;
-  font-size: 14px;
-  font-weight: 700;
+  min-height: 18px;
+  margin: 10px 16px 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-align: center;
   color: var(--ink-soft);
+  transition: opacity var(--calm) var(--ease);
 }
 
 .actions {
   display: flex;
   justify-content: center;
   gap: 44px;
-  padding: 10px 0 18px;
+  padding: 12px 0 22px;
 }
 
+/* The hint: the same outlined ring as the header buttons, one size up. */
 .round-btn {
   position: relative;
-  width: 68px;
-  height: 68px;
   display: flex;
+  width: 58px;
+  height: 58px;
   align-items: center;
   justify-content: center;
-  font-size: 30px;
-  color: #5c3a17;
+  font-size: 22px;
+  color: var(--ink-soft);
   cursor: pointer;
-  background: radial-gradient(circle at 35% 28%, var(--brass-bright) 0%, var(--brass) 62%, #a97c1f 100%);
-  border: none;
+  background: transparent;
+  border: 1px solid var(--line);
   border-radius: 50%;
-  box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.45),
-    0 0 22px rgba(255, 215, 130, 0.35),
-    0 4px 10px rgba(0, 0, 0, 0.5);
+  transition:
+    transform var(--quick) var(--ease),
+    border-color var(--calm) var(--ease),
+    opacity var(--calm) var(--ease);
 }
 
 .round-btn:active:not(:disabled) {
-  transform: translateY(2px);
+  transform: scale(0.94);
+  border-color: var(--ink-faint);
 }
 
 .round-btn:disabled {
   cursor: default;
-  filter: grayscale(0.6);
-  opacity: 0.5;
+  opacity: 0.32;
 }
 
 .round-btn .glyph {
-  font-weight: 800;
+  font-size: 20px;
   line-height: 1;
+  opacity: 0.85;
 }
 
 .round-btn svg.glyph {
-  width: 30px;
-  height: 30px;
+  width: 22px;
+  height: 22px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 1.7;
   stroke-linecap: round;
 }
 
 .round-btn.urge {
-  animation: hint-pulse 900ms ease-in-out infinite;
+  animation: hint-breathe 1800ms var(--ease) infinite;
 }
 
+/* The count of hints left: a number beside the ring, not a red alert. */
 .badge {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  min-width: 24px;
-  padding: 2px 6px;
-  font-size: 13px;
-  font-weight: 800;
-  color: #fff;
-  background: #ff4f7b;
-  border: 2px solid rgba(255, 246, 221, 0.9);
-  border-radius: 12px;
-}
-
-.overlay {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: rgba(30, 17, 6, 0.72);
-  backdrop-filter: blur(3px);
-}
-
-.overlay.hidden {
-  display: none;
-}
-
-.panel {
-  width: min(360px, 100%);
-  padding: 26px 22px;
-  text-align: center;
-  background: linear-gradient(160deg, #8b5c2b 0%, #6d451f 100%);
-  border: 3px solid #c79a5c;
-  border-radius: 18px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  right: -4px;
+  bottom: -2px;
+  min-width: 20px;
+  padding: 1px 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--sky-high);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  font-variant-numeric: tabular-nums;
 }
 
 /*
@@ -350,7 +340,7 @@
 @media (max-height: 660px) {
   .hud {
     grid-template-columns: 38px 1fr 38px;
-    padding: 4px 10px 0;
+    padding: 6px 12px 0;
   }
 
   .icon-btn {
@@ -363,58 +353,86 @@
   }
 
   .sub-hud {
-    padding: 4px 10px 6px;
+    padding: 4px 14px 8px;
   }
 
   .chip {
-    padding: 3px 10px;
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .timer-bar {
-    height: 6px;
-    margin: 0 10px 4px;
+    margin: 0 14px 6px;
   }
 
-  .board-wrap {
-    margin: 0 8px;
+  .board-wrap,
+  .stage-floor {
+    margin: 0 10px;
+  }
+
+  .board {
+    padding: 7px;
+    border-radius: 16px;
   }
 
   .notice {
-    margin: 4px 10px 0;
+    margin: 6px 12px 0;
     font-size: 12px;
   }
 
   .actions {
     gap: 28px;
-    padding: 4px 0 8px;
+    padding: 6px 0 10px;
   }
 
   .round-btn {
-    width: 50px;
-    height: 50px;
-    font-size: 22px;
+    width: 46px;
+    height: 46px;
   }
 
   .round-btn svg.glyph {
-    width: 22px;
-    height: 22px;
+    width: 19px;
+    height: 19px;
   }
 }
 
-/* Tighter still, and the notice is the first thing that can go: the star
-   targets are also on the results panel. */
+/*
+ * Tighter still. The notice is the first thing that can go — the star targets
+ * are also on the results panel — and then every remaining piece of chrome
+ * gives up a few pixels each. Eleven rows on a 390px-tall landscape screen is
+ * the worst case in the game, and it only clears the 18px thumb floor because
+ * of the pixels reclaimed here.
+ */
 @media (max-height: 520px) {
-  .notice {
+  .notice,
+  .stage-floor::before {
     display: none;
   }
 
+  .hud {
+    padding: 2px 12px 0;
+  }
+
+  .sub-hud {
+    padding: 2px 14px 4px;
+  }
+
+  .board {
+    --gap: 3px;
+
+    padding: 5px;
+  }
+
   .actions {
-    padding: 2px 0 6px;
+    padding: 0 0 6px;
   }
 
   .round-btn {
-    width: 44px;
-    height: 44px;
+    width: 38px;
+    height: 38px;
+  }
+
+  .round-btn svg.glyph {
+    width: 17px;
+    height: 17px;
   }
 }

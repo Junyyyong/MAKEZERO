@@ -1,4 +1,4 @@
-import { aliveCount, emptyIndices } from "../../core/board";
+import { emptyIndices } from "../../core/board";
 import { stars } from "../../core/game";
 import type { GameState } from "../../core/game";
 import { chapterFor } from "../../content/chapters";
@@ -57,16 +57,23 @@ export class Hud {
     this.noticeEl.textContent = this.notice(state);
   }
 
+  /**
+   * The line under the board. It never counts the tiles that are left: a
+   * running tally turns a calm board into a chore, and the board itself
+   * already shows how much is gone. Only what the player cannot see goes here.
+   */
   private notice(state: GameState): string {
-    const left = aliveCount(state.board);
     if (state.config.spawn) {
       if (state.status === "lost") return "보드가 가득 찼어요.";
-      const room = emptyIndices(state.board).length;
-      return room <= 6 ? `빈 칸 ${room}개 — 곧 가득 차요!` : `빈 칸 ${room}개`;
+      return emptyIndices(state.board).length <= 6 ? "곧 가득 차요" : "";
     }
     if (state.status === "lost") return "10을 만들 수 있는 숫자가 없어요.";
-    if (state.config.mode !== "story") return `${left}개 남음`;
-    const [one, two, three] = state.config.starTargets;
-    return `${left}개 남음 · ${starLine(stars(state))} (★ ${one} · ★★ ${two} · ★★★ ${three} 이하)`;
+    if (state.config.mode !== "story") return "";
+    // Stars earned so far, and the one number that is still worth chasing.
+    // Listing all three targets at once was a wall of asterisks nobody read.
+    const earned = stars(state);
+    const line = starLine(earned);
+    if (earned === 3) return line;
+    return `${line} · 다음 별 ${state.config.starTargets[earned]}칸 이하`;
   }
 }

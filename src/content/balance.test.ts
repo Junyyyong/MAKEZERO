@@ -38,27 +38,34 @@ const SEEDS = [1, 2, 3, 5, 8, 13].map((n) => n * 7919);
 const each = (f: (seed: number) => number) => SEEDS.map(f);
 const avg = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
 
-describe("the 81-tile deck", () => {
-  it("deals nine of every digit, 81 tiles totalling 405", () => {
-    expect(DECK.slice(1)).toEqual(Array(9).fill(9));
-    const game = newGame(stageConfig(1), 7);
-    expect(game.board.cells).toHaveLength(81);
-    expect(game.board.cells.reduce((a, c) => a + c.value, 0)).toBe(405);
+describe("the deck", () => {
+  it("fills the board exactly, whatever size the stage deals", () => {
+    expect(DECK.slice(1)).toEqual(Array(9).fill(9)); // time attack's fixed deck
+    for (const stage of [1, 10, TOTAL_STAGES]) {
+      const config = stageConfig(stage);
+      const game = newGame(config, 7);
+      expect(game.board.cells).toHaveLength(config.width * config.rows);
+      // Nine of each digit sums to 45, so a full deck sums to 45 per row.
+      expect(game.board.cells.reduce((a, c) => a + c.value, 0)).toBe(45 * config.rows);
+    }
   });
 
-  it("always strands exactly one tile, and it is a 5", () => {
-    // 405 ends in 5 and every clear removes exactly ten, so the last digit
-    // never moves. Pairing everything else away leaves a single 5.
-    for (const seed of SEEDS) {
-      const state = playAllPairs(seed);
-      expect(aliveCount(state.board)).toBe(1);
-      expect(state.board.cells.find((c) => !c.cleared)!.value).toBe(5);
+  it("pairs away to nothing, or to the one 5 an odd deck cannot pair", () => {
+    // Every clear removes exactly ten, so the total's last digit never moves.
+    // An even number of 5s pairs off; an odd number strands one, and only one.
+    for (const stage of [1, TOTAL_STAGES]) {
+      const odd = stageConfig(stage).rows % 2 === 1;
+      for (const seed of SEEDS) {
+        const state = playAllPairs(stage, seed);
+        expect(aliveCount(state.board)).toBe(odd ? 1 : 0);
+        if (odd) expect(state.board.cells.find((c) => !c.cleared)!.value).toBe(5);
+      }
     }
   });
 });
 
-function playAllPairs(seed: number): GameState {
-  let state = newGame(stageConfig(1), seed);
+function playAllPairs(stage: number, seed: number): GameState {
+  let state = newGame(stageConfig(stage), seed);
   for (let move = 0; move < 200; move++) {
     const combo = pick(valueCounts(state.board), "short");
     if (!combo) break;
@@ -77,10 +84,14 @@ describe("clearing versus scoring", () => {
     }
   });
 
-  it("pays a scoring line far more than a clearing one", () => {
-    const clearing = avg(each((seed) => playWith(1, seed, "short").score));
-    const scoring = avg(each((seed) => playWith(1, seed, "long").score));
-    expect(scoring).toBeGreaterThan(clearing * 1.2);
+  it("pays a scoring line more than a clearing one, and more as boards grow", () => {
+    const gap = (stage: number) =>
+      avg(each((seed) => playWith(stage, seed, "long").score)) /
+      avg(each((seed) => playWith(stage, seed, "short").score));
+    // Long chains earn their keep on any board; the wider the board, the more
+    // room a chain has to find, so the temptation to abandon pairing grows.
+    expect(gap(1)).toBeGreaterThan(1.05);
+    expect(gap(TOTAL_STAGES)).toBeGreaterThan(gap(1));
   });
 
   it("makes the scoring line leave the board in a state stars will punish", () => {

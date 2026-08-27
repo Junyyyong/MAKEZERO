@@ -50,14 +50,27 @@ describe("stage curve", () => {
     }
   });
 
-  it("deals the same 9x9 deck on every stage", () => {
+  it("grows the board a row at a time, never shrinking it", () => {
+    let rows = 0;
     for (const stage of everyStage) {
       const config = stageConfig(stage);
       expect(config.width).toBe(9);
-      expect(config.rows).toBe(9);
-      expect(config.deck?.slice(1)).toEqual(Array(9).fill(9));
+      expect(config.rows).toBeGreaterThanOrEqual(rows);
+      rows = config.rows;
       expect(config.stage).toBe(stage);
       expect(config.mode).toBe("story");
+    }
+    expect(stageConfig(1).rows).toBe(6);
+    expect(stageConfig(TOTAL_STAGES).rows).toBe(11);
+  });
+
+  it("deals a full even deck on every stage, one digit per cell", () => {
+    for (const stage of everyStage) {
+      const config = stageConfig(stage);
+      // Nine columns, so a row is one more of every digit. The deck exactly
+      // fills the board, which is what keeps a stage clearable.
+      expect(config.deck?.slice(1)).toEqual(Array(9).fill(config.rows));
+      expect(config.deck?.reduce((a, b) => a + b, 0)).toBe(config.width * config.rows);
     }
   });
 
@@ -76,7 +89,8 @@ describe("stage curve", () => {
   it("reaches its hardest settings exactly at the final stage", () => {
     const last = stageConfig(TOTAL_STAGES);
     expect(last.hints).toBe(1);
-    expect(last.starTargets[2]).toBe(1);
+    expect(last.rows).toBe(11);
+    expect(last.starTargets[2]).toBe(3);
   });
 
   it("deals a playable opening board on every stage", () => {

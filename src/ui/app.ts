@@ -84,6 +84,13 @@ export class App {
     for (const [name, node] of Object.entries(this.screens)) {
       node.classList.toggle("hidden", name !== screen);
     }
+    // Replay the entrance. Un-hiding an element does not restart a CSS
+    // animation, so the class comes off, the layout is flushed to make the
+    // removal count, and it goes back on.
+    const shown = this.screens[screen];
+    shown.classList.remove("entering");
+    void shown.offsetWidth;
+    shown.classList.add("entering");
     this.overlay.close();
   }
 

@@ -111,6 +111,9 @@ async function check(page, label, mode) {
 }
 
 const SKIP = { stage: 1, bestTimeAttack: 0, bestEndless: 0, seenChapters: [], stageStars: [], tutorialDone: true };
+// The story board grows with the stage, so the last one is the tallest thing
+// the game ever has to fit. Checking stage 1 alone would miss it entirely.
+const LAST_STAGE = { ...SKIP, stage: 20 };
 
 for (const [label, width, height] of SCREENS) {
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 });
@@ -130,6 +133,22 @@ for (const [label, width, height] of SCREENS) {
 
   const m = await (async () => { await page.click("#mode-story"); await page.waitForTimeout(240); return inspect(page); })();
   if (good) ok(`${String(label).padEnd(20)} ${width}x${height}  타일 ${String(Math.round(m.tile)).padStart(3)}px  프레임 여백 ${Math.round(m.frameSlackX)}px`);
+  await page.close();
+}
+
+// The final stage deals the biggest board in the game — 9 by 11.
+for (const [label, width, height] of SCREENS) {
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 });
+  page.on("pageerror", (e) => errors.push(`${label} (stage 20): ${e}`));
+  await page.goto(BASE, { waitUntil: "networkidle" });
+  await page.evaluate((p) => localStorage.setItem("makezero.progress.v1", JSON.stringify(p)), LAST_STAGE);
+  await page.reload({ waitUntil: "networkidle" });
+  await page.click("#mode-story");
+  await page.waitForTimeout(260);
+  const m = await inspect(page);
+  if (await check(page, label, "스토리 20")) {
+    ok(`${String(label).padEnd(20)} ${width}x${height}  스테이지 20  타일 ${String(Math.round(m.tile)).padStart(3)}px`);
+  }
   await page.close();
 }
 

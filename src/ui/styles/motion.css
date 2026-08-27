@@ -1,44 +1,84 @@
-/* Animations, and the opt-out that must switch every one of them off. */
+/*
+ * Motion, and the opt-out that must switch every one of it off.
+ *
+ * The house rule: nothing overshoots, nothing snaps, nothing flashes. Every
+ * animation here is a slow fade, a small drift or a breath — the same
+ * unhurried register as the palette. If a keyframe needs a bounce to read, the
+ * thing it is animating is wrong, not the timing.
+ */
 
-@keyframes hint-pulse {
+/* A screen arrives from just below, already almost in place. */
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* A hint does not blink: it breathes, twice, and stops. */
+@keyframes hint-breathe {
   0%,
   100% {
-    box-shadow:
-      inset 0 2px 0 rgba(255, 255, 255, 0.6),
-      0 1px 2px rgba(0, 0, 0, 0.35);
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(127, 181, 170, 0);
   }
   50% {
-    box-shadow:
-      0 0 0 3px var(--ring-ok),
-      0 0 12px rgba(121, 192, 90, 0.8);
+    transform: scale(1.05);
+    box-shadow: 0 0 0 2px var(--ring-ok);
   }
 }
 
-@keyframes shake {
+/* A refused selection sways the board like a hanging shape, then settles. */
+@keyframes sway {
   0%,
   100% {
-    transform: translateX(0);
+    transform: translateX(0) rotate(0deg);
   }
-  25% {
-    transform: translateX(-6px);
+  30% {
+    transform: translateX(-4px) rotate(-0.35deg);
   }
-  75% {
-    transform: translateX(6px);
+  65% {
+    transform: translateX(3px) rotate(0.25deg);
   }
 }
 
-@keyframes pop-up {
+/* A score drifts off like something let go of, not like something fired. */
+@keyframes drift-up {
   0% {
     opacity: 0;
-    transform: translate(-50%, 0) scale(0.7);
+    transform: translate(-50%, 0) scale(0.94);
   }
-  25% {
+  22% {
     opacity: 1;
-    transform: translate(-50%, -14px) scale(1.15);
+    transform: translate(-50%, -12px) scale(1);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -52px) scale(1);
+    transform: translate(-50%, -46px) scale(1);
   }
 }
 

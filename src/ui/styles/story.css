@@ -1,4 +1,4 @@
-/* ── story ─────────────────────────────────────────────────────── */
+/* The beat between chapters: one card, one line, room to breathe. */
 
 .story-screen {
   align-items: center;
@@ -7,40 +7,44 @@
 }
 
 .story-card {
-  width: min(360px, 100%);
-  padding: 24px 22px;
+  width: min(340px, 100%);
+  padding: 30px 26px 24px;
   text-align: center;
-  background: linear-gradient(160deg, var(--house-lit) 0%, var(--house-deep) 100%);
-  border: 1px solid rgba(232, 180, 76, 0.45);
-  border-radius: 18px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  background: rgba(251, 244, 234, 0.7);
+  border: 1px solid var(--line-soft);
+  border-radius: 22px;
+  animation: rise-in var(--slow) var(--ease) both;
 }
 
 .story-portrait {
-  width: 148px;
-  height: 148px;
+  width: 132px;
+  height: 132px;
+  margin-bottom: 10px;
   object-fit: contain;
-  margin-bottom: 8px;
 }
 
 .story-title {
   margin: 0;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
   color: var(--ink-soft);
 }
 
 .story-name {
-  margin: 10px 0 2px;
-  font-size: 19px;
-  font-weight: 800;
-  color: var(--brass-bright);
+  margin: 12px 0 4px;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--ink);
 }
 
 .story-line {
   min-height: 76px;
-  margin: 0 0 18px;
-  font-size: 16px;
-  line-height: 1.7;
-  color: var(--ink);
+  margin: 0 0 22px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.9;
+  color: var(--ink-soft);
 }

@@ -1,40 +1,72 @@
 /*
- * Broadway at night: a deep velvet house, warm marquee bulbs, and brass.
+ * A Monument Valley sky: flat pastel planes, thin lines, no gloss.
  *
- * The whole skin lives in these tokens. Every other file reads them, so a new
- * look means editing this block and nothing else.
+ * The rules of this skin, in order of importance:
+ *   1. Flat colour, never a bevel. Depth comes from one plane sitting on a
+ *      slightly different plane, not from highlights and inner shadows.
+ *   2. Low contrast everywhere except the digits. The numbers are the only
+ *      thing a player must read quickly; everything else recedes.
+ *   3. Nothing moves fast and nothing bounces. Motion is slow, eased out and
+ *      always reversible — see --ease and --slow.
+ *
+ * The whole look lives in these tokens. Every other file reads them, so a new
+ * skin means editing this block and nothing else.
  */
 :root {
-  /* The house */
-  --house-deep: #150b2e;
-  --house: #241247;
-  --house-lit: #3a1d69;
-  --velvet: #2d1550;
+  /* Sky: the backdrop, palest at the top */
+  --sky-high: #f7ece2;
+  --sky-mid: #ecd9d9;
+  --sky-low: #d5cbe2;
+  --sun: #fbf3e5;
 
-  /* Brass and bulbs */
-  --brass: #e8b44c;
-  --brass-bright: #ffd782;
-  --marquee: #ffe9b0;
-  --spotlight: #fff6dd;
+  /* Stone: the planes things are built from */
+  --stone-pale: #fbf4ea;
+  --stone: #efe1cf;
+  --stone-deep: #ded0be;
+  --stone-shadow: #cfc2d4;
 
-  /* The stage floor the tiles sit on */
-  --stage: #1b0f38;
-  --stage-edge: #0e0722;
+  /* Accents: one warm, one cool, used sparingly */
+  --clay: #e08a6d;
+  --clay-deep: #c96b52;
+  --jade: #7fb5aa;
+  --violet: #9186b6;
+  --violet-deep: #6d6390;
 
-  /* Tiles: lit boards under the marquee */
-  --tile-face: #f7ecd8;
-  --tile-face-low: #e2d0b2;
-  --tile-ink: #3a1d69;
-  --tile-sel: #ffe9a8;
+  /* Tiles */
+  --tile-face: #fbf4ea;
+  --tile-ink: #514a72;
+  --tile-sel: var(--clay);
+  --tile-sel-ink: #fdf6ee;
+  --tile-gone: rgba(120, 108, 150, 0.09);
 
-  --ring-sel: var(--brass);
-  --ring-ok: #57d9a3;
-  --ring-bad: #ff6b8a;
+  --ring-ok: var(--jade);
+  --ring-bad: var(--clay-deep);
 
-  --ink: #f4ecff;
-  --ink-soft: #c3aee6;
+  /* Type */
+  --ink: #514a72;
+  --ink-soft: #8d86a6;
+  --ink-faint: rgba(81, 74, 114, 0.34);
 
-  --gap: 3px;
+  /* Lines: MV draws edges, it does not shade them */
+  --line: rgba(81, 74, 114, 0.18);
+  --line-soft: rgba(81, 74, 114, 0.1);
+
+  --gap: 4px;
+  --radius: 14px;
+
+  /*
+   * The monument: a sun, an arch and two blocks, drawn flat and used as a
+   * background wherever a screen has room under its content. Colours are
+   * literal because a data URI cannot read custom properties — if the palette
+   * above moves, these five fills move with it by hand.
+   */
+  --monument: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 140'%3E%3Ccircle cx='166' cy='36' r='19' fill='%23fbf3e5'/%3E%3Crect x='34' y='134' width='152' height='6' rx='3' fill='%23cfc2d4'/%3E%3Crect x='48' y='98' width='32' height='38' rx='3' fill='%23ded0be'/%3E%3Cpath d='M80 136V78a25 25 0 0 1 50 0v58z' fill='%23cfc2d4'/%3E%3Crect x='130' y='88' width='22' height='48' rx='3' fill='%23efe1cf'/%3E%3Crect x='152' y='112' width='18' height='24' rx='3' fill='%23ded0be'/%3E%3Cpath d='M95 136v-24a10 10 0 0 1 20 0v24z' fill='%23a99cbb'/%3E%3Ccircle cx='105' cy='44' r='3.5' fill='%23e08a6d'/%3E%3C/svg%3E");
+
+  /* Motion: one curve, three speeds. Nothing overshoots. */
+  --ease: cubic-bezier(0.32, 0.72, 0.24, 1);
+  --quick: 180ms;
+  --calm: 320ms;
+  --slow: 620ms;
 }
 
 * {
@@ -49,28 +81,30 @@ body {
 }
 
 body {
-  font-family: "Trebuchet MS", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  font-family: "Avenir Next", Futura, "Century Gothic", "Apple SD Gothic Neo", "Noto Sans KR",
+    "Malgun Gothic", system-ui, sans-serif;
+  font-weight: 500;
   color: var(--ink);
-  background: var(--house-deep);
+  background: var(--sky-high);
   overscroll-behavior: none;
   user-select: none;
 }
 
 /*
- * The auditorium: a spotlight from above, a velvet wash, and a faint sheen of
- * vertical light like a curtain catching the house lights.
+ * The valley: a still sky with a low sun in it. Three stops and one soft
+ * radial, nothing else — the moment this gains a texture or a glow it stops
+ * looking like flat paper and starts looking like a website.
  */
 #app {
   position: relative;
   height: 100dvh;
+  /* The entrance slides a screen up from below its resting place. Without this
+     the document itself grows by those few pixels for the length of the
+     animation, and the page picks up a scrollbar it will never need. */
+  overflow: hidden;
   background:
-    radial-gradient(120% 60% at 50% -10%, rgba(255, 233, 176, 0.16) 0%, transparent 60%),
-    repeating-linear-gradient(
-      91deg,
-      rgba(255, 255, 255, 0.022) 0 2px,
-      transparent 2px 9px
-    ),
-    linear-gradient(180deg, var(--house) 0%, var(--velvet) 45%, var(--house-deep) 100%);
+    radial-gradient(46% 26% at 50% 16%, var(--sun) 0%, rgba(251, 243, 229, 0) 68%),
+    linear-gradient(180deg, var(--sky-high) 0%, var(--sky-mid) 52%, var(--sky-low) 100%);
 }
 
 .screen {
@@ -81,7 +115,63 @@ body {
     env(safe-area-inset-left);
 }
 
+/* Applied by App.show() on the screen being moved to, so the entrance plays
+   every time and not only on the first paint. */
+.screen.entering {
+  animation: screen-in var(--slow) var(--ease) both;
+}
+
 .screen.hidden,
 .round-btn.hidden {
   display: none;
+}
+
+/* Shared shapes ────────────────────────────────────────────────────
+   Two button forms carry the whole interface: a filled plane and an
+   outlined one. Both are flat, both are quiet, neither has a gradient. */
+
+.wood-btn {
+  width: 100%;
+  padding: 15px 18px;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  cursor: pointer;
+  background: var(--stone-pale);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  transition:
+    transform var(--quick) var(--ease),
+    background var(--calm) var(--ease),
+    border-color var(--calm) var(--ease);
+}
+
+.wood-btn:active {
+  transform: scale(0.98);
+  background: var(--stone);
+}
+
+.wood-btn.ghost {
+  color: var(--ink-soft);
+  background: transparent;
+  border-color: var(--line-soft);
+}
+
+.text-btn {
+  padding: 9px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+  cursor: pointer;
+  background: none;
+  border: none;
+  transition: color var(--calm) var(--ease);
+}
+
+.text-btn:active {
+  color: var(--ink);
 }

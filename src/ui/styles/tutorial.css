@@ -1,8 +1,8 @@
 /* Hands-on tutorial: instruction above the board, lesson below it. */
 
 .tutorial-screen {
-  gap: 10px;
-  padding: 14px;
+  gap: 12px;
+  padding: 16px;
 }
 
 .tutorial-head {
@@ -15,33 +15,37 @@
 
 .tutorial-dots {
   display: flex;
-  gap: 7px;
+  gap: 8px;
 }
 
 .dot {
-  width: 9px;
-  height: 9px;
-  background: rgba(195, 174, 230, 0.3);
+  width: 6px;
+  height: 6px;
+  background: var(--ink-faint);
   border-radius: 50%;
+  transition:
+    background var(--calm) var(--ease),
+    transform var(--calm) var(--ease);
 }
 
 .dot.done {
-  background: var(--ring-ok);
+  background: var(--jade);
 }
 
 .dot.now {
-  background: var(--brass-bright);
-  transform: scale(1.25);
+  background: var(--clay);
+  transform: scale(1.5);
 }
 
 .tutorial-instruction {
   margin: 0;
-  font-size: 17px;
-  font-weight: 700;
-  line-height: 1.6;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.8;
+  letter-spacing: 0.04em;
   text-align: center;
   white-space: pre-line;
-  text-shadow: 0 0 14px rgba(255, 215, 130, 0.3);
+  color: var(--ink);
 }
 
 .tutorial-board-wrap {
@@ -54,7 +58,7 @@
 .tutorial-foot {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
   min-height: 96px;
   padding-bottom: 6px;
@@ -63,10 +67,11 @@
 .tutorial-reward {
   min-height: 24px;
   margin: 0;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
   text-align: center;
-  color: var(--ring-ok);
+  color: var(--jade);
 }
 
 .tutorial-foot .wood-btn {
