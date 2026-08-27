@@ -387,3 +387,38 @@
   .actions { padding: 2px 0 4px; }
   .round-btn { width: 44px; height: 44px; }
 }
+
+/* ── the picture behind the board ─────────────────────────────────────
+   A story board sits on the stage's illustration. Clearing a block turns its
+   square transparent, so the picture arrives a square at a time and a finished
+   stage *is* the picture. Clipped to the content box so it lines up with the
+   grid rather than with the frame around it. */
+.board.reveal {
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  background-origin: content-box;
+  background-clip: content-box;
+}
+
+.board.reveal .tile.cleared {
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+  /* Uncovering is the reward, so it fades in rather than snapping. */
+  transition:
+    background 420ms ease,
+    box-shadow 420ms ease,
+    opacity 420ms ease;
+}
+
+/* The split item, waiting for a block to be picked. */
+.round-btn.armed {
+  border-color: var(--marquee);
+  box-shadow: 0 0 0 2px rgba(255, 215, 116, 0.35);
+}
+
+.board.splitting .tile:not(.cleared) {
+  cursor: pointer;
+  animation: offer 1400ms ease-in-out infinite;
+}

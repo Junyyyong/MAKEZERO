@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { aliveCount, emptyIndices } from "./board";
-import { commitSelection, newGame, spawnIntervalMs, stars, tick, undo, useHint } from "./game";
+import { aliveCount, emptyIndices, valueCounts } from "./board";
+import { canEmpty } from "./solver";
+import { commitSelection, newGame, spawnIntervalMs, splitTile, stars, tick, undo, useHint } from "./game";
 import { evaluateSelection } from "./rules";
 import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
 
@@ -23,6 +24,7 @@ function stateWith(board: Board, overrides: Partial<GameState> = {}): GameState 
     score: 0,
     hintsLeft: config.hints,
     undosLeft: config.undos,
+    splitsLeft: config.splits,
     status: "playing",
     startingCells: board.cells.length,
     remainingMs: config.timeLimitMs ?? 0,
@@ -73,8 +75,23 @@ describe("commitSelection", () => {
     expect(state).toBe(before);
   });
 
+  it("leaves the holes where they are when the run keeps its board", () => {
+    // Story has a picture behind the board, so a row that closed up would drag
+    // the holes out of line with the part of it they had uncovered.
+    const kept = stateWith(boardOf([4, 6, 9, 1], [3, 7, 2, 8]), {
+      config: { ...PLAIN, keepBoard: true },
+    });
+    const after = commitSelection(kept, [0, 1]).state;
+    expect(after.board.cells).toHaveLength(8);
+    expect(after.board.cells[0]!.cleared).toBe(true);
+    expect(after.board.cells[4]!.value).toBe(3);
+  });
+
   it("drops a row once every tile in it is gone", () => {
-    const { state, rowsRemoved } = commitSelection(stateWith(boardOf([4, 6, 0], [1, 3, 5])), [0, 1]);
+    const { state, rowsRemoved } = commitSelection(
+      stateWith(boardOf([4, 6, 0], [1, 3, 5]), { config: { ...PLAIN, keepBoard: false } }),
+      [0, 1],
+    );
     expect(rowsRemoved).toBe(1);
     expect(state.board.cells.map((c) => c.value)).toEqual([1, 3, 5]);
   });
@@ -163,6 +180,49 @@ describe("undo", () => {
   it("keeps no history at all in the modes that cannot take a move back", () => {
     const start = stateWith(rowOf(4, 6, 9, 1), { config: { ...PLAIN, undos: 0 } });
     expect(commitSelection(start, [0, 1]).state.previous).toBeUndefined();
+  });
+});
+
+describe("splitTile", () => {
+  const splittable = (over: Partial<GameState> = {}) =>
+    stateWith(boardOf([5, 5, 9, 1], [0, 0, 0, 0]), {
+      config: { ...PLAIN, splits: 2, undos: 0 },
+      ...over,
+    });
+
+  it("breaks a block into pieces that add up to the same thing", () => {
+    const before = splittable();
+    const after = splitTile(before, 0, 12345);
+    const total = (state: GameState) =>
+      state.board.cells.filter((c) => !c.cleared).reduce((sum, c) => sum + c.value, 0);
+    expect(after).not.toBe(before);
+    expect(total(after)).toBe(total(before));
+    expect(aliveCount(after.board)).toBeGreaterThan(aliveCount(before.board));
+    expect(after.splitsLeft).toBe(1);
+  });
+
+  it("puts the pieces in squares that have already been cleared", () => {
+    const before = splittable();
+    const after = splitTile(before, 0, 12345);
+    // The second row was cleared to start with; that is the only room there is.
+    expect(after.board.cells).toHaveLength(before.board.cells.length);
+  });
+
+  it("leaves the board still emptiable, whatever the roll", () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const after = splitTile(splittable(), 0, seed * 7919);
+      const counts = valueCounts(after.board) as number[];
+      expect(canEmpty(counts), `seed ${seed}`).toBe(true);
+    }
+  });
+
+  it("refuses a block worth one, and refuses once the item is spent", () => {
+    const ones = stateWith(boardOf([1, 9, 4, 6], [0, 0, 0, 0]), {
+      config: { ...PLAIN, splits: 1, undos: 0 },
+    });
+    expect(splitTile(ones, 0, 7)).toBe(ones); // a 1 has nothing to break into
+    const spent = splittable({ splitsLeft: 0 });
+    expect(splitTile(spent, 0, 7)).toBe(spent);
   });
 });
 

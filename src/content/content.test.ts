@@ -51,8 +51,9 @@ describe("stage curve", () => {
       const next = stageConfig(stage);
       expect(next.width * next.rows).toBeGreaterThanOrEqual(prev.width * prev.rows);
       expect(next.hints).toBeLessThanOrEqual(prev.hints);
-      expect(next.groupWeights[0]!).toBeGreaterThanOrEqual(prev.groupWeights[0]!);
-      expect(next.groupWeights[3]!).toBeLessThanOrEqual(prev.groupWeights[3]!);
+      // 1s get rarer and 9s commoner, every stage without exception.
+      expect(next.digitWeights![1]!).toBeLessThanOrEqual(prev.digitWeights![1]!);
+      expect(next.digitWeights![9]!).toBeGreaterThanOrEqual(prev.digitWeights![9]!);
     }
   });
 
@@ -78,7 +79,7 @@ describe("stage curve", () => {
         next.hints !== prev.hints ||
         next.undos !== prev.undos ||
         next.starTargets.some((t, tier) => t !== prev.starTargets[tier]) ||
-        next.groupWeights.some((weight, i) => weight !== prev.groupWeights[i]);
+        next.digitWeights!.some((weight, i) => weight !== prev.digitWeights![i]);
       expect(changed, `stages plateau between checkpoint ${i - 1} and ${i}`).toBe(true);
     }
   });
@@ -89,7 +90,10 @@ describe("stage curve", () => {
     expect(last.rows).toBe(11);
     expect(last.hints).toBe(0);
     expect(last.undos).toBe(1);
-    expect(last.groupWeights[0]).toBeGreaterThan(last.groupWeights[3]!);
+    // The digit histogram is nearly level by the end: as many 9s as 1s, so
+    // long combinations stop being a free ride.
+    const digits = last.digitWeights!.slice(1);
+    expect(Math.max(...digits) - Math.min(...digits)).toBeLessThan(3);
   });
 
   it("deals a playable opening board on every stage", () => {

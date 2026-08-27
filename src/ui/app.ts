@@ -1,25 +1,27 @@
 import { aliveCount } from "../core/board";
-import { commitSelection, newGame, stars, tick, undo, useHint } from "../core/game";
+import { canSplit, commitSelection, newGame, splitTile, tick, undo, useHint } from "../core/game";
 import type { GameState } from "../core/game";
 import { isSelectionValid } from "../core/rules";
 import type { GameMode, RunConfig } from "../core/types";
 import { TOTAL_STAGES, chapterFor, isChapterFinale } from "../content/chapters";
+import { artFor, plateFor } from "../content/gallery";
 import type { Chapter } from "../content/chapters";
 import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
 import { BoardView } from "./boardView";
 import { AppStateMachine } from "./appStateMachine";
-import { el, starLine } from "./dom";
+import { el } from "./dom";
 import { Hud } from "./screens/hud";
 import { Overlay } from "./screens/overlay";
 import { StoryScreen } from "./screens/storyScreen";
-import { RecordsScreen } from "./screens/recordsScreen";
+import { GalleryScreen } from "./screens/galleryScreen";
 import { TitleScreen } from "./screens/titleScreen";
 import { TutorialScreen } from "./screens/tutorialScreen";
 import {
   loadDaily,
   loadProgress,
   loadSettings,
-  recordStageStars,
+  collectPlate,
+  totalCollected,
   saveDaily,
   saveProgress,
   saveSettings,
@@ -32,13 +34,15 @@ const RULES_TEXT = `숫자를 골라 합이 <b>정확히 10</b>이 되면 지워
 <b>어느 칸이든 상관없습니다.</b> 멀리 떨어져 있어도, 사이에 무엇이 있어도 함께 고를 수 있습니다.
 같은 숫자끼리 지우는 규칙은 없습니다. 3+3은 6이라 지워지지 않아요.`;
 
-type Screen = "splash" | "title" | "game" | "story" | "tutorial" | "records";
+type Screen = "splash" | "title" | "game" | "story" | "tutorial" | "gallery";
 
 /** Owns the run in progress and moves between screens. */
 export class App {
   private state: GameState;
   private daily: DailyStats;
   private progress: Progress;
+  /** Whether the split item is waiting for a block to be picked. */
+  private splitArmed = false;
   private settings: Settings;
   private readonly flow = new AppStateMachine();
 
@@ -48,7 +52,7 @@ export class App {
   private readonly story = new StoryScreen();
   private readonly title: TitleScreen;
   private readonly tutorial = new TutorialScreen();
-  private readonly records: RecordsScreen;
+  private readonly gallery: GalleryScreen;
 
   private frame: number | undefined;
   private lastFrameMs = 0;
@@ -60,7 +64,7 @@ export class App {
     game: el("screen-game"),
     story: el("screen-story"),
     tutorial: el("screen-tutorial"),
-    records: el("screen-records"),
+    gallery: el("screen-gallery"),
   };
 
   constructor() {
@@ -74,6 +78,7 @@ export class App {
       grid: el("board"),
       isValid: (selection) => isSelectionValid(this.state.board, selection),
       onCommit: (selection) => this.commit(selection),
+      onSplit: (index) => this.onSplit(index),
       onSelectionChange: (sum) => this.hud.setSelectionSum(sum),
     });
     this.title = new TitleScreen(
@@ -82,13 +87,14 @@ export class App {
       () => this.showSettings(),
     );
 
-    this.records = new RecordsScreen(() => this.showTitle());
+    this.gallery = new GalleryScreen(() => this.showTitle());
     el<HTMLButtonElement>("btn-back").addEventListener("click", () => this.showTitle());
     el<HTMLButtonElement>("btn-pause").addEventListener("click", () => this.pause());
     el<HTMLButtonElement>("btn-title-tutorial").addEventListener("click", () => this.showTutorial());
-    el<HTMLButtonElement>("btn-title-records").addEventListener("click", () => this.showRecords());
+    el<HTMLButtonElement>("btn-title-gallery").addEventListener("click", () => this.showGallery());
     this.hud.hintBtn.addEventListener("click", () => this.onHint());
     this.hud.undoBtn.addEventListener("click", () => this.onUndo());
+    this.hud.splitBtn.addEventListener("click", () => this.armSplit());
     document.addEventListener("visibilitychange", () => {
       if (document.hidden && this.flow.current === "inGame") this.pause();
     });
@@ -142,11 +148,11 @@ export class App {
     });
   }
 
-  private showRecords(): void {
+  private showGallery(): void {
     this.progress = loadProgress();
-    this.records.render(this.progress);
-    this.flow.enter("records");
-    this.show("records");
+    this.gallery.render(this.progress);
+    this.flow.enter("gallery");
+    this.show("gallery");
   }
 
   private startMode(mode: GameMode): void {
@@ -169,6 +175,7 @@ export class App {
     this.state = newGame(config);
     this.flow.enter("inGame");
     this.show("game");
+    this.view.setBackdrop(config.mode === "story" ? artFor(config.stage ?? 1) : null);
     this.view.setBoard(this.state.board);
     this.view.setInteractive(true);
     this.render();
@@ -250,6 +257,40 @@ export class App {
     this.render();
   }
 
+  /**
+   * Arms the split item: the next block tapped is broken up.
+   *
+   * Tapping the button again puts it away, and so does using it — one tap of
+   * the item buys one break, never a mode the player can forget they are in.
+   */
+  private armSplit(): void {
+    if (!canSplit(this.state)) return;
+    this.splitArmed = !this.splitArmed;
+    this.view.setSplitting(this.splitArmed);
+    this.hud.splitBtn.classList.toggle("armed", this.splitArmed);
+    this.hud.setNotice(this.splitArmed ? "나눌 블록을 하나 고르세요" : null);
+  }
+
+  private onSplit(index: number): void {
+    const next = splitTile(this.state, index);
+    this.splitArmed = false;
+    this.view.setSplitting(false);
+    this.hud.splitBtn.classList.remove("armed");
+    this.hud.setNotice(null);
+    if (next === this.state) {
+      this.view.reject([index]);
+      this.hud.setNotice("이 블록은 나눌 수 없어요");
+      window.setTimeout(() => {
+        this.hud.setNotice(null);
+        this.render();
+      }, 1400);
+      return;
+    }
+    this.state = next;
+    this.view.setBoard(this.state.board);
+    this.render();
+  }
+
   private onHint(): void {
     if (this.state.hintsLeft === 0 || this.state.status !== "playing") return;
     const { state, indices } = useHint(this.state);
@@ -317,7 +358,7 @@ export class App {
         });
         return;
       }
-      this.finishStage(config.stage ?? 1, stars(this.state));
+      this.finishStage(config.stage ?? 1);
       return;
     }
     if (config.mode === "timeAttack") {
@@ -335,25 +376,32 @@ export class App {
     });
   }
 
-  /** Grades a stuck board the player has decided not to take back. */
+  /** Settles a stuck board the player has decided not to take back. */
   private giveUp(): void {
     this.overlay.close();
-    this.finishStage(this.state.config.stage ?? 1, stars(this.state));
+    this.finishStage(this.state.config.stage ?? 1);
   }
 
-  /** Grades the stage, unlocks the next one, then plays any chapter beat. */
-  private finishStage(stage: number, earned: number): void {
+  /**
+   * Settles the stage.
+   *
+   * There is nothing to grade any more: the board is either empty, and the
+   * picture behind it is the player's, or it is not and the stage is unfinished.
+   * Every board can be emptied, so an unfinished one is always worth another go.
+   */
+  private finishStage(stage: number): void {
     const left = aliveCount(this.state.board);
-    if (earned === 0) {
+    if (left > 0) {
       this.overlay.open({
         title: "아쉬워요",
-        body: `${starLine(0)}\n${left}칸이 남았어요. 이 판은 전부 지울 수 있었어요.`,
+        body: `${left}칸이 남았어요.\n이 판은 전부 지울 수 있어요 — 한 번 더 해볼까요?`,
         primary: { label: "다시 도전", action: () => this.startStage(stage) },
+        secondary: { label: "모드 선택", action: () => this.showTitle() },
       });
       return;
     }
 
-    this.progress = recordStageStars(this.progress, stage, earned);
+    this.progress = collectPlate(this.progress, stage);
     if (stage >= this.progress.stage) {
       this.progress = { ...this.progress, stage: Math.min(stage + 1, TOTAL_STAGES + 1) };
     }
@@ -369,32 +417,27 @@ export class App {
       this.playChapter(chapter, stage);
       return;
     }
-    this.showStageResult(stage, earned);
+    this.showStageResult(stage);
   }
 
-  private showStageResult(stage: number, earned: number): void {
-    const left = aliveCount(this.state.board);
-    const how =
-      left > 0
-        ? `${left}칸 남음 · 전부 지우면 별이 늘어요`
-        : earned === 3
-          ? "혼자 힘으로 전부 지웠어요"
-          : "전부 지웠어요 · 도움 없이 하면 별 셋";
-    const summary = `${starLine(earned)}\n${how}\n점수 ${this.state.score}점`;
+  private showStageResult(stage: number): void {
+    const plate = plateFor(stage);
+    const held = totalCollected(this.progress);
+    const body = `${plate.title}\n모은 그림 ${held} / ${TOTAL_STAGES}\n점수 ${this.state.score}점`;
     if (stage >= TOTAL_STAGES) {
       this.overlay.open({
-        title: "완주!",
-        body: `${summary}\n모든 스테이지를 끝냈습니다.`,
-        primary: { label: "모드 선택", action: () => this.showTitle() },
+        title: "그림을 모두 모았어요",
+        body: `${body}\n99장이 전부 갤러리에 있습니다.`,
+        primary: { label: "갤러리 보기", action: () => this.showGallery() },
+        secondary: { label: "모드 선택", action: () => this.showTitle() },
       });
       return;
     }
     this.overlay.open({
-      title: earned === 3 ? "완벽해요!" : "스테이지 클리어",
-      body: summary,
+      title: "그림을 얻었어요",
+      body,
       primary: { label: "다음 스테이지", action: () => this.startStage(stage + 1) },
-      secondary:
-        earned < 3 ? { label: "다시 도전", action: () => this.startStage(stage) } : undefined,
+      secondary: { label: "갤러리 보기", action: () => this.showGallery() },
     });
   }
 

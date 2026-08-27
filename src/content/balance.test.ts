@@ -56,10 +56,12 @@ describe("progressive story deal", () => {
   it("makes the deal itself stricter as the board grows", () => {
     const first = stageConfig(1);
     const last = stageConfig(TOTAL_STAGES);
-    // Rigid pairs at the end, loose groups at the start: this is the dial that
-    // actually decides whether a careless line can still empty the board.
-    expect(last.groupWeights[0]).toBeGreaterThan(first.groupWeights[0]!);
-    expect(last.groupWeights[3]).toBeLessThan(first.groupWeights[3]!);
+    // A level histogram at the end, a small-heavy one at the start: this is
+    // the dial that decides whether a careless line can still empty the board.
+    // It sets the group sizes too — five tiles adding to ten can only be 1s
+    // and 2s, so wanting fewer 1s deals more pairs without being asked.
+    expect(last.digitWeights![1]).toBeLessThan(first.digitWeights![1]!);
+    expect(last.digitWeights![9]).toBeGreaterThan(first.digitWeights![9]!);
     expect(last.hints).toBeLessThan(first.hints);
     expect(last.undos).toBeLessThan(first.undos);
   });

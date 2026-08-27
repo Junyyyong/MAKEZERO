@@ -1,4 +1,4 @@
-import { EASY_GROUPS, HARD_GROUPS, evenDeck } from "../core/board";
+import { EASY_GROUPS, GENTLE_DIGITS, LEVEL_DIGITS, evenDeck } from "../core/board";
 import { TOTAL_STAGES } from "./chapters";
 import type { RunConfig } from "../core/types";
 
@@ -27,8 +27,8 @@ import type { RunConfig } from "../core/types";
  * at every size and every mix. What changes is how easily a wrong move throws
  * it away.
  */
-const EASIEST = { rows: 4, hints: 5, undos: 5, nearly: 0.16 };
-const HARDEST = { rows: 11, hints: 0, undos: 1, nearly: 0.14 };
+const EASIEST = { rows: 4, hints: 5, undos: 5, splits: 3, nearly: 0.16 };
+const HARDEST = { rows: 11, hints: 0, undos: 1, splits: 1, nearly: 0.14 };
 
 export const BOARD_WIDTH = 9;
 export const DECK = evenDeck(9);
@@ -44,9 +44,12 @@ export function stageConfig(stage: number): RunConfig {
     mode: "story",
     width: BOARD_WIDTH,
     rows,
-    groupWeights: EASY_GROUPS.map((easy, i) => lerp(easy, HARD_GROUPS[i] ?? easy)),
+    groupWeights: EASY_GROUPS,
+    digitWeights: GENTLE_DIGITS.map((gentle, i) => lerp(gentle, LEVEL_DIGITS[i] ?? gentle)),
+    keepBoard: true,
     hints: Math.round(lerp(EASIEST.hints, HARDEST.hints)),
     undos: Math.round(lerp(EASIEST.undos, HARDEST.undos)),
+    splits: Math.round(lerp(EASIEST.splits, HARDEST.splits)),
     /*
      * Only the first of these is a leftover target any more, and it is the
      * consolation mark: a board this close counts as passed so the run never
@@ -67,6 +70,7 @@ export const TIME_ATTACK_CONFIG: RunConfig = {
   groupWeights: EASY_GROUPS,
   hints: 0,
   undos: 0,
+  splits: 0,
   starTargets: [0, 0, 0],
   timeLimitMs: 60_000,
   autoRefill: true,
@@ -84,6 +88,7 @@ export const ENDLESS_CONFIG: RunConfig = {
   groupWeights: [3, 3, 2, 1],
   hints: 3,
   undos: 0,
+  splits: 0,
   starTargets: [0, 0, 0],
   spawn: {
     initialFill: 0.45,

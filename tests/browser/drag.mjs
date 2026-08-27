@@ -37,7 +37,7 @@ const ok = (m) => console.log("ok - " + m);
 
 const PROGRESS = {
   stage: 1, bestStory: 0, bestTimeAttack: 0, bestEndless: 0,
-  seenChapters: ["opening"], stageStars: [], tutorialDone: true,
+  seenChapters: ["opening"], collected: [], tutorialDone: true,
 };
 
 const browser = await chromium.launch(CHROME ? { executablePath: CHROME } : {});

@@ -46,6 +46,22 @@ export interface RunConfig {
   rows: number;
   /** Relative chance of dealing a group of 2, 3, 4 or 5 tiles. */
   groupWeights: readonly number[];
+  /**
+   * How common each digit should be, 1 to 9. Overrides `groupWeights`.
+   *
+   * Group sizes follow from it rather than the other way round: five tiles
+   * that add to ten can only be 1s and 2s, so asking for few 1s deals mostly
+   * pairs on its own. See `createWeightedBoard`.
+   */
+  digitWeights?: readonly number[];
+  /**
+   * Cleared squares stay where they are instead of the rows closing up.
+   *
+   * Story needs this because there is a picture behind the board: a row that
+   * collapsed would drag the holes out of line with the part of the picture
+   * they had uncovered.
+   */
+  keepBoard?: boolean;
   /** How many of each digit to deal, indexed by value. Overrides groupWeights. */
   deck?: readonly number[];
   hints: number;
@@ -59,6 +75,15 @@ export interface RunConfig {
    * a late stage hard.
    */
   undos: number;
+  /**
+   * Story only: how many blocks may be broken into smaller ones.
+   *
+   * A split keeps the total exactly — a 5 becomes 3 and 2, or 1, 1, 1 and 2 —
+   * so it never changes what the board adds up to. What it changes is how
+   * rigid the board is: a 9 can only ever pair with a 1, but three 3s can go
+   * almost anywhere. How it breaks is not the player's choice.
+   */
+  splits: number;
   /**
    * Most tiles that may remain for one, two and three stars.
    *

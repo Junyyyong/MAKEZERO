@@ -19,6 +19,8 @@ export interface BoardViewOptions {
   isValid(selection: readonly number[]): boolean;
   /** Fired when a selection should actually be played. */
   onCommit(selection: readonly number[]): void;
+  /** Fired when a block is chosen to be broken up, while splitting is armed. */
+  onSplit?(index: number): void;
   /** Keeps the bottom sum indicator in sync with taps and drags. */
   onSelectionChange?(sum: number): void;
   /**
@@ -46,6 +48,8 @@ export class BoardView {
   private bustTimer: number | undefined;
   private hintTimer: number | undefined;
   private dragging = false;
+  /** While armed, the next tap breaks a block up instead of selecting it. */
+  private splitting = false;
   /** Where the pointer was last seen, so a drag can fill in what it skipped. */
   private lastPoint: { x: number; y: number } | null = null;
   /** The tile size the board was last laid out at, in CSS pixels. */
@@ -89,6 +93,20 @@ export class BoardView {
     }
   }
 
+  /**
+   * Puts a picture behind the tiles, or takes it away.
+   *
+   * Cleared squares go transparent in this mode, so uncovering a block
+   * uncovers the part of the picture it was standing on. The background is
+   * clipped to the content box so it lines up with the tile grid rather than
+   * with the frame around it.
+   */
+  setBackdrop(image: string | null): void {
+    const { grid } = this.options;
+    grid.classList.toggle("reveal", image !== null);
+    grid.style.backgroundImage = image ?? "";
+  }
+
   /** Starts on a new board: nothing selected, measured from scratch. */
   setBoard(board: Board): void {
     this.board = board;
@@ -118,9 +136,18 @@ export class BoardView {
     this.render();
   }
 
+  /** Arms or disarms the split item. Arming clears any selection in progress. */
+  setSplitting(on: boolean): void {
+    if (this.splitting === on) return;
+    this.splitting = on;
+    this.options.grid.classList.toggle("splitting", on);
+    if (on) this.clearSelection();
+  }
+
   setInteractive(interactive: boolean): void {
     this.interactive = interactive;
     if (!interactive) {
+      this.setSplitting(false);
       this.dragging = false;
       this.gestureSettled = false;
       this.selection = [];
@@ -202,6 +229,10 @@ export class BoardView {
     const i = this.tileIndexFrom(event.target);
     if (i === null) return;
     event.preventDefault();
+    if (this.splitting) {
+      this.options.onSplit?.(i);
+      return;
+    }
     this.options.grid.setPointerCapture(event.pointerId);
     this.dragging = true;
     this.gestureSettled = false;
