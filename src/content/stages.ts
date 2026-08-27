@@ -3,13 +3,13 @@ import { TOTAL_STAGES } from "./chapters";
 import type { RunConfig } from "../core/types";
 
 /**
- * Story stages grow from a compact opening board to the 8x9 theatre board in
- * the visual reference. More tiles alone would create more possible matches,
- * so the deal also shifts from flexible long groups toward rigid pairs while
- * hints disappear and the star targets tighten.
+ * Story stages keep nine columns so the tiles stay large and consistent with
+ * the supplied layout. Difficulty adds rows downward (leaving the rest of the
+ * screen as a character stage), shifts flexible groups toward rigid pairs,
+ * removes hints and tightens the star targets.
  */
-const EASIEST = { width: 6, rows: 7, hints: 4, stars: [0.34, 0.18, 0.08] };
-const HARDEST = { width: 8, rows: 9, hints: 1, stars: [0.24, 0.12, 0.03] };
+const EASIEST = { width: 9, rows: 5, hints: 4, stars: [0.34, 0.18, 0.08] };
+const HARDEST = { width: 9, rows: 9, hints: 1, stars: [0.24, 0.12, 0.03] };
 
 export const BOARD_WIDTH = 9;
 export const DECK = evenDeck(9);

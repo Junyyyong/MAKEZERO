@@ -23,12 +23,12 @@ function play(stage: number, seed: number) {
 }
 
 describe("progressive story deal", () => {
-  it("starts compact and finishes with thirty more tiles", () => {
+  it("starts compact and finishes with four more nine-tile rows", () => {
     const first = stageConfig(1);
     const last = stageConfig(TOTAL_STAGES);
-    expect(first.width * first.rows).toBe(42);
-    expect(last.width * last.rows).toBe(72);
-    expect(last.width * last.rows - first.width * first.rows).toBe(30);
+    expect(first.width * first.rows).toBe(45);
+    expect(last.width * last.rows).toBe(81);
+    expect(last.width * last.rows - first.width * first.rows).toBe(36);
   });
 
   it("deals totals that can be partitioned into clears of ten", () => {
@@ -64,4 +64,3 @@ describe("progressive story deal", () => {
     }
   });
 });
-

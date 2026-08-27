@@ -43,7 +43,6 @@
 
       <!-- ── game ──────────────────────────────────────────────── -->
       <section class="screen game-screen hidden" id="screen-game">
-        <div class="bulb-rail" aria-hidden="true"></div>
         <header class="hud">
           <button class="icon-btn" id="btn-back" aria-label="모드 선택으로">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -61,13 +60,14 @@
           <div class="chip" id="chip-right">오늘 <b>0</b></div>
         </div>
 
-        <div class="deco-fans" aria-hidden="true"><span></span><span></span></div>
-
         <div class="timer-bar hidden" id="timer-bar"><span id="timer-fill"></span></div>
 
         <div class="board-wrap" id="board-wrap">
           <div class="board" id="board"></div>
         </div>
+
+        <!-- Future character art lives here. The empty stage is intentional. -->
+        <div class="stage-floor" id="stage-floor" aria-label="캐릭터 무대"></div>
 
         <p class="notice" id="notice" role="status" aria-live="polite"></p>
 

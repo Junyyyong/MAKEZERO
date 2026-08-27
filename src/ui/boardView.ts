@@ -264,6 +264,9 @@ export class BoardView {
     const { width } = this.board;
     const rows = Math.ceil(this.board.cells.length / width);
     if (rows === 0) return;
+    // The game screen uses this ratio to size the board from its width. This
+    // keeps nine-column tiles the same size while story difficulty adds rows.
+    this.options.wrap.style.setProperty("--board-ratio", `${width} / ${rows}`);
     const gridStyles = getComputedStyle(this.options.grid);
 
     const box = this.options.wrap.getBoundingClientRect();

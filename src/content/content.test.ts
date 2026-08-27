@@ -50,9 +50,9 @@ describe("stage curve", () => {
     }
   });
 
-  it("grows the story board from 6x7 to the reference's 8x9 composition", () => {
-    expect(stageConfig(1)).toMatchObject({ width: 6, rows: 7 });
-    expect(stageConfig(TOTAL_STAGES)).toMatchObject({ width: 8, rows: 9 });
+  it("keeps nine columns and grows the story board from five to nine rows", () => {
+    expect(stageConfig(1)).toMatchObject({ width: 9, rows: 5 });
+    expect(stageConfig(TOTAL_STAGES)).toMatchObject({ width: 9, rows: 9 });
     for (const stage of everyStage) {
       const config = stageConfig(stage);
       expect(config.deck).toBeUndefined();
@@ -78,7 +78,7 @@ describe("stage curve", () => {
 
   it("reaches its hardest settings exactly at the final stage", () => {
     const last = stageConfig(TOTAL_STAGES);
-    expect(last.width).toBe(8);
+    expect(last.width).toBe(9);
     expect(last.rows).toBe(9);
     expect(last.hints).toBe(1);
     expect(last.groupWeights[0]).toBeGreaterThan(last.groupWeights[3]!);

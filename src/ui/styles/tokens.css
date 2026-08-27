@@ -1,35 +1,27 @@
-/*
- * Black-box theatre: warm marquee bulbs, polished brass and burgundy velvet.
- * Shared colours stay here so every screen belongs to the same stage.
- */
 :root {
-  --night: #050408;
-  --house-deep: #09070a;
-  --house: #110b0e;
-  --house-lit: #211318;
-  --velvet: #3a001f;
-  --velvet-deep: #19000e;
-
-  --brass-dark: #8e5311;
-  --brass: #d79224;
-  --brass-bright: #ffc85a;
-  --marquee: #fff0ba;
-  --bulb: #fff7d0;
-  --spotlight: #fff6dd;
-
-  --stage: #08070a;
-  --stage-edge: #000;
-  --tile-face: #fff8e8;
-  --tile-face-low: #f1dfba;
-  --tile-ink: #121013;
-  --tile-sel: #ffe7a0;
-
-  --ring-sel: var(--brass-bright);
-  --ring-ok: #77e0ab;
-  --ring-bad: #ff607a;
-
-  --ink: #fff8e8;
-  --ink-soft: #e7d7b6;
+  --night: #120426;
+  --house-deep: #16062f;
+  --house: #241044;
+  --house-lit: #3a2062;
+  --velvet: #32135a;
+  --velvet-deep: #18062e;
+  --brass-dark: #a56d20;
+  --brass: #d99b36;
+  --brass-bright: #f5bd4f;
+  --marquee: #ffd774;
+  --bulb: #fff2b1;
+  --spotlight: #6b4498;
+  --stage: #210d40;
+  --stage-edge: #10031f;
+  --tile-face: #f8edd5;
+  --tile-face-low: #ead8b6;
+  --tile-ink: #3d1971;
+  --tile-sel: #fff1bd;
+  --ring-sel: #f3b846;
+  --ring-ok: #70d8a4;
+  --ring-bad: #ff6684;
+  --ink: #fff7e7;
+  --ink-soft: #d9c8ea;
   --gap: 2px;
 }
 
@@ -47,7 +39,7 @@ body {
 body {
   font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
   color: var(--ink);
-  background: #030205;
+  background: var(--night);
   overscroll-behavior: none;
   user-select: none;
 }
@@ -57,33 +49,18 @@ body {
   height: 100dvh;
   overflow: hidden;
   background:
-    radial-gradient(90% 42% at 50% 5%, rgba(255, 193, 75, 0.08), transparent 62%),
-    linear-gradient(90deg, rgba(70, 0, 35, 0.34), transparent 13% 87%, rgba(70, 0, 35, 0.34)),
-    linear-gradient(180deg, #050407 0%, #0b080b 60%, #17000d 100%);
-}
-
-#app::before,
-#app::after {
-  position: absolute;
-  z-index: 0;
-  top: 0;
-  bottom: 0;
-  width: 14%;
-  content: "";
-  opacity: 0.45;
-  pointer-events: none;
-  background:
-    repeating-linear-gradient(87deg, transparent 0 14px, rgba(255, 255, 255, 0.025) 15px 17px),
-    linear-gradient(90deg, var(--velvet-deep), var(--velvet), transparent);
+    radial-gradient(70% 34% at 50% 78%, rgba(105, 64, 151, 0.22), transparent 72%),
+    repeating-linear-gradient(91deg, transparent 0 7px, rgba(255, 255, 255, 0.018) 8px 9px),
+    linear-gradient(180deg, #2b1550 0%, #1c0939 58%, #13052b 100%);
 }
 
 #app::before {
-  left: 0;
-}
-
-#app::after {
-  right: 0;
-  transform: scaleX(-1);
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(10, 1, 23, 0.25), transparent 16% 84%, rgba(10, 1, 23, 0.25));
 }
 
 .screen {
@@ -103,4 +80,3 @@ body {
 .round-btn.hidden {
   display: none;
 }
-
