@@ -90,6 +90,30 @@ export function makeGroup(rng: Rng, parts: number): number[] {
 }
 
 /**
+ * Deals an exact set of tiles — so many 1s, so many 2s — shuffled into place.
+ *
+ * The counts are the puzzle. Nine of each digit is 81 tiles totalling 405, and
+ * since every clear removes exactly ten, that last digit never moves: one 5
+ * always survives. See docs/DECISIONS.md.
+ */
+export function createDeck(rng: Rng, width: number, counts: readonly number[]): Board {
+  const values: number[] = [];
+  for (let v = MIN_VALUE; v <= MAX_VALUE; v++) {
+    for (let n = 0; n < (counts[v] ?? 0); n++) values.push(v);
+  }
+  for (let i = values.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [values[i], values[j]] = [values[j]!, values[i]!];
+  }
+  return { width, cells: values.map((value) => ({ value, cleared: false })) };
+}
+
+/** Nine of every digit: 81 tiles on a 9x9 board. */
+export function evenDeck(perDigit = 9): number[] {
+  return Array.from({ length: MAX_VALUE + 1 }, (_, v) => (v === 0 ? 0 : perDigit));
+}
+
+/**
  * Deals a board made entirely of groups that add up to ten, then scatters them.
  *
  * A board of loose random numbers can never be cleared: every clear removes

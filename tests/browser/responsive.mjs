@@ -66,6 +66,7 @@ async function inspect(page) {
       gridTop: g.top, gridBottom: g.bottom,
       wrapTop: w.top, wrapBottom: w.bottom,
       tile: tile ? tile.getBoundingClientRect().width : 0,
+      atFloor: tile ? tile.getBoundingClientRect().width <= 16.5 : false,
       cols: Number(grid.dataset.cols),
       scrolls: wrap.scrollHeight > wrap.clientHeight + 1,
       docOverflow: document.documentElement.scrollHeight - document.documentElement.clientHeight,
@@ -78,6 +79,14 @@ async function inspect(page) {
 async function check(page, label, mode) {
   const m = await inspect(page);
   const room = 1.5; // sub-pixel rounding
+
+  // A board that cannot fit even at the smallest usable tile falls back to
+  // scrolling rather than shrinking further. Only landscape reaches this, and
+  // the Android build is locked to portrait.
+  if (m.atFloor && m.scrolls) {
+    ok(`${label} / ${mode}: too short to fit — scrolling, tiles at the floor`);
+    return true;
+  }
   if (m.gridBottom > m.wrapBottom + room || m.gridTop < m.wrapTop - room) {
     fail(`${label} / ${mode}: board is clipped (grid ${m.gridTop.toFixed(0)}-${m.gridBottom.toFixed(0)} vs frame ${m.wrapTop.toFixed(0)}-${m.wrapBottom.toFixed(0)})`);
     return false;

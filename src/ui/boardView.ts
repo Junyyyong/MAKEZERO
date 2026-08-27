@@ -274,9 +274,20 @@ export class BoardView {
       return;
     }
 
-    const gap = parseFloat(gridStyles.gap) || 0;
-    const padX = parseFloat(gridStyles.paddingLeft) + parseFloat(gridStyles.paddingRight);
-    const padY = parseFloat(gridStyles.paddingTop) + parseFloat(gridStyles.paddingBottom);
+    const px = (value: string) => parseFloat(value) || 0;
+    const gap = px(gridStyles.gap);
+    // The frame's own border counts too: getBoundingClientRect measures the
+    // border box, so leaving it out overshoots by the border on every side.
+    const padX =
+      px(gridStyles.paddingLeft) +
+      px(gridStyles.paddingRight) +
+      px(gridStyles.borderLeftWidth) +
+      px(gridStyles.borderRightWidth);
+    const padY =
+      px(gridStyles.paddingTop) +
+      px(gridStyles.paddingBottom) +
+      px(gridStyles.borderTopWidth) +
+      px(gridStyles.borderBottomWidth);
 
     const byWidth = (box.width - padX - gap * (width - 1)) / width;
     const byHeight = (box.height - padY - gap * (rows - 1)) / rows;

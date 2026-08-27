@@ -1,4 +1,12 @@
-import { aliveCount, collapseRows, createBoard, createSparseBoard, emptyIndices, placeGroup } from "./board";
+import {
+  aliveCount,
+  collapseRows,
+  createBoard,
+  createDeck,
+  createSparseBoard,
+  emptyIndices,
+  placeGroup,
+} from "./board";
 import { findHint, hasAnyMove } from "./solver";
 import { mulberry32, randomSeed } from "./rng";
 import { evaluateSelection } from "./rules";
@@ -35,6 +43,7 @@ const MAX_DEAL_ATTEMPTS = 20;
 
 function deal(config: RunConfig, rngSeed: number): Board {
   const rng = mulberry32(rngSeed);
+  if (config.deck) return createDeck(rng, config.width, config.deck);
   return config.spawn
     ? createSparseBoard(rng, config.width, config.rows, config.spawn.initialFill, config.groupWeights)
     : createBoard(rng, config.width, config.rows, config.groupWeights);

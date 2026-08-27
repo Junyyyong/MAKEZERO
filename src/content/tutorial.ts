@@ -67,6 +67,6 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
       [0, 2, 0, 2, 0],
     ],
     instruction: "많이 이을수록 점수가 큽니다.\n다섯 개를 모두 눌러보세요.",
-    reward: "2개 10점 · 3개 30점 · 4개 70점 · 5개 150점!",
+    reward: "2개 10점 · 3개 20점 · 4개 40점 · 5개 80점!",
   },
 ];

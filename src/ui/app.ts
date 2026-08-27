@@ -19,7 +19,7 @@ import type { DailyStats, Progress } from "./storage";
 
 const RULES_TEXT = `숫자를 골라 합이 <b>정확히 10</b>이 되면 지워집니다.
 2개부터 5개까지 고를 수 있고, 많이 고를수록 점수가 큽니다.
-<span class="rule-num">2개 10점 · 3개 30점<br />4개 70점 · 5개 150점</span>
+<span class="rule-num">2개 10점 · 3개 20점<br />4개 40점 · 5개 80점</span>
 <b>어느 칸이든 상관없습니다.</b> 멀리 떨어져 있어도, 사이에 무엇이 있어도 함께 고를 수 있습니다.
 같은 숫자끼리 지우는 규칙은 없습니다. 3+3은 6이라 지워지지 않아요.`;
 

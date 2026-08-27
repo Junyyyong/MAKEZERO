@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">MAKEZERO</string>
-    <string name="title_activity_main">MAKEZERO</string>
+    <string name="app_name">TAP to TEN</string>
+    <string name="title_activity_main">TAP to TEN</string>
     <string name="package_name">io.github.junyyyong.makezero</string>
     <string name="custom_url_scheme">io.github.junyyyong.makezero</string>
 </resources>

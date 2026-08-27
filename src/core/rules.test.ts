@@ -24,8 +24,8 @@ describe("evaluateSelection", () => {
   });
 
   it("accepts repeated values inside a chain", () => {
-    expect(evaluateSelection(boardOf([1, 1, 1, 7]), [0, 1, 2, 3])).toEqual({ ok: true, score: 70 });
-    expect(evaluateSelection(boardOf([1, 1, 8]), [0, 1, 2])).toEqual({ ok: true, score: 30 });
+    expect(evaluateSelection(boardOf([1, 1, 1, 7]), [0, 1, 2, 3])).toEqual({ ok: true, score: 40 });
+    expect(evaluateSelection(boardOf([1, 1, 8]), [0, 1, 2])).toEqual({ ok: true, score: 20 });
   });
 
   it("refuses two tiles that merely show the same number", () => {
@@ -55,15 +55,15 @@ describe("evaluateSelection", () => {
 
   it("awards the full curve by tile count", () => {
     expect(evaluateSelection(boardOf([4, 6]), [0, 1]).score).toBe(10);
-    expect(evaluateSelection(boardOf([4, 3, 3]), [0, 1, 2]).score).toBe(30);
-    expect(evaluateSelection(boardOf([1, 2, 3, 4]), [0, 1, 2, 3]).score).toBe(70);
-    expect(evaluateSelection(boardOf([1, 2, 3, 2, 2]), [0, 1, 2, 3, 4]).score).toBe(150);
+    expect(evaluateSelection(boardOf([4, 3, 3]), [0, 1, 2]).score).toBe(20);
+    expect(evaluateSelection(boardOf([1, 2, 3, 4]), [0, 1, 2, 3]).score).toBe(40);
+    expect(evaluateSelection(boardOf([1, 2, 3, 2, 2]), [0, 1, 2, 3, 4]).score).toBe(80);
   });
 
   it("does not care what order the tiles were picked in", () => {
     const chain = boardOf([1, 2, 3, 4]);
-    expect(evaluateSelection(chain, [3, 1, 0, 2]).score).toBe(70);
-    expect(evaluateSelection(chain, [0, 1, 2, 3]).score).toBe(70);
+    expect(evaluateSelection(chain, [3, 1, 0, 2]).score).toBe(40);
+    expect(evaluateSelection(chain, [0, 1, 2, 3]).score).toBe(40);
   });
 });
 

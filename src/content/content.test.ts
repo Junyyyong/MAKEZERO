@@ -43,24 +43,19 @@ describe("stage curve", () => {
     for (let stage = 2; stage <= TOTAL_STAGES; stage++) {
       const prev = stageConfig(stage - 1);
       const next = stageConfig(stage);
-      expect(next.width).toBeGreaterThanOrEqual(prev.width);
-      expect(next.rows).toBeGreaterThanOrEqual(prev.rows);
       expect(next.hints).toBeLessThanOrEqual(prev.hints);
-      // Later stages deal more plain pairs, which spreads the values out and
-      // strands the rigid 8s and 9s — that is what makes a board hard.
-      expect(next.groupWeights[0]!).toBeGreaterThanOrEqual(prev.groupWeights[0]!);
+      for (let tier = 0; tier < 3; tier++) {
+        expect(next.starTargets[tier]!).toBeLessThanOrEqual(prev.starTargets[tier]!);
+      }
     }
   });
 
-  it("keeps every board a sane shape for a phone screen", () => {
+  it("deals the same 9x9 deck on every stage", () => {
     for (const stage of everyStage) {
       const config = stageConfig(stage);
-      expect(config.width).toBeGreaterThanOrEqual(5);
-      expect(config.width).toBeLessThanOrEqual(10);
-      expect(config.rows).toBeGreaterThanOrEqual(config.width);
-      // Tiles are square and the board fills the screen, so the shape has to
-      // stay near the phone's own ratio or it ends up a thin ribbon.
-      expect(config.rows / config.width).toBeLessThan(2);
+      expect(config.width).toBe(9);
+      expect(config.rows).toBe(9);
+      expect(config.deck?.slice(1)).toEqual(Array(9).fill(9));
       expect(config.stage).toBe(stage);
       expect(config.mode).toBe("story");
     }
@@ -72,19 +67,16 @@ describe("stage curve", () => {
       const prev = checkpoints[i - 1]!;
       const next = checkpoints[i]!;
       const changed =
-        next.width !== prev.width ||
-        next.rows !== prev.rows ||
         next.hints !== prev.hints ||
-        next.groupWeights[0] !== prev.groupWeights[0];
+        next.starTargets.some((t, tier) => t !== prev.starTargets[tier]);
       expect(changed, `stages plateau between checkpoint ${i - 1} and ${i}`).toBe(true);
     }
   });
 
   it("reaches its hardest settings exactly at the final stage", () => {
     const last = stageConfig(TOTAL_STAGES);
-    expect(last.width).toBe(10);
-    expect(last.rows).toBe(15);
     expect(last.hints).toBe(1);
+    expect(last.starTargets[2]).toBe(1);
   });
 
   it("deals a playable opening board on every stage", () => {
@@ -106,13 +98,11 @@ describe("star targets", () => {
     }
   });
 
-  it("tightens the share of the board allowed to survive, stage by stage", () => {
-    const share = (stage: number, tier: number) => {
-      const c = stageConfig(stage);
-      return c.starTargets[tier]! / (c.width * c.rows);
-    };
+  it("tightens every target from the first stage to the last", () => {
     for (let tier = 0; tier < 3; tier++) {
-      expect(share(TOTAL_STAGES, tier)).toBeLessThan(share(1, tier));
+      expect(stageConfig(TOTAL_STAGES).starTargets[tier]!).toBeLessThan(
+        stageConfig(1).starTargets[tier]!,
+      );
     }
   });
 });

@@ -10,14 +10,14 @@
   font-size: 15px;
   line-height: 1.7;
   white-space: pre-line;
-  color: #ffe9c6;
+  color: var(--ink-soft);
 }
 
 .panel-body .rule-num {
   display: block;
   margin: 4px 0;
   font-weight: 800;
-  color: #ffd27a;
+  color: var(--brass-bright);
 }
 
 .panel-actions {
@@ -47,7 +47,7 @@
 }
 
 .wood-btn.ghost {
-  color: #ffe9c6;
+  color: var(--ink-soft);
   background: rgba(255, 233, 198, 0.12);
   border: 2px solid rgba(255, 233, 198, 0.4);
   box-shadow: none;

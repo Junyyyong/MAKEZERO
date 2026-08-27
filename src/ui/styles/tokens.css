@@ -1,17 +1,39 @@
 /*
- * Palette, reset and the screen frame. A skin change starts here.
+ * Broadway at night: a deep velvet house, warm marquee bulbs, and brass.
+ *
+ * The whole skin lives in these tokens. Every other file reads them, so a new
+ * look means editing this block and nothing else.
  */
 :root {
-  --wood-dark: #4a2f18;
-  --wood-mid: #7a4f24;
-  --wood-light: #b5813f;
-  --tile-face: #f0d5a8;
-  --tile-face-low: #dfbb80;
-  --tile-ink: #6b431c;
+  /* The house */
+  --house-deep: #150b2e;
+  --house: #241247;
+  --house-lit: #3a1d69;
+  --velvet: #2d1550;
+
+  /* Brass and bulbs */
+  --brass: #e8b44c;
+  --brass-bright: #ffd782;
+  --marquee: #ffe9b0;
+  --spotlight: #fff6dd;
+
+  /* The stage floor the tiles sit on */
+  --stage: #1b0f38;
+  --stage-edge: #0e0722;
+
+  /* Tiles: lit boards under the marquee */
+  --tile-face: #f7ecd8;
+  --tile-face-low: #e2d0b2;
+  --tile-ink: #3a1d69;
   --tile-sel: #ffe9a8;
-  --ring-sel: #f0a91e;
-  --ring-ok: #79c05a;
-  --ring-bad: #d9563f;
+
+  --ring-sel: var(--brass);
+  --ring-ok: #57d9a3;
+  --ring-bad: #ff6b8a;
+
+  --ink: #f4ecff;
+  --ink-soft: #c3aee6;
+
   --gap: 3px;
 }
 
@@ -28,28 +50,27 @@ body {
 
 body {
   font-family: "Trebuchet MS", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-  color: #fff3df;
-  background: var(--wood-mid);
+  color: var(--ink);
+  background: var(--house-deep);
   overscroll-behavior: none;
   user-select: none;
 }
 
-/* Plank grain, drawn rather than shipped as an image. */
+/*
+ * The auditorium: a spotlight from above, a velvet wash, and a faint sheen of
+ * vertical light like a curtain catching the house lights.
+ */
 #app {
   position: relative;
   height: 100dvh;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
-    env(safe-area-inset-left);
   background:
-    linear-gradient(115deg, rgba(255, 240, 200, 0.16) 0%, rgba(255, 240, 200, 0) 42%),
+    radial-gradient(120% 60% at 50% -10%, rgba(255, 233, 176, 0.16) 0%, transparent 60%),
     repeating-linear-gradient(
-      92deg,
-      rgba(74, 47, 24, 0.16) 0px,
-      rgba(74, 47, 24, 0) 2px,
-      rgba(255, 226, 176, 0.06) 5px,
-      rgba(74, 47, 24, 0.12) 9px
+      91deg,
+      rgba(255, 255, 255, 0.022) 0 2px,
+      transparent 2px 9px
     ),
-    radial-gradient(120% 90% at 50% 0%, var(--wood-light) 0%, var(--wood-mid) 55%, #5f3c1b 100%);
+    linear-gradient(180deg, var(--house) 0%, var(--velvet) 45%, var(--house-deep) 100%);
 }
 
 .screen {

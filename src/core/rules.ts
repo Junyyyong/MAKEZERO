@@ -5,12 +5,19 @@ export const TARGET_SUM = 10;
 export const MIN_SELECTION = 2;
 export const MAX_SELECTION = 5;
 
-/** More tiles in one clear is strictly harder, so the reward curve is steep. */
+/**
+ * Each extra tile doubles the reward.
+ *
+ * Tuned against the 81-tile deck, where the two ways to play pull apart:
+ * clearing with pairs empties the board down to its last tile for 400, while
+ * chasing long chains tops out near 550 but strands about 27 tiles. Stars
+ * reward the first, score the second, and no single run does both.
+ */
 export const SCORE_BY_COUNT: Readonly<Record<number, number>> = {
   2: 10,
-  3: 30,
-  4: 70,
-  5: 150,
+  3: 20,
+  4: 40,
+  5: 80,
 };
 
 export function scoreFor(count: number): number {

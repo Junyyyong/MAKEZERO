@@ -1,47 +1,49 @@
-import { EASY_GROUPS, HARD_GROUPS } from "../core/board";
+import { EASY_GROUPS, evenDeck } from "../core/board";
 import { TOTAL_STAGES } from "./chapters";
 import type { RunConfig } from "../core/types";
 
 /**
- * Difficulty dials at the first and last stage; everything between is
- * interpolated so no dial plateaus before the end of the run. Tuning the game
- * mostly means editing these two lines — see docs/BALANCE.md.
+ * Every stage deals the same 81 tiles: nine of each digit on a 9x9 board.
  *
- * `stars` is the share of the board still allowed to be standing for one, two
- * and three stars. Shares rather than flat counts: leftovers scale with the
- * board, so a fixed count would make the big late stages unwinnable.
+ * That deck is the puzzle. Clearing it with pairs empties all but its last
+ * tile — 81 is odd and 5 only pairs with itself, so one 5 always survives.
+ * Chasing long chains scores far more but strands about 27 tiles, so stars and
+ * score pull in opposite directions and a run has to pick one.
+ *
+ * Difficulty is the targets and the help, not the deck. Tuning lives here.
  */
-const EASIEST = { width: 5, rows: 8, hints: 3, stars: [0.32, 0.18, 0.08] };
-const HARDEST = { width: 10, rows: 15, hints: 1, stars: [0.26, 0.14, 0.05] };
+const EASIEST = { hints: 5, stars: [24, 10, 3] };
+const HARDEST = { hints: 1, stars: [12, 4, 1] };
+
+export const BOARD_WIDTH = 9;
+export const DECK = evenDeck(9);
 
 export function stageConfig(stage: number): RunConfig {
   const clamped = Math.min(Math.max(stage, 1), TOTAL_STAGES);
   const t = TOTAL_STAGES > 1 ? (clamped - 1) / (TOTAL_STAGES - 1) : 0;
-  const lerp = (from: number, to: number) => from + (to - from) * t;
-
-  const width = Math.round(lerp(EASIEST.width, HARDEST.width));
-  const rows = Math.round(lerp(EASIEST.rows, HARDEST.rows));
-  const cells = width * rows;
-  const target = (tier: number) =>
-    Math.max(tier === 2 ? 1 : 2, Math.round(cells * lerp(EASIEST.stars[tier]!, HARDEST.stars[tier]!)));
+  const lerp = (from: number, to: number) => Math.round(from + (to - from) * t);
 
   return {
     mode: "story",
-    width,
-    rows,
-    // Later stages deal more plain pairs, which spreads the values out and
-    // strands the rigid 8s and 9s. See EASY_GROUPS in core/board.ts.
-    groupWeights: EASY_GROUPS.map((easy, i) => lerp(easy, HARD_GROUPS[i] ?? easy)),
-    hints: Math.round(lerp(EASIEST.hints, HARDEST.hints)),
-    starTargets: [target(0), target(1), target(2)],
+    width: BOARD_WIDTH,
+    rows: 9,
+    deck: DECK,
+    groupWeights: EASY_GROUPS,
+    hints: lerp(EASIEST.hints, HARDEST.hints),
+    starTargets: [
+      lerp(EASIEST.stars[0]!, HARDEST.stars[0]!),
+      lerp(EASIEST.stars[1]!, HARDEST.stars[1]!),
+      lerp(EASIEST.stars[2]!, HARDEST.stars[2]!),
+    ],
     stage,
   };
 }
 
 export const TIME_ATTACK_CONFIG: RunConfig = {
   mode: "timeAttack",
-  width: 7,
-  rows: 11,
+  width: BOARD_WIDTH,
+  rows: 9,
+  deck: DECK,
   groupWeights: EASY_GROUPS,
   hints: 0,
   starTargets: [0, 0, 0],
@@ -56,7 +58,7 @@ export const TIME_ATTACK_CONFIG: RunConfig = {
  */
 export const ENDLESS_CONFIG: RunConfig = {
   mode: "endless",
-  width: 7,
+  width: BOARD_WIDTH,
   rows: 11,
   groupWeights: [3, 3, 2, 1],
   hints: 3,

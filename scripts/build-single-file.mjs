@@ -48,7 +48,7 @@ if (!body) throw new Error("could not find the body of dist/index.html");
 
 // Artifacts supply their own doctype, html, head and body wrapper, so emit only
 // the page content. The stylesheet paints every colour, including the ground.
-const page = `<title>MAKEZERO</title>
+const page = `<title>TAP to TEN</title>
 <style>
 ${css}
 </style>

@@ -46,6 +46,8 @@ export interface RunConfig {
   rows: number;
   /** Relative chance of dealing a group of 2, 3, 4 or 5 tiles. */
   groupWeights: readonly number[];
+  /** How many of each digit to deal, indexed by value. Overrides groupWeights. */
+  deck?: readonly number[];
   hints: number;
   /** Most tiles that may remain for one, two and three stars. */
   starTargets: readonly [number, number, number];
