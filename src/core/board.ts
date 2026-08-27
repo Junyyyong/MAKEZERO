@@ -133,10 +133,13 @@ export function createBoard(
   while (values.length < capacity) {
     const remaining = capacity - values.length;
     let parts = MIN_SELECTION + weightedPick(rng, groupWeights);
-    if (parts > remaining) parts = remaining;
-    // Never leave a single orphan cell that no group could fill.
-    if (remaining - parts === 1) parts = remaining >= MAX_SELECTION ? parts + 1 : remaining;
     parts = Math.max(MIN_SELECTION, Math.min(parts, Math.min(MAX_SELECTION, remaining)));
+    // Never leave a single orphan cell that no legal group could fill. If a
+    // five-part group would leave one of six cells behind, making it larger is
+    // impossible; make it four instead and leave a final pair.
+    if (remaining - parts === 1) {
+      parts = parts < Math.min(MAX_SELECTION, remaining) ? parts + 1 : parts - 1;
+    }
     values.push(...makeGroup(rng, parts));
   }
 
