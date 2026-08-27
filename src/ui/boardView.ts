@@ -41,6 +41,10 @@ export class BoardView {
   private hinted: number[] = [];
   private hintTimer: number | undefined;
   private dragging = false;
+  /** Where the pointer was last seen, so a drag can fill in what it skipped. */
+  private lastPoint: { x: number; y: number } | null = null;
+  /** The tile size the board was last laid out at, in CSS pixels. */
+  private tilePx = MIN_TILE_PX;
   /** Stops one gesture after it clears or overcharges; lift to start again. */
   private gestureSettled = false;
   private interactive = true;
@@ -183,6 +187,7 @@ export class BoardView {
     this.options.grid.setPointerCapture(event.pointerId);
     this.dragging = true;
     this.gestureSettled = false;
+    this.lastPoint = { x: event.clientX, y: event.clientY };
     this.clearHint();
 
     const at = this.selection.indexOf(i);
@@ -199,15 +204,45 @@ export class BoardView {
   private readonly onPointerMove = (event: PointerEvent): void => {
     if (!this.dragging || this.gestureSettled) return;
     event.preventDefault();
-    const i = this.tileIndexFrom(document.elementFromPoint(event.clientX, event.clientY));
-    if (i === null || this.selection.includes(i)) return;
-    this.add(i);
+    this.sweepTo(event.clientX, event.clientY);
   };
+
+  /**
+   * Picks up every tile between the last sample and this one.
+   *
+   * The browser reports a moving pointer as a handful of points, not as a
+   * path: a quick flick across the board can arrive as a single move event
+   * from one edge to the other. Testing only the reported points skips
+   * whatever lay between them, and because a selection is only punished for
+   * going *over* ten, the skipped tiles vanish silently — a fast sweep looked
+   * like the game was picking out the tiles that happen to add up. Walking the
+   * line makes the drag select exactly what the finger crossed.
+   *
+   * The step is a fraction of a tile so a tile can never fall between samples,
+   * and the walk stops the moment the gesture settles — on a clear or a bust
+   * nothing further the finger passes over counts.
+   */
+  private sweepTo(x: number, y: number): void {
+    const from = this.lastPoint ?? { x, y };
+    this.lastPoint = { x, y };
+    const dx = x - from.x;
+    const dy = y - from.y;
+    const step = Math.max(4, this.tilePx * 0.4);
+    const samples = Math.max(1, Math.ceil(Math.hypot(dx, dy) / step));
+    for (let s = 1; s <= samples; s++) {
+      if (this.gestureSettled) return;
+      const at = this.tileIndexFrom(
+        document.elementFromPoint(from.x + (dx * s) / samples, from.y + (dy * s) / samples),
+      );
+      if (at !== null && !this.selection.includes(at)) this.add(at);
+    }
+  }
 
   private readonly onPointerUp = (event: PointerEvent): void => {
     if (!this.dragging) return;
     this.dragging = false;
     this.gestureSettled = false;
+    this.lastPoint = null;
     this.options.grid.releasePointerCapture?.(event.pointerId);
     // Taps and incomplete drags deliberately keep their selection. A later
     // tap can toggle any chosen block off; only ten or overcharge settles it.
@@ -216,6 +251,7 @@ export class BoardView {
   private readonly onPointerCancel = (): void => {
     this.dragging = false;
     this.gestureSettled = false;
+    this.lastPoint = null;
     this.selection = [];
     this.emitSelection();
     this.render();
@@ -283,12 +319,21 @@ export class BoardView {
     const { width } = this.board;
     const rows = Math.ceil(this.board.cells.length / width);
     if (rows === 0) return;
-    // The game screen uses this ratio to size the board from its width. This
-    // keeps nine-column tiles the same size while story difficulty adds rows.
-    this.options.wrap.style.setProperty("--board-ratio", `${width} / ${rows}`);
     const gridStyles = getComputedStyle(this.options.grid);
 
-    const box = this.options.wrap.getBoundingClientRect();
+    /*
+     * clientWidth/clientHeight, not getBoundingClientRect().
+     *
+     * A rect is the *painted* box, so it includes any transform on the way up
+     * the tree — and a screen arriving plays `.screen-enter`, which scales it
+     * to .992 for the length of the animation. Measuring then reports a board
+     * about three pixels narrower than it really is, which floors the tile a
+     * whole pixel small; a transform fires no resize observation, so nothing
+     * ever corrects it and that mode keeps a visibly wider margin than the
+     * others for the rest of the run. These two properties report the layout
+     * box, which the animation never touches.
+     */
+    const box = { width: this.options.wrap.clientWidth, height: this.options.wrap.clientHeight };
     // The screen may still be hidden when a run is set up; leave the board
     // unmeasured so the next render tries again once it has a size.
     if (box.width <= 0 || box.height <= 0) {
@@ -312,7 +357,29 @@ export class BoardView {
       px(gridStyles.borderBottomWidth);
 
     const byWidth = (box.width - padX - gap * (width - 1)) / width;
-    const byHeight = (box.height - padY - gap * (rows - 1)) / rows;
+
+    /*
+     * The game screen sizes the board's box from its width through this ratio,
+     * so the rows a stage adds push the character stage down instead of
+     * shrinking the tiles.
+     *
+     * It has to be the ratio of the *whole frame*, not of the tile grid. A
+     * board is `cols` tiles plus `cols - 1` gaps plus its padding across, and
+     * the same sum with `rows` down — those constants do not scale with the
+     * tile, so `cols / rows` leaves a wide board's box a few pixels short and
+     * the tile is floored one pixel below what fits. One pixel over nine
+     * columns is a visibly wider margin in the modes with the fewest rows.
+     */
+    const wanted = Math.max(MIN_TILE_PX, Math.floor(byWidth));
+    const frameW = width * wanted + gap * (width - 1) + padX;
+    const frameH = rows * wanted + gap * (rows - 1) + padY;
+    this.options.wrap.style.setProperty("--board-ratio", `${frameW} / ${frameH}`);
+
+    // Read back after setting the ratio: on a screen with room this is the
+    // height the frame just asked for, and on a short one it is whatever the
+    // column could actually spare, which is what shrinks the tiles.
+    const byHeight =
+      (this.options.wrap.clientHeight - padY - gap * (rows - 1)) / rows;
     const cap = this.options.maxTilePx ?? Infinity;
     const tile = Math.max(MIN_TILE_PX, Math.floor(Math.min(byWidth, byHeight, cap)));
 
@@ -321,6 +388,7 @@ export class BoardView {
     const signature = `${width}x${rows}@${tile}`;
     if (signature === this.laidOut) return;
 
+    this.tilePx = tile;
     this.options.grid.style.setProperty("--tile", `${tile}px`);
     // repeat() will not take its count from a custom property, so the track
     // list has to be written out here rather than left to the stylesheet.
@@ -328,7 +396,7 @@ export class BoardView {
     this.options.grid.dataset.cols = String(width);
 
     // Only a board too big even at the minimum tile size may scroll.
-    const overflows = rows * (tile + gap) + padY > box.height + 1;
+    const overflows = rows * (tile + gap) + padY > this.options.wrap.clientHeight + 1;
     this.options.wrap.classList.toggle("scrolls", overflows);
     this.laidOut = signature;
   }

@@ -30,10 +30,26 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html,
-body {
+/*
+ * The page is an app, not a document: it must never scroll or rubber-band.
+ *
+ * `overscroll-behavior` alone is not enough on a phone browser — the document
+ * itself still bounces under a drag, which reads as the whole screen wobbling
+ * like a web page. Pinning the body to the viewport removes the scroll it
+ * would bounce, and every screen sizes itself from that box instead of from
+ * the viewport units, so the chrome sliding in and out cannot leave the app
+ * taller than the room it is being shown in.
+ */
+html {
   height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  position: fixed;
+  inset: 0;
   margin: 0;
+  overflow: hidden;
 }
 
 body {
@@ -41,12 +57,14 @@ body {
   color: var(--ink);
   background: var(--night);
   overscroll-behavior: none;
+  /* A double tap on a tile is two taps, never a zoom. */
+  touch-action: manipulation;
   user-select: none;
 }
 
 #app {
   position: relative;
-  height: 100dvh;
+  height: 100%;
   overflow: hidden;
   background:
     radial-gradient(70% 34% at 50% 78%, rgba(105, 64, 151, 0.22), transparent 72%),
