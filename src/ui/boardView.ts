@@ -3,6 +3,8 @@ import { MAX_SELECTION, TARGET_SUM } from "../core/rules";
 import type { Board } from "../core/types";
 
 const HINT_MS = 2700;
+/** How long a refused selection stays lit before it lets go. */
+const BUST_MS = 420;
 /**
  * Below this a tile is too small to hit reliably with a thumb. It is a floor
  * of last resort: the chrome shrinks first (see the short-screen rules in
@@ -39,6 +41,9 @@ export class BoardView {
   private tiles: HTMLButtonElement[] = [];
   private selection: number[] = [];
   private hinted: number[] = [];
+  /** Blocks shown as refused, cleared again once the flash is over. */
+  private busted: number[] = [];
+  private bustTimer: number | undefined;
   private hintTimer: number | undefined;
   private dragging = false;
   /** Where the pointer was last seen, so a drag can fill in what it skipped. */
@@ -149,10 +154,23 @@ export class BoardView {
     this.hinted = [];
   }
 
-  reject(): void {
+  /**
+   * Says no: the board sways and the blocks that failed flash before they let
+   * go. The flash is the whole point — a selection that simply vanished left
+   * the player unsure whether the tap had registered at all.
+   */
+  reject(blamed: readonly number[] = []): void {
     this.options.grid.classList.remove("shake");
     void this.options.grid.offsetWidth; // restart the animation
     this.options.grid.classList.add("shake");
+
+    if (blamed.length === 0) return;
+    this.busted = [...blamed];
+    window.clearTimeout(this.bustTimer);
+    this.bustTimer = window.setTimeout(() => {
+      this.busted = [];
+      this.render();
+    }, BUST_MS);
   }
 
   /** Floats the earned points off the last tile of the selection. */
@@ -266,12 +284,16 @@ export class BoardView {
     if (this.selection.includes(i)) return;
     this.selection.push(i);
     const sum = this.selectionSum();
-    if (sum > TARGET_SUM || this.selection.length > MAX_SELECTION) {
+    // Over ten is dead, and so is a full selection that has not reached it:
+    // five blocks with no sixth to come can never add up, so say so now
+    // rather than leaving the player to work it out and undo it by hand.
+    const full = this.selection.length >= MAX_SELECTION;
+    if (sum > TARGET_SUM || this.selection.length > MAX_SELECTION || (full && sum !== TARGET_SUM)) {
+      this.reject(this.selection);
       this.selection = [];
       this.gestureSettled = true;
       this.emitSelection();
       this.render();
-      this.reject();
       return;
     }
 
@@ -407,6 +429,7 @@ export class BoardView {
 
     const selected = new Set(this.selection);
     const hinted = new Set(this.hinted);
+    const busted = new Set(this.busted);
     this.board.cells.forEach((cell, i) => {
       const tile = this.tiles[i]!;
       tile.textContent = cell.value > 0 ? String(cell.value) : "";
@@ -414,6 +437,7 @@ export class BoardView {
         "tile",
         cell.cleared ? "cleared" : "",
         selected.has(i) ? "sel" : "",
+        busted.has(i) ? "bust" : "",
         hinted.has(i) ? "hint" : "",
       ]
         .filter(Boolean)

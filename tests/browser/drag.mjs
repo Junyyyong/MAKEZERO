@@ -78,7 +78,9 @@ function expected(row) {
     taken.push(tile.value);
     sum += tile.value;
     if (sum === 10) return { outcome: "cleared", taken };
-    if (sum > 10 || taken.length > 5) return { outcome: "rejected", taken };
+    // Over ten is dead, and so is five blocks that have not reached it: there
+    // is no sixth to come, so the selection can never add up.
+    if (sum > 10 || taken.length >= 5) return { outcome: "rejected", taken };
   }
   return { outcome: "held", taken };
 }
@@ -128,6 +130,41 @@ for (const steps of [1, 1, 2, 5, 40]) {
   const got = await sweep(steps);
   if (got && (got.scrolled || got.overflow > 1)) {
     fail(`${steps}회 이동: 드래그하는 동안 페이지가 스크롤됐습니다 (${got.overflow}px)`);
+  }
+}
+
+// Five blocks that do not add up cannot be rescued by a sixth, so the board
+// must say no there and then rather than leaving the selection sitting.
+{
+  await openStory();
+  const picked = await page.evaluate(() => {
+    const tiles = [...document.querySelectorAll("#board .tile")];
+    // The five smallest blocks on the board: if anything adds to less than
+    // ten in five picks, they do.
+    const chosen = tiles
+      .sort((a, b) => Number(a.textContent) - Number(b.textContent))
+      .slice(0, 5);
+    const sum = chosen.reduce((t, tile) => t + Number(tile.textContent), 0);
+    if (chosen.length < 5 || sum >= 10) return null;
+    return { sum, points: chosen.map((t) => { const b = t.getBoundingClientRect();
+      return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }) };
+  });
+  if (!picked) {
+    ok("다섯 칸이 10 미만인 조합이 이 판에 없어 건너뜀");
+  } else {
+    for (const point of picked.points) {
+      await page.mouse.click(point.x, point.y);
+      await page.waitForTimeout(60);
+    }
+    await page.waitForTimeout(120);
+    const after = await state();
+    if (after.selected.length !== 0) {
+      fail(`5칸 합 ${picked.sum}: 선택이 남아 있습니다 (${after.selected.join()})`);
+    } else if (after.score !== 0) {
+      fail(`5칸 합 ${picked.sum}: 지워지면 안 되는데 점수가 올랐습니다`);
+    } else {
+      ok(`5칸을 골랐는데 합이 ${picked.sum} — 바로 거절하고 선택을 놓았습니다`);
+    }
   }
 }
 

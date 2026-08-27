@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { aliveCount, emptyIndices } from "./board";
-import { commitSelection, newGame, spawnIntervalMs, stars, tick, useHint } from "./game";
+import { commitSelection, newGame, spawnIntervalMs, stars, tick, undo, useHint } from "./game";
 import { evaluateSelection } from "./rules";
 import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
 
@@ -22,6 +22,7 @@ function stateWith(board: Board, overrides: Partial<GameState> = {}): GameState 
     board,
     score: 0,
     hintsLeft: config.hints,
+    undosLeft: config.undos,
     status: "playing",
     startingCells: board.cells.length,
     remainingMs: config.timeLimitMs ?? 0,
@@ -97,19 +98,71 @@ describe("commitSelection", () => {
 });
 
 describe("stars", () => {
-  const graded = (left: number) =>
-    stars(
-      stateWith(boardOf(Array.from({ length: Math.max(left, 1) }, () => (left ? 9 : 0))), {
-        config: { ...PLAIN, starTargets: [16, 10, 5] },
-      }),
-    );
+  const board = (left: number) =>
+    boardOf(Array.from({ length: Math.max(left, 1) }, () => (left ? 9 : 0)));
+  const story = { ...PLAIN, hints: 3, undos: 3, starTargets: [16, 0, 0] as const };
+  const graded = (left: number, over: Partial<GameState> = {}) =>
+    stars(stateWith(board(left), { config: story, ...over }));
 
-  it("reads the targets off the run's own config", () => {
+  it("gives three stars only for an empty board played unaided", () => {
     expect(graded(0)).toBe(3);
-    expect(graded(5)).toBe(3);
-    expect(graded(6)).toBe(2);
-    expect(graded(11)).toBe(1);
+    expect(graded(0, { hintsLeft: 2 })).toBe(2); // a hint was spent
+    expect(graded(0, { undosLeft: 2 })).toBe(2); // a move was taken back
+  });
+
+  it("gives one star for coming close, and none for missing", () => {
+    expect(graded(1)).toBe(1);
+    expect(graded(16)).toBe(1);
     expect(graded(17)).toBe(0);
+  });
+
+  it("still grades the other modes on how few tiles were left", () => {
+    const timed = { ...TIME_ATTACK_CONFIG, starTargets: [16, 10, 5] as const };
+    const at = (left: number) => stars(stateWith(board(left), { config: timed }));
+    expect(at(5)).toBe(3);
+    expect(at(6)).toBe(2);
+    expect(at(11)).toBe(1);
+    expect(at(17)).toBe(0);
+  });
+});
+
+describe("undo", () => {
+  const rowOf = (...values: number[]) => boardOf(values);
+
+  it("puts the board, the score and the status back", () => {
+    const start = stateWith(rowOf(4, 6, 9, 1), { config: { ...PLAIN, undos: 2 } });
+    const after = commitSelection(start, [0, 1]).state;
+    expect(after.score).toBeGreaterThan(0);
+
+    const back = undo(after);
+    expect(aliveCount(back.board)).toBe(aliveCount(start.board));
+    expect(back.score).toBe(0);
+    expect(back.status).toBe("playing");
+    expect(back.undosLeft).toBe(1);
+  });
+
+  it("rescues a run that has gone dead", () => {
+    // 1+2+3+4 clears, and taking it strands 6 and 7 with nothing to pair.
+    const start = stateWith(rowOf(1, 2, 3, 4, 6, 7, 9), { config: { ...PLAIN, undos: 1 } });
+    const dead = commitSelection(start, [0, 1, 2, 3]).state;
+    expect(dead.status).toBe("lost");
+    expect(undo(dead).status).toBe("playing");
+  });
+
+  it("stops at the start of the run, and when the take-backs are gone", () => {
+    const start = stateWith(rowOf(4, 6, 9, 1), { config: { ...PLAIN, undos: 1 } });
+    expect(undo(start)).toBe(start); // nothing to go back to
+
+    const after = commitSelection(start, [0, 1]).state;
+    const back = undo(after);
+    expect(back.undosLeft).toBe(0);
+    const again = commitSelection(back, [0, 1]).state;
+    expect(undo(again)).toBe(again); // spent
+  });
+
+  it("keeps no history at all in the modes that cannot take a move back", () => {
+    const start = stateWith(rowOf(4, 6, 9, 1), { config: { ...PLAIN, undos: 0 } });
+    expect(commitSelection(start, [0, 1]).state.previous).toBeUndefined();
   });
 });
 

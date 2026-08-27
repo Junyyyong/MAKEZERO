@@ -16,6 +16,8 @@ export class Hud {
   private readonly noticeEl = el<HTMLParagraphElement>("notice");
   readonly hintBtn = el<HTMLButtonElement>("btn-hint");
   private readonly hintBadge = el<HTMLSpanElement>("badge-hint");
+  readonly undoBtn = el<HTMLButtonElement>("btn-undo");
+  private readonly undoBadge = el<HTMLSpanElement>("badge-undo");
 
   /** Games played today, shown in endless mode. */
   gamesToday = 1;
@@ -36,6 +38,14 @@ export class Hud {
     this.hintBadge.textContent = String(hintsLeft);
     this.hintBtn.disabled = hintsLeft === 0 || status !== "playing";
     this.hintBtn.classList.toggle("hidden", config.hints === 0);
+
+    // Taking a move back is what makes "empty the board" a fair goal, so the
+    // button stays live on a board that has gone dead — that is the one moment
+    // it matters most.
+    this.undoBadge.textContent = String(state.undosLeft);
+    this.undoBtn.disabled = state.undosLeft === 0 || !state.previous;
+    this.undoBtn.classList.toggle("hidden", config.undos === 0);
+    this.undoBtn.classList.toggle("urge", status === "lost" && !this.undoBtn.disabled);
 
     const timed = config.timeLimitMs !== undefined;
     this.timerBar.classList.toggle("hidden", !timed);
@@ -74,8 +84,13 @@ export class Hud {
       const room = emptyIndices(state.board).length;
       return room <= 6 ? "곧 가득 차요!" : "";
     }
-    if (state.status === "lost") return "10을 만들 수 있는 숫자가 없어요.";
+    if (state.status === "lost") {
+      return state.undosLeft > 0 && state.previous
+        ? "막혔어요 — 한 수 물려서 다시 해보세요"
+        : "10을 만들 수 있는 숫자가 없어요.";
+    }
     if (state.config.mode !== "story") return "10을 만들어 점수를 올리세요";
-    return starLine(stars(state));
+    if (state.status === "won") return starLine(stars(state));
+    return "한 칸도 남기지 않는 게 목표예요";
   }
 }

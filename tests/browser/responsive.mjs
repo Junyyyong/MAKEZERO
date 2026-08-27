@@ -127,9 +127,9 @@ async function openModes(page) {
 
 const SKIP = { stage: 1, bestStory: 0, bestTimeAttack: 0, bestEndless: 0, seenChapters: [], stageStars: [], tutorialDone: true };
 // The story board grows with the stage, so the last one is the tallest thing
-// the game ever has to fit (9x5 at stage 1, 9x9 at stage 20). Checking stage 1
+// the game ever has to fit (9x4 at stage 1, 9x11 at stage 99). Checking stage 1
 // alone would miss it entirely.
-const LAST_STAGE = { ...SKIP, stage: 20 };
+const LAST_STAGE = { ...SKIP, stage: 99 };
 
 for (const [label, width, height] of SCREENS) {
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 });
@@ -153,7 +153,7 @@ for (const [label, width, height] of SCREENS) {
   await page.close();
 }
 
-// The final stage deals the biggest story board — nine rows against five.
+// The final stage deals the biggest story board — eleven rows against four.
 for (const [label, width, height] of SCREENS) {
   const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 2 });
   page.on("pageerror", (e) => errors.push(`${label} (stage 20): ${e}`));
@@ -164,8 +164,8 @@ for (const [label, width, height] of SCREENS) {
   await page.click("#mode-story");
   await page.waitForTimeout(260);
   const m = await inspect(page);
-  if (await check(page, label, "스토리 20")) {
-    ok(`${String(label).padEnd(20)} ${width}x${height}  스테이지 20  타일 ${String(Math.round(m.tile)).padStart(3)}px`);
+  if (await check(page, label, "스토리 99")) {
+    ok(`${String(label).padEnd(20)} ${width}x${height}  스테이지 99  타일 ${String(Math.round(m.tile)).padStart(3)}px`);
   }
   await page.close();
 }

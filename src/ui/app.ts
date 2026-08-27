@@ -1,4 +1,5 @@
-import { commitSelection, newGame, stars, tick, useHint } from "../core/game";
+import { aliveCount } from "../core/board";
+import { commitSelection, newGame, stars, tick, undo, useHint } from "../core/game";
 import type { GameState } from "../core/game";
 import { isSelectionValid } from "../core/rules";
 import type { GameMode, RunConfig } from "../core/types";
@@ -87,6 +88,7 @@ export class App {
     el<HTMLButtonElement>("btn-title-tutorial").addEventListener("click", () => this.showTutorial());
     el<HTMLButtonElement>("btn-title-records").addEventListener("click", () => this.showRecords());
     this.hud.hintBtn.addEventListener("click", () => this.onHint());
+    this.hud.undoBtn.addEventListener("click", () => this.onUndo());
     document.addEventListener("visibilitychange", () => {
       if (document.hidden && this.flow.current === "inGame") this.pause();
     });
@@ -228,6 +230,26 @@ export class App {
     this.render();
   }
 
+  /**
+   * Takes the last move back, including the one that killed the board.
+   *
+   * A story board can always be emptied, so being stuck is a mistake rather
+   * than bad luck — and a mistake the player should be able to see and fix.
+   * The result overlay is closed first, because it is what the dead board put
+   * up a moment ago.
+   */
+  private onUndo(): void {
+    const back = undo(this.state);
+    if (back === this.state) return;
+    this.overlay.close();
+    if (this.flow.current !== "inGame") this.flow.enter("inGame");
+    this.state = back;
+    this.view.setInteractive(true);
+    this.view.clearHint();
+    this.view.setBoard(this.state.board);
+    this.render();
+  }
+
   private onHint(): void {
     if (this.state.hintsLeft === 0 || this.state.status !== "playing") return;
     const { state, indices } = useHint(this.state);
@@ -284,6 +306,17 @@ export class App {
     const { config, score } = this.state;
 
     if (config.mode === "story") {
+      // A dead board with a take-back left is not the end of the stage: the
+      // board could still be emptied, so offer the way back before grading it.
+      if (this.state.status === "lost" && this.state.undosLeft > 0 && this.state.previous) {
+        this.overlay.open({
+          title: "막혔어요",
+          body: `10을 만들 수 있는 숫자가 없어요.\n이 판은 전부 지울 수 있어요 — 한 수 물려서 다시 해보세요.\n남은 물리기 ${this.state.undosLeft}회`,
+          primary: { label: "한 수 물리기", action: () => this.onUndo() },
+          secondary: { label: "여기서 끝내기", action: () => this.giveUp() },
+        });
+        return;
+      }
       this.finishStage(config.stage ?? 1, stars(this.state));
       return;
     }
@@ -302,12 +335,19 @@ export class App {
     });
   }
 
+  /** Grades a stuck board the player has decided not to take back. */
+  private giveUp(): void {
+    this.overlay.close();
+    this.finishStage(this.state.config.stage ?? 1, stars(this.state));
+  }
+
   /** Grades the stage, unlocks the next one, then plays any chapter beat. */
   private finishStage(stage: number, earned: number): void {
+    const left = aliveCount(this.state.board);
     if (earned === 0) {
       this.overlay.open({
         title: "아쉬워요",
-        body: `${starLine(0)}\n별 하나에 조금 못 미쳤어요.`,
+        body: `${starLine(0)}\n${left}칸이 남았어요. 이 판은 전부 지울 수 있었어요.`,
         primary: { label: "다시 도전", action: () => this.startStage(stage) },
       });
       return;
@@ -333,7 +373,14 @@ export class App {
   }
 
   private showStageResult(stage: number, earned: number): void {
-    const summary = `${starLine(earned)}\n점수 ${this.state.score}점`;
+    const left = aliveCount(this.state.board);
+    const how =
+      left > 0
+        ? `${left}칸 남음 · 전부 지우면 별이 늘어요`
+        : earned === 3
+          ? "혼자 힘으로 전부 지웠어요"
+          : "전부 지웠어요 · 도움 없이 하면 별 셋";
+    const summary = `${starLine(earned)}\n${how}\n점수 ${this.state.score}점`;
     if (stage >= TOTAL_STAGES) {
       this.overlay.open({
         title: "완주!",

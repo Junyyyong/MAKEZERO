@@ -23,16 +23,18 @@ function play(stage: number, seed: number) {
 }
 
 describe("progressive story deal", () => {
-  it("starts compact and finishes with four more nine-tile rows", () => {
+  it("runs ninety-nine stages, from four rows to eleven", () => {
+    expect(TOTAL_STAGES).toBe(99);
     const first = stageConfig(1);
     const last = stageConfig(TOTAL_STAGES);
-    expect(first.width * first.rows).toBe(45);
-    expect(last.width * last.rows).toBe(81);
-    expect(last.width * last.rows - first.width * first.rows).toBe(36);
+    expect(first.width * first.rows).toBe(36);
+    expect(last.width * last.rows).toBe(99);
+    // Nine columns throughout, so a block is the same size on every stage.
+    for (let stage = 1; stage <= TOTAL_STAGES; stage++) expect(stageConfig(stage).width).toBe(9);
   });
 
   it("deals totals that can be partitioned into clears of ten", () => {
-    for (const stage of [1, 5, 10, 15, TOTAL_STAGES]) {
+    for (const stage of [1, 25, 50, 75, TOTAL_STAGES]) {
       for (const seed of SEEDS) {
         const game = newGame(stageConfig(stage), seed);
         const total = game.board.cells.reduce((sum, cell) => sum + cell.value, 0);
@@ -54,13 +56,22 @@ describe("progressive story deal", () => {
   it("makes the deal itself stricter as the board grows", () => {
     const first = stageConfig(1);
     const last = stageConfig(TOTAL_STAGES);
+    // Rigid pairs at the end, loose groups at the start: this is the dial that
+    // actually decides whether a careless line can still empty the board.
     expect(last.groupWeights[0]).toBeGreaterThan(first.groupWeights[0]!);
     expect(last.groupWeights[3]).toBeLessThan(first.groupWeights[3]!);
     expect(last.hints).toBeLessThan(first.hints);
-    for (let tier = 0; tier < 3; tier++) {
-      const firstShare = first.starTargets[tier]! / (first.width * first.rows);
-      const lastShare = last.starTargets[tier]! / (last.width * last.rows);
-      expect(lastShare).toBeLessThan(firstShare);
+    expect(last.undos).toBeLessThan(first.undos);
+  });
+
+  it("never lets the help run out before the board grows", () => {
+    for (let stage = 2; stage <= TOTAL_STAGES; stage++) {
+      const prev = stageConfig(stage - 1);
+      const next = stageConfig(stage);
+      expect(next.rows).toBeGreaterThanOrEqual(prev.rows);
+      expect(next.hints).toBeLessThanOrEqual(prev.hints);
+      expect(next.undos).toBeLessThanOrEqual(prev.undos);
+      expect(next.undos).toBeGreaterThan(0); // one take-back, always
     }
   });
 });
