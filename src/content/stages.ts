@@ -11,8 +11,12 @@ import type { RunConfig } from "../core/types";
  * Three dials move together across the run, and each one was chosen because a
  * simulated player's chance of emptying the board responds to it:
  *
- *   rows          4 → 11   more to hold in your head, and a longer run in
- *                          which one careless move can cost the board
+ *   rows          3 → 11   more to hold in your head, and a longer run in
+ *                          which one careless move can cost the board. The
+ *                          first stage is deliberately tiny: fewer blocks is
+ *                          fewer chances to strand one, and a careless line
+ *                          empties a 27-square board about half the time
+ *                          against two in five at 36
  *   groupWeights  큰 조각 → 짝 위주
  *                          the real difficulty dial. Boards dealt from big
  *                          loose groups leave small flexible numbers behind
@@ -27,7 +31,7 @@ import type { RunConfig } from "../core/types";
  * at every size and every mix. What changes is how easily a wrong move throws
  * it away.
  */
-const EASIEST = { rows: 4, hints: 5, undos: 5, splits: 3, nearly: 0.16 };
+const EASIEST = { rows: 3, hints: 5, undos: 5, splits: 3, nearly: 0.16 };
 const HARDEST = { rows: 11, hints: 0, undos: 1, splits: 1, nearly: 0.14 };
 
 export const BOARD_WIDTH = 9;

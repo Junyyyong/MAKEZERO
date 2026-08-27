@@ -388,28 +388,19 @@
   .round-btn { width: 44px; height: 44px; }
 }
 
-/* ── the picture behind the board ─────────────────────────────────────
-   A story board sits on the stage's illustration. Clearing a block turns its
-   square transparent, so the picture arrives a square at a time and a finished
-   stage *is* the picture. Clipped to the content box so it lines up with the
-   grid rather than with the frame around it. */
-.board.reveal {
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
-  background-origin: content-box;
-  background-clip: content-box;
-}
-
+/* ── the picture under the board ──────────────────────────────────────
+   Each cleared square carries its own slice of the stage's picture, cut to the
+   tile size in boardView. Slices rather than one big background, because the
+   uncovered picture should read as *blocks* — rounded, with the gap between
+   them staying dark — not as a hole torn in a sheet. */
 .board.reveal .tile.cleared {
-  background: none;
+  background-color: transparent;
+  background-image: var(--plate);
+  background-repeat: no-repeat;
   border-color: transparent;
-  box-shadow: none;
-  /* Uncovering is the reward, so it fades in rather than snapping. */
-  transition:
-    background 420ms ease,
-    box-shadow 420ms ease,
-    opacity 420ms ease;
+  box-shadow: inset 0 0 0 1px rgba(8, 1, 18, 0.35);
+  /* Uncovering is the reward, so it arrives rather than snapping. */
+  animation: uncover 420ms ease both;
 }
 
 /* The split item, waiting for a block to be picked. */
