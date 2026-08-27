@@ -12,17 +12,23 @@ import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "./stages";
 const everyStage = Array.from({ length: TOTAL_STAGES }, (_, i) => i + 1);
 
 describe("chapters", () => {
-  it("covers every stage and groups them five at a time", () => {
+  it("covers all ninety-nine stages, nine to a chapter", () => {
+    expect(TOTAL_STAGES).toBe(99);
+    expect(STAGES_PER_CHAPTER).toBe(9);
     expect(TOTAL_STAGES).toBe(CHAPTERS.length * STAGES_PER_CHAPTER);
     expect(chapterFor(1).id).toBe(CHAPTERS[0]!.id);
-    expect(chapterFor(5).id).toBe(CHAPTERS[0]!.id);
-    expect(chapterFor(6).id).toBe(CHAPTERS[1]!.id);
+    expect(chapterFor(9).id).toBe(CHAPTERS[0]!.id);
+    expect(chapterFor(10).id).toBe(CHAPTERS[1]!.id);
   });
 
   it("plays a story beat on the last stage of each chapter", () => {
-    expect(isChapterFinale(4)).toBe(false);
-    expect(isChapterFinale(5)).toBe(true);
+    expect(isChapterFinale(8)).toBe(false);
+    expect(isChapterFinale(9)).toBe(true);
     expect(everyStage.filter(isChapterFinale)).toHaveLength(CHAPTERS.length);
+  });
+
+  it("gives every chapter its own id, so no beat plays twice", () => {
+    expect(new Set(CHAPTERS.map((c) => c.id)).size).toBe(CHAPTERS.length);
   });
 
   it("clamps past the final stage rather than falling off the end", () => {
@@ -50,9 +56,9 @@ describe("stage curve", () => {
     }
   });
 
-  it("keeps nine columns and grows the story board from five to nine rows", () => {
-    expect(stageConfig(1)).toMatchObject({ width: 9, rows: 5 });
-    expect(stageConfig(TOTAL_STAGES)).toMatchObject({ width: 9, rows: 9 });
+  it("keeps nine columns and grows the story board from four rows to eleven", () => {
+    expect(stageConfig(1)).toMatchObject({ width: 9, rows: 4 });
+    expect(stageConfig(TOTAL_STAGES)).toMatchObject({ width: 9, rows: 11 });
     for (const stage of everyStage) {
       const config = stageConfig(stage);
       expect(config.deck).toBeUndefined();
@@ -62,7 +68,7 @@ describe("stage curve", () => {
   });
 
   it("keeps moving all the way to the final stage, never plateauing early", () => {
-    const checkpoints = [1, 5, 10, 15, TOTAL_STAGES].map(stageConfig);
+    const checkpoints = [1, 20, 40, 60, 80, TOTAL_STAGES].map(stageConfig);
     for (let i = 1; i < checkpoints.length; i++) {
       const prev = checkpoints[i - 1]!;
       const next = checkpoints[i]!;
@@ -70,6 +76,7 @@ describe("stage curve", () => {
         next.width !== prev.width ||
         next.rows !== prev.rows ||
         next.hints !== prev.hints ||
+        next.undos !== prev.undos ||
         next.starTargets.some((t, tier) => t !== prev.starTargets[tier]) ||
         next.groupWeights.some((weight, i) => weight !== prev.groupWeights[i]);
       expect(changed, `stages plateau between checkpoint ${i - 1} and ${i}`).toBe(true);
@@ -79,8 +86,9 @@ describe("stage curve", () => {
   it("reaches its hardest settings exactly at the final stage", () => {
     const last = stageConfig(TOTAL_STAGES);
     expect(last.width).toBe(9);
-    expect(last.rows).toBe(9);
-    expect(last.hints).toBe(1);
+    expect(last.rows).toBe(11);
+    expect(last.hints).toBe(0);
+    expect(last.undos).toBe(1);
     expect(last.groupWeights[0]).toBeGreaterThan(last.groupWeights[3]!);
   });
 
@@ -94,23 +102,23 @@ describe("stage curve", () => {
 });
 
 describe("star targets", () => {
-  it("keeps every stage's targets ordered and reachable", () => {
+  it("keeps the consolation mark within reach on every stage", () => {
+    // Story grades on emptying the board; the first target is only the mark
+    // for a board that came close, so a run never hard-locks on one bad deal.
     for (const stage of everyStage) {
-      const [one, two, three] = stageConfig(stage).starTargets;
-      expect(one).toBeGreaterThan(two);
-      expect(two).toBeGreaterThan(three);
-      expect(three).toBeGreaterThanOrEqual(0);
+      const config = stageConfig(stage);
+      const [nearly] = config.starTargets;
+      expect(nearly).toBeGreaterThan(1);
+      expect(nearly).toBeLessThan(config.width * config.rows * 0.25);
     }
   });
 
-  it("tightens the share of the board allowed to survive", () => {
-    for (let tier = 0; tier < 3; tier++) {
-      const first = stageConfig(1);
-      const last = stageConfig(TOTAL_STAGES);
-      expect(last.starTargets[tier]! / (last.width * last.rows)).toBeLessThan(
-        first.starTargets[tier]! / (first.width * first.rows),
-      );
-    }
+  it("asks for a smaller share of a bigger board", () => {
+    const first = stageConfig(1);
+    const last = stageConfig(TOTAL_STAGES);
+    expect(last.starTargets[0]! / (last.width * last.rows)).toBeLessThan(
+      first.starTargets[0]! / (first.width * first.rows),
+    );
   });
 });
 

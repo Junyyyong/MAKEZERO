@@ -49,7 +49,23 @@ export interface RunConfig {
   /** How many of each digit to deal, indexed by value. Overrides groupWeights. */
   deck?: readonly number[];
   hints: number;
-  /** Most tiles that may remain for one, two and three stars. */
+  /**
+   * Story only: how many moves may be taken back.
+   *
+   * A story board is always dealt so that it *can* be emptied, but a careless
+   * move can strand tiles that nothing will ever clear. Taking that move back
+   * is the difference between a puzzle and a lottery, so this is a resource
+   * like hints rather than a convenience — and running out of it is what makes
+   * a late stage hard.
+   */
+  undos: number;
+  /**
+   * Most tiles that may remain for one, two and three stars.
+   *
+   * In story only the first still works that way: it is the consolation mark
+   * for a board that came close. Two and three stars are about emptying the
+   * board — see `stars()`.
+   */
   starTargets: readonly [number, number, number];
   timeLimitMs?: number;
   /** Time attack only: redeal instead of ending. */

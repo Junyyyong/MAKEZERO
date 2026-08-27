@@ -20,6 +20,16 @@ export interface GameState {
   board: Board;
   score: number;
   hintsLeft: number;
+  /** Moves still available to take back. */
+  undosLeft: number;
+  /**
+   * The state one move ago, or undefined at the start of a run.
+   *
+   * Kept as a chain rather than a list so that taking a move back is just
+   * stepping to it. Only built when the run allows undos at all, so the modes
+   * that do not carry no history.
+   */
+  previous?: GameState;
   status: GameStatus;
   /** Tiles the board was dealt with, before anything was cleared. */
   startingCells: number;
@@ -91,6 +101,7 @@ export function newGame(config: RunConfig, seed: number = randomSeed()): GameSta
     board,
     score: 0,
     hintsLeft: config.hints,
+    undosLeft: config.undos,
     status: "playing",
     startingCells: board.cells.length,
     remainingMs: config.timeLimitMs ?? 0,
@@ -159,7 +170,12 @@ export function commitSelection(state: GameState, indices: readonly number[]): C
   const { board, removed } = state.config.spawn
     ? { board: { width: state.board.width, cells }, removed: 0 }
     : collapseRows({ width: state.board.width, cells });
-  const next = settleStatus({ ...state, board, score: state.score + result.score });
+  const next = settleStatus({
+    ...state,
+    board,
+    score: state.score + result.score,
+    previous: state.config.undos > 0 ? state : undefined,
+  });
   return { state: next, result, rowsRemoved: removed };
 }
 
@@ -175,10 +191,40 @@ export function useHint(state: GameState): HintOutcome {
   return { state: { ...state, hintsLeft: state.hintsLeft - 1 }, indices };
 }
 
-/** 0 to 3, from how few tiles the player left standing. */
+/**
+ * Takes back the last move.
+ *
+ * Allowed after the board has gone dead, which is the whole reason it exists:
+ * a story board can always be emptied, but one careless move can strand tiles
+ * that nothing will ever clear, and the player deserves to see which move it
+ * was. Everything goes back with it — the score, the tiles, the row that
+ * closed up — except the count of how many take-backs are left.
+ */
+export function undo(state: GameState): GameState {
+  if (state.undosLeft <= 0 || !state.previous) return state;
+  return { ...state.previous, undosLeft: state.undosLeft - 1, status: "playing" };
+}
+
+/** Hints and take-backs spent so far. Three stars asks for none of either. */
+export function assistsUsed(state: GameState): number {
+  return state.config.hints - state.hintsLeft + (state.config.undos - state.undosLeft);
+}
+
+/**
+ * 0 to 3.
+ *
+ * Story is scored on emptying the board, because a story board is always dealt
+ * so that it can be: three stars for doing it unaided, two for doing it with a
+ * hint or a take-back, and one as consolation for a board that came close. The
+ * other modes have no stars, and grade on how few tiles were left.
+ */
 export function stars(state: GameState): number {
   const left = aliveCount(state.board);
   const [one, two, three] = state.config.starTargets;
+  if (state.config.mode === "story") {
+    if (left > 0) return left <= one ? 1 : 0;
+    return assistsUsed(state) === 0 ? 3 : 2;
+  }
   if (left <= three) return 3;
   if (left <= two) return 2;
   if (left <= one) return 1;
