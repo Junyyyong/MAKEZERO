@@ -25,22 +25,32 @@
           <p class="tagline">타닥, 타다닥 — 두드려서 10</p>
         </div>
 
-        <button class="play-btn" id="btn-title-play">PLAY</button>
+        <!-- The collection so far. It fills the middle of the screen with the
+             thing the game is actually about, and it is where character art
+             can go later. -->
+        <div class="title-collection" id="title-collection">
+          <p class="collection-count" id="collection-count">모은 그림 0 / 99</p>
+          <div class="collection-strip" id="collection-strip"></div>
+        </div>
 
-        <nav class="mode-list collapsed" id="mode-list" aria-label="게임 모드">
-          <button class="mode-btn" id="mode-story" data-mode="story">
-            <span class="mode-name">스토리</span>
-            <span class="mode-desc" id="desc-story">스테이지 1</span>
-          </button>
-          <button class="mode-btn" id="mode-timeAttack" data-mode="timeAttack">
-            <span class="mode-name">타임어택</span>
-            <span class="mode-desc" id="desc-timeAttack">60초 도전</span>
-          </button>
-          <button class="mode-btn" id="mode-endless" data-mode="endless">
-            <span class="mode-name">무제한</span>
-            <span class="mode-desc" id="desc-endless">끝까지 지우기</span>
-          </button>
-        </nav>
+        <div class="title-actions">
+          <button class="play-btn" id="btn-title-play">PLAY</button>
+
+          <nav class="mode-list collapsed" id="mode-list" aria-label="게임 모드">
+            <button class="mode-btn" id="mode-story" data-mode="story">
+              <span class="mode-name">스토리</span>
+              <span class="mode-desc" id="desc-story">스테이지 1</span>
+            </button>
+            <button class="mode-btn" id="mode-timeAttack" data-mode="timeAttack">
+              <span class="mode-name">타임어택</span>
+              <span class="mode-desc" id="desc-timeAttack">60초 도전</span>
+            </button>
+            <button class="mode-btn" id="mode-endless" data-mode="endless">
+              <span class="mode-name">무제한</span>
+              <span class="mode-desc" id="desc-endless">끝까지 지우기</span>
+            </button>
+          </nav>
+        </div>
 
         <div class="title-links">
           <button class="text-btn" id="btn-title-tutorial">튜토리얼</button>

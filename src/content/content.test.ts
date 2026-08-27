@@ -57,8 +57,8 @@ describe("stage curve", () => {
     }
   });
 
-  it("keeps nine columns and grows the story board from four rows to eleven", () => {
-    expect(stageConfig(1)).toMatchObject({ width: 9, rows: 4 });
+  it("keeps nine columns and grows the story board from three rows to eleven", () => {
+    expect(stageConfig(1)).toMatchObject({ width: 9, rows: 3 });
     expect(stageConfig(TOTAL_STAGES)).toMatchObject({ width: 9, rows: 11 });
     for (const stage of everyStage) {
       const config = stageConfig(stage);

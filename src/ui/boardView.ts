@@ -59,6 +59,8 @@ export class BoardView {
   private interactive = true;
   /** Cleared whenever the board must be measured again. */
   private laidOut = "";
+  /** The picture behind the board, cut into one slice per square. */
+  private backdrop: string | null = null;
   private readonly resizeObserver: ResizeObserver | undefined;
 
   constructor(private readonly options: BoardViewOptions) {
@@ -103,8 +105,39 @@ export class BoardView {
    */
   setBackdrop(image: string | null): void {
     const { grid } = this.options;
+    this.backdrop = image;
     grid.classList.toggle("reveal", image !== null);
-    grid.style.backgroundImage = image ?? "";
+    grid.style.setProperty("--plate", image ?? "none");
+    this.laidOut = ""; // the slices are cut to the tile size
+  }
+
+  /**
+   * Cuts the picture into one slice per square.
+   *
+   * The obvious way — one background on the whole board, transparent tiles —
+   * leaves the uncovered part as a single continuous shape, gaps and all. Here
+   * each square carries its own slice of the same picture, so what surfaces is
+   * block-shaped: rounded corners, and the gap between blocks staying dark.
+   *
+   * The picture is treated as square and scaled to cover the grid, so a wide
+   * early board and a tall late one both get the middle of it rather than a
+   * squashed copy.
+   */
+  private cutBackdrop(tile: number, gap: number, cols: number, rows: number): void {
+    if (this.backdrop === null) return;
+    const step = tile + gap;
+    const across = cols * tile + (cols - 1) * gap;
+    const down = rows * tile + (rows - 1) * gap;
+    const side = Math.max(across, down);
+    const offsetX = (side - across) / 2;
+    const offsetY = (side - down) / 2;
+
+    this.tiles.forEach((element, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      element.style.backgroundSize = `${side}px ${side}px`;
+      element.style.backgroundPosition = `${-(col * step) - offsetX}px ${-(row * step) - offsetY}px`;
+    });
   }
 
   /** Starts on a new board: nothing selected, measured from scratch. */
@@ -447,6 +480,8 @@ export class BoardView {
     // list has to be written out here rather than left to the stylesheet.
     this.options.grid.style.gridTemplateColumns = `repeat(${width}, ${tile}px)`;
     this.options.grid.dataset.cols = String(width);
+
+    this.cutBackdrop(tile, gap, width, rows);
 
     // Only a board too big even at the minimum tile size may scroll.
     const overflows = rows * (tile + gap) + padY > this.options.wrap.clientHeight + 1;

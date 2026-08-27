@@ -23,11 +23,11 @@ function play(stage: number, seed: number) {
 }
 
 describe("progressive story deal", () => {
-  it("runs ninety-nine stages, from four rows to eleven", () => {
+  it("runs ninety-nine stages, from three rows to eleven", () => {
     expect(TOTAL_STAGES).toBe(99);
     const first = stageConfig(1);
     const last = stageConfig(TOTAL_STAGES);
-    expect(first.width * first.rows).toBe(36);
+    expect(first.width * first.rows).toBe(27);
     expect(last.width * last.rows).toBe(99);
     // Nine columns throughout, so a block is the same size on every stage.
     for (let stage = 1; stage <= TOTAL_STAGES; stage++) expect(stageConfig(stage).width).toBe(9);
