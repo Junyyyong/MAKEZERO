@@ -17,6 +17,8 @@ export interface BoardViewOptions {
   isValid(selection: readonly number[]): boolean;
   /** Fired when a selection should actually be played. */
   onCommit(selection: readonly number[]): void;
+  /** Keeps the bottom sum indicator in sync with taps and drags. */
+  onSelectionChange?(sum: number): void;
   /**
    * Largest a tile may be drawn. A game board wants to fill the screen, but a
    * small teaching board would blow up to enormous tiles without a cap.
@@ -39,7 +41,8 @@ export class BoardView {
   private hinted: number[] = [];
   private hintTimer: number | undefined;
   private dragging = false;
-  private dragMoved = false;
+  /** Stops one gesture after it clears or overcharges; lift to start again. */
+  private gestureSettled = false;
   private interactive = true;
   /** Cleared whenever the board must be measured again. */
   private laidOut = "";
@@ -81,6 +84,7 @@ export class BoardView {
   setBoard(board: Board): void {
     this.board = board;
     this.selection = [];
+    this.emitSelection();
     this.laidOut = "";
     this.render();
   }
@@ -97,7 +101,10 @@ export class BoardView {
       board.width !== this.board.width || board.cells.length !== this.board.cells.length;
     this.board = board;
     const kept = this.selection.filter((i) => isAlive(board, i));
-    if (kept.length !== this.selection.length) this.selection = kept;
+    if (kept.length !== this.selection.length) {
+      this.selection = kept;
+      this.emitSelection();
+    }
     if (reshaped) this.laidOut = "";
     this.render();
   }
@@ -106,7 +113,9 @@ export class BoardView {
     this.interactive = interactive;
     if (!interactive) {
       this.dragging = false;
+      this.gestureSettled = false;
       this.selection = [];
+      this.emitSelection();
       this.render();
     }
   }
@@ -114,11 +123,13 @@ export class BoardView {
   clearSelection(): void {
     if (this.selection.length === 0) return;
     this.selection = [];
+    this.emitSelection();
     this.render();
   }
 
   showHint(indices: number[]): void {
     this.selection = [];
+    this.emitSelection();
     this.hinted = indices;
     this.render();
     window.clearTimeout(this.hintTimer);
@@ -171,72 +182,80 @@ export class BoardView {
     event.preventDefault();
     this.options.grid.setPointerCapture(event.pointerId);
     this.dragging = true;
-    this.dragMoved = false;
+    this.gestureSettled = false;
     this.clearHint();
 
     const at = this.selection.indexOf(i);
     if (at >= 0) {
-      // Tapping a selected tile drops it and everything picked after it.
-      this.selection = this.selection.slice(0, at);
+      // A tap toggles exactly that block, matching familiar mobile selection.
+      this.selection.splice(at, 1);
+      this.emitSelection();
       this.render();
       return;
     }
-    if (!this.extend(i)) this.selection = [i];
-    this.render();
-    // Ten is always the end of a selection, so a tap can settle on its own.
-    if (this.options.isValid(this.selection)) this.options.onCommit([...this.selection]);
+    this.add(i);
   };
 
   private readonly onPointerMove = (event: PointerEvent): void => {
-    if (!this.dragging) return;
+    if (!this.dragging || this.gestureSettled) return;
     event.preventDefault();
     const i = this.tileIndexFrom(document.elementFromPoint(event.clientX, event.clientY));
-    if (i === null || i === this.selection[this.selection.length - 1]) return;
-    this.dragMoved = true;
-    if (i === this.selection[this.selection.length - 2]) {
-      this.selection.pop();
-      this.render();
-      return;
-    }
-    if (this.extend(i)) this.render();
+    if (i === null || this.selection.includes(i)) return;
+    this.add(i);
   };
 
   private readonly onPointerUp = (event: PointerEvent): void => {
     if (!this.dragging) return;
     this.dragging = false;
+    this.gestureSettled = false;
     this.options.grid.releasePointerCapture?.(event.pointerId);
-    if (!this.dragMoved) return; // a tap keeps its selection on screen
-    if (this.options.isValid(this.selection)) {
-      this.options.onCommit([...this.selection]);
-      return;
-    }
-    if (this.selection.length >= 2) this.reject();
-    this.selection = [];
-    this.render();
+    // Taps and incomplete drags deliberately keep their selection. A later
+    // tap can toggle any chosen block off; only ten or overcharge settles it.
   };
 
   private readonly onPointerCancel = (): void => {
     this.dragging = false;
+    this.gestureSettled = false;
     this.selection = [];
+    this.emitSelection();
     this.render();
   };
 
   /**
-   * Adds a tile to the selection, refusing anything that could not belong to
-   * it. A selection can only ever total ten, so a tile that would overshoot
-   * starts a fresh selection instead of piling up an unclearable heap.
+   * Adds exactly what the player touched. We intentionally do not pre-filter
+   * the drag toward a valid answer: crossing ten is player input too, and the
+   * documented penalty is to clear the whole selection and shake the board.
    */
-  private extend(i: number): boolean {
-    if (this.selection.length === 0) return false;
-    if (this.selection.length >= MAX_SELECTION) return false;
-    if (this.selection.includes(i)) return false;
-    if (this.selectionSum() + valueAt(this.board, i) > TARGET_SUM) return false;
+  private add(i: number): void {
+    if (this.selection.includes(i)) return;
     this.selection.push(i);
-    return true;
+    const sum = this.selectionSum();
+    if (sum > TARGET_SUM || this.selection.length > MAX_SELECTION) {
+      this.selection = [];
+      this.gestureSettled = true;
+      this.emitSelection();
+      this.render();
+      this.reject();
+      return;
+    }
+
+    this.emitSelection();
+    this.render();
+    if (this.options.isValid(this.selection)) {
+      const completed = [...this.selection];
+      this.selection = [];
+      this.gestureSettled = true;
+      this.emitSelection();
+      this.options.onCommit(completed);
+    }
   }
 
   private selectionSum(): number {
     return this.selection.reduce((total, i) => total + valueAt(this.board, i), 0);
+  }
+
+  private emitSelection(): void {
+    this.options.onSelectionChange?.(this.selectionSum());
   }
 
   // ---- rendering ---------------------------------------------------------

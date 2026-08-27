@@ -6,6 +6,7 @@ import { TOTAL_STAGES, chapterFor, isChapterFinale } from "../content/chapters";
 import type { Chapter } from "../content/chapters";
 import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
 import { BoardView } from "./boardView";
+import { AppStateMachine } from "./appStateMachine";
 import { el, starLine } from "./dom";
 import { Hud } from "./screens/hud";
 import { Overlay } from "./screens/overlay";
@@ -13,8 +14,16 @@ import { StoryScreen } from "./screens/storyScreen";
 import { RecordsScreen } from "./screens/recordsScreen";
 import { TitleScreen } from "./screens/titleScreen";
 import { TutorialScreen } from "./screens/tutorialScreen";
-import { loadDaily, loadProgress, recordStageStars, saveDaily, saveProgress } from "./storage";
-import type { DailyStats, Progress } from "./storage";
+import {
+  loadDaily,
+  loadProgress,
+  loadSettings,
+  recordStageStars,
+  saveDaily,
+  saveProgress,
+  saveSettings,
+} from "./storage";
+import type { DailyStats, Progress, Settings } from "./storage";
 
 const RULES_TEXT = `숫자를 골라 합이 <b>정확히 10</b>이 되면 지워집니다.
 2개부터 5개까지 고를 수 있고, 많이 고를수록 점수가 큽니다.
@@ -22,13 +31,15 @@ const RULES_TEXT = `숫자를 골라 합이 <b>정확히 10</b>이 되면 지워
 <b>어느 칸이든 상관없습니다.</b> 멀리 떨어져 있어도, 사이에 무엇이 있어도 함께 고를 수 있습니다.
 같은 숫자끼리 지우는 규칙은 없습니다. 3+3은 6이라 지워지지 않아요.`;
 
-type Screen = "title" | "game" | "story" | "tutorial" | "records";
+type Screen = "splash" | "title" | "game" | "story" | "tutorial" | "records";
 
 /** Owns the run in progress and moves between screens. */
 export class App {
   private state: GameState;
   private daily: DailyStats;
   private progress: Progress;
+  private settings: Settings;
+  private readonly flow = new AppStateMachine();
 
   private readonly view: BoardView;
   private readonly hud = new Hud();
@@ -40,8 +51,10 @@ export class App {
 
   private frame: number | undefined;
   private lastFrameMs = 0;
+  private activeScreen: Screen = "splash";
 
   private readonly screens: Record<Screen, HTMLElement> = {
+    splash: el("screen-splash"),
     title: el("screen-title"),
     game: el("screen-game"),
     story: el("screen-story"),
@@ -52,6 +65,7 @@ export class App {
   constructor() {
     this.daily = loadDaily();
     this.progress = loadProgress();
+    this.settings = loadSettings();
     this.state = newGame(ENDLESS_CONFIG, 1);
 
     this.view = new BoardView({
@@ -59,30 +73,46 @@ export class App {
       grid: el("board"),
       isValid: (selection) => isSelectionValid(this.state.board, selection),
       onCommit: (selection) => this.commit(selection),
+      onSelectionChange: (sum) => this.hud.setSelectionSum(sum),
     });
     this.title = new TitleScreen(
       (mode) => this.startMode(mode),
       () => this.showRules(),
+      () => this.showSettings(),
     );
 
     this.records = new RecordsScreen(() => this.showTitle());
-    el<HTMLButtonElement>("btn-help").addEventListener("click", () => this.showRules());
     el<HTMLButtonElement>("btn-back").addEventListener("click", () => this.showTitle());
+    el<HTMLButtonElement>("btn-pause").addEventListener("click", () => this.pause());
     el<HTMLButtonElement>("btn-title-tutorial").addEventListener("click", () => this.showTutorial());
     el<HTMLButtonElement>("btn-title-records").addEventListener("click", () => this.showRecords());
     this.hud.hintBtn.addEventListener("click", () => this.onHint());
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden && this.flow.current === "inGame") this.pause();
+    });
 
-    // A first-time player gets shown the ropes before the mode picker.
-    if (this.progress.tutorialDone) this.showTitle();
-    else this.showTutorial();
+    this.applySettings();
+    window.setTimeout(() => this.showTitle(), 2_000);
   }
 
   // ---- screens -----------------------------------------------------------
 
   private show(screen: Screen): void {
-    for (const [name, node] of Object.entries(this.screens)) {
-      node.classList.toggle("hidden", name !== screen);
-    }
+    const next = this.screens[screen];
+    const previous = this.screens[this.activeScreen];
+    if (previous === next) return;
+
+    this.activeScreen = screen;
+    next.classList.remove("hidden");
+    next.classList.remove("screen-leave", "screen-enter", "screen-enter-active");
+    next.classList.add("screen-enter");
+    previous?.classList.add("screen-leave");
+    requestAnimationFrame(() => next.classList.add("screen-enter-active"));
+    window.setTimeout(() => {
+      previous?.classList.add("hidden");
+      previous?.classList.remove("screen-leave");
+      next.classList.remove("screen-enter", "screen-enter-active");
+    }, 240);
     this.overlay.close();
   }
 
@@ -92,12 +122,14 @@ export class App {
     this.daily = loadDaily();
     this.progress = loadProgress();
     this.title.render(this.progress);
+    this.flow.enter("mainMenu");
     this.show("title");
   }
 
   private showTutorial(): void {
     this.stopClock();
     this.view.setInteractive(false);
+    this.flow.enter("tutorial");
     this.show("tutorial");
     this.tutorial.start(() => {
       if (!this.progress.tutorialDone) {
@@ -111,6 +143,7 @@ export class App {
   private showRecords(): void {
     this.progress = loadProgress();
     this.records.render(this.progress);
+    this.flow.enter("records");
     this.show("records");
   }
 
@@ -132,6 +165,7 @@ export class App {
 
   private beginRun(config: RunConfig): void {
     this.state = newGame(config);
+    this.flow.enter("inGame");
     this.show("game");
     this.view.setBoard(this.state.board);
     this.view.setInteractive(true);
@@ -162,6 +196,26 @@ export class App {
     this.frame = undefined;
   }
 
+  private pause(): void {
+    if (this.flow.current !== "inGame" || this.state.status !== "playing") return;
+    this.stopClock();
+    this.view.setInteractive(false);
+    this.flow.enter("paused");
+    this.overlay.open({
+      title: "일시정지",
+      body: "잠시 쉬어가도 괜찮아요.",
+      primary: { label: "계속하기", action: () => this.resume() },
+      secondary: { label: "메인 메뉴", action: () => this.showTitle() },
+    });
+  }
+
+  private resume(): void {
+    if (this.flow.current !== "paused") return;
+    this.flow.enter("inGame");
+    this.view.setInteractive(true);
+    if (this.state.config.timeLimitMs !== undefined || this.state.config.spawn) this.startClock();
+  }
+
   // ---- moves -------------------------------------------------------------
 
   private commit(selection: readonly number[]): void {
@@ -184,7 +238,10 @@ export class App {
 
   private recordScore(): void {
     const { mode } = this.state.config;
-    if (mode === "endless") {
+    if (mode === "story" && this.state.score > this.progress.bestStory) {
+      this.progress = { ...this.progress, bestStory: this.state.score };
+      saveProgress(this.progress);
+    } else if (mode === "endless") {
       if (this.state.score > this.daily.best) {
         this.daily = { ...this.daily, best: this.state.score };
         saveDaily(this.daily);
@@ -207,16 +264,23 @@ export class App {
     // Measuring the board before that sizes its tiles against a stale box.
     this.hud.gamesToday = this.daily.games;
     this.hud.bestToday = this.daily.best;
+    this.hud.bestForMode =
+      this.state.config.mode === "story"
+        ? this.progress.bestStory
+        : this.state.config.mode === "timeAttack"
+          ? this.progress.bestTimeAttack
+          : this.progress.bestEndless;
     this.hud.render(this.state);
     // The board is a new object whenever anything changes it, tiles arriving
     // on their own timer included, so the view is re-pointed every render.
     this.view.sync(this.state.board);
-    if (this.state.status !== "playing") this.finishRun();
+    if (this.state.status !== "playing" && this.flow.current === "inGame") this.finishRun();
   }
 
   private finishRun(): void {
     this.stopClock();
     this.view.setInteractive(false);
+    this.flow.enter("result");
     const { config, score } = this.state;
 
     if (config.mode === "story") {
@@ -288,6 +352,7 @@ export class App {
   }
 
   private playChapter(chapter: Chapter, stage: number): void {
+    this.flow.enter("story");
     this.show("story");
     this.story.play(chapter, () => {
       if (stage >= TOTAL_STAGES) {
@@ -296,6 +361,28 @@ export class App {
       }
       this.startStage(stage + 1);
     });
+  }
+
+  private showSettings(): void {
+    if (this.flow.current !== "settings") this.flow.enter("settings");
+    this.overlay.open({
+      title: "설정",
+      body: `사운드 ${this.settings.soundOn ? "켜짐" : "꺼짐"}`,
+      primary: {
+        label: this.settings.soundOn ? "사운드 끄기" : "사운드 켜기",
+        action: () => {
+          this.settings = { ...this.settings, soundOn: !this.settings.soundOn };
+          saveSettings(this.settings);
+          this.applySettings();
+          this.showSettings();
+        },
+      },
+      secondary: { label: "닫기", action: () => this.showTitle() },
+    });
+  }
+
+  private applySettings(): void {
+    document.documentElement.dataset.sound = this.settings.soundOn ? "on" : "off";
   }
 
   private showRules(): void {

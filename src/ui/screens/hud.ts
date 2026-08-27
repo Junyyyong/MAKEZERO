@@ -7,6 +7,8 @@ import { el, formatClock, starLine } from "../dom";
 /** The score, mode chips, timer and hint button above and below the board. */
 export class Hud {
   private readonly scoreEl = el<HTMLDivElement>("score");
+  private readonly bestEl = el<HTMLDivElement>("score-best");
+  private readonly sumEl = el<HTMLElement>("selection-sum").querySelector("b")!;
   private readonly chipLeft = el<HTMLDivElement>("chip-left");
   private readonly chipRight = el<HTMLDivElement>("chip-right");
   private readonly timerBar = el<HTMLDivElement>("timer-bar");
@@ -18,10 +20,19 @@ export class Hud {
   /** Games played today, shown in endless mode. */
   gamesToday = 1;
   bestToday = 0;
+  bestForMode = 0;
+
+  setSelectionSum(sum: number): void {
+    this.sumEl.textContent = String(sum);
+    const root = this.sumEl.parentElement!;
+    root.classList.toggle("active", sum > 0);
+    root.classList.toggle("ready", sum === 10);
+  }
 
   render(state: GameState): void {
     const { config, score, hintsLeft, status, remainingMs } = state;
     this.scoreEl.textContent = String(score);
+    this.bestEl.textContent = `BEST ${Math.max(this.bestForMode, score)}`;
     this.hintBadge.textContent = String(hintsLeft);
     this.hintBtn.disabled = hintsLeft === 0 || status !== "playing";
     this.hintBtn.classList.toggle("hidden", config.hints === 0);

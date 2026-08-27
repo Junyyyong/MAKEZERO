@@ -2,6 +2,7 @@ import { TOTAL_STAGES } from "../content/chapters";
 
 const DAILY_KEY = "makezero.daily.v1";
 const PROGRESS_KEY = "makezero.progress.v1";
+const SETTINGS_KEY = "makezero.settings.v1";
 
 export interface DailyStats {
   date: string;
@@ -12,6 +13,7 @@ export interface DailyStats {
 export interface Progress {
   /** Highest stage the player may enter, 1-based. */
   stage: number;
+  bestStory: number;
   bestTimeAttack: number;
   bestEndless: number;
   /** Chapters whose story beat has already played. */
@@ -20,6 +22,10 @@ export interface Progress {
   stageStars: number[];
   /** Whether the player has been through, or skipped, the tutorial. */
   tutorialDone: boolean;
+}
+
+export interface Settings {
+  soundOn: boolean;
 }
 
 export function todayKey(now: Date = new Date()): string {
@@ -66,9 +72,21 @@ export function saveDaily(stats: DailyStats): void {
   write(DAILY_KEY, stats);
 }
 
+export function loadSettings(): Settings {
+  return read(SETTINGS_KEY, { soundOn: true }, (raw) => {
+    const parsed = raw as Partial<Settings>;
+    return { soundOn: parsed.soundOn !== false };
+  });
+}
+
+export function saveSettings(settings: Settings): void {
+  write(SETTINGS_KEY, settings);
+}
+
 function blankProgress(): Progress {
   return {
     stage: 1,
+    bestStory: 0,
     bestTimeAttack: 0,
     bestEndless: 0,
     seenChapters: [],
@@ -83,6 +101,7 @@ export function loadProgress(): Progress {
     const stage = Number(parsed.stage);
     return {
       stage: Number.isFinite(stage) ? Math.min(Math.max(stage, 1), TOTAL_STAGES) : 1,
+      bestStory: Number(parsed.bestStory) || 0,
       bestTimeAttack: Number(parsed.bestTimeAttack) || 0,
       bestEndless: Number(parsed.bestEndless) || 0,
       seenChapters: Array.isArray(parsed.seenChapters)

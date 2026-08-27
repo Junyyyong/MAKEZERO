@@ -12,14 +12,22 @@
   </head>
   <body>
     <div id="app">
+      <!-- ── splash ────────────────────────────────────────────── -->
+      <section class="screen splash-screen" id="screen-splash" aria-label="TAP to TEN 시작">
+        <div class="splash-logo">TAP <span>to</span> TEN</div>
+        <div class="splash-pulse" aria-hidden="true">10</div>
+      </section>
+
       <!-- ── title ─────────────────────────────────────────────── -->
-      <section class="screen title-screen" id="screen-title">
+      <section class="screen title-screen hidden" id="screen-title">
         <div class="brand-block">
           <h1 class="brand">TAP <span class="brand-to">to</span> TEN</h1>
           <p class="tagline">타닥, 타다닥 — 두드려서 10</p>
         </div>
 
-        <nav class="mode-list">
+        <button class="play-btn" id="btn-title-play">PLAY</button>
+
+        <nav class="mode-list collapsed" id="mode-list" aria-label="게임 모드">
           <button class="mode-btn" id="mode-story" data-mode="story">
             <span class="mode-name">스토리</span>
             <span class="mode-desc" id="desc-story">스테이지 1</span>
@@ -37,6 +45,7 @@
         <div class="title-links">
           <button class="text-btn" id="btn-title-tutorial">튜토리얼</button>
           <button class="text-btn" id="btn-title-records">내 기록</button>
+          <button class="text-btn" id="btn-title-settings">설정</button>
           <button class="text-btn" id="btn-title-rules">규칙 보기</button>
         </div>
       </section>
@@ -50,9 +59,15 @@
             </svg>
           </button>
           <div class="score-block">
+            <div class="score-label">SCORE</div>
             <div class="score" id="score">0</div>
+            <div class="score-best" id="score-best">BEST 0</div>
           </div>
-          <button class="icon-btn" id="btn-help" aria-label="규칙">?</button>
+          <button class="icon-btn" id="btn-pause" aria-label="일시정지">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M9 6v12M15 6v12" />
+            </svg>
+          </button>
         </header>
 
         <div class="sub-hud">
@@ -72,6 +87,9 @@
         <p class="notice" id="notice" role="status" aria-live="polite"></p>
 
         <footer class="actions">
+          <div class="selection-sum" id="selection-sum" aria-live="polite">
+            <span>SUM</span><b>0</b>
+          </div>
           <button class="round-btn" id="btn-hint" aria-label="힌트">
             <span class="glyph">&#128161;</span><span class="badge" id="badge-hint">3</span>
           </button>

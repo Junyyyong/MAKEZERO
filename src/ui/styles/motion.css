@@ -1,5 +1,51 @@
 /* Animations, and the opt-out that must switch every one of them off. */
 
+.screen-enter,
+.screen-leave {
+  position: absolute;
+  inset: 0;
+}
+
+.screen-enter {
+  z-index: 2;
+  opacity: 0;
+  transform: translateY(10px) scale(.992);
+}
+
+.screen-enter.screen-enter-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 200ms ease, transform 240ms cubic-bezier(.2,.8,.2,1);
+}
+
+.screen-leave {
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(.985);
+  transition: opacity 140ms ease, transform 180ms ease;
+}
+
+@keyframes splash-rise {
+  from { opacity: 0; transform: translateY(14px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes splash-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes panel-rise {
+  from { opacity: 0; transform: translateY(18px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 @keyframes hint-pulse {
   0%,
   100% {
