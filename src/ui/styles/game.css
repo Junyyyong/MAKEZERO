@@ -99,7 +99,9 @@
   border-radius: 999px;
 }
 
-.timer-bar.hidden { display: none; }
+/* Story has no clock, but the bar keeps its room so the board sits at the same
+   height in all three modes — a mode change must not nudge the board. */
+.timer-bar.hidden { visibility: hidden; }
 
 .timer-bar span {
   display: block;
@@ -109,6 +111,22 @@
 }
 
 .timer-bar.urgent span { background: linear-gradient(90deg, #ffb53d, #e83f66); }
+
+/*
+ * Nothing around the board pans the page. A drag that begins a few pixels off
+ * a tile — in the frame's padding, on the score row, on the stage below — is
+ * still a drag, and without this the browser claims it as a scroll gesture and
+ * the board slides out from under the finger.
+ */
+.hud,
+.sub-hud,
+.timer-bar,
+.selection-sum,
+.stage-floor,
+.notice,
+.actions {
+  touch-action: none;
+}
 
 .board-wrap {
   position: relative;
@@ -121,12 +139,32 @@
 }
 
 /* Width determines tile size. Rows grow downward as story difficulty rises. */
-.game-screen > .board-wrap {
+.game-screen > /*
+ * Nothing around the board pans the page. A drag that begins a few pixels off
+ * a tile — in the frame's padding, on the score row, on the stage below — is
+ * still a drag, and without this the browser claims it as a scroll gesture and
+ * the board slides out from under the finger.
+ */
+.hud,
+.sub-hud,
+.timer-bar,
+.selection-sum,
+.stage-floor,
+.notice,
+.actions {
+  touch-action: none;
+}
+
+.board-wrap {
   flex: 0 1 auto;
   align-items: flex-start;
   width: calc(100% - 28px);
   margin: 0 14px;
   aspect-ratio: var(--board-ratio, 1 / 1);
+}
+
+.board-wrap:not(.scrolls) {
+  touch-action: none;
 }
 
 .board-wrap.scrolls {
