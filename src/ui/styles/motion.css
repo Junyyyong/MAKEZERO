@@ -1,84 +1,90 @@
-/*
- * Motion, and the opt-out that must switch every one of it off.
- *
- * The house rule: nothing overshoots, nothing snaps, nothing flashes. Every
- * animation here is a slow fade, a small drift or a breath — the same
- * unhurried register as the palette. If a keyframe needs a bounce to read, the
- * thing it is animating is wrong, not the timing.
- */
+/* Animations, and the opt-out that must switch every one of them off. */
 
-/* A screen arrives from just below, already almost in place. */
-@keyframes screen-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.screen-enter,
+.screen-leave {
+  position: absolute;
+  inset: 0;
 }
 
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+.screen-enter {
+  z-index: 2;
+  opacity: 0;
+  transform: translateY(10px) scale(.992);
 }
 
-@keyframes rise-in {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.screen-enter.screen-enter-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 200ms ease, transform 240ms cubic-bezier(.2,.8,.2,1);
 }
 
-/* A hint does not blink: it breathes, twice, and stops. */
-@keyframes hint-breathe {
+.screen-leave {
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(.985);
+  transition: opacity 140ms ease, transform 180ms ease;
+}
+
+@keyframes splash-rise {
+  from { opacity: 0; transform: translateY(14px) scale(.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes splash-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes panel-rise {
+  from { opacity: 0; transform: translateY(18px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes hint-pulse {
   0%,
   100% {
-    transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(127, 181, 170, 0);
+    box-shadow:
+      inset 0 2px 0 rgba(255, 255, 255, 0.6),
+      0 1px 2px rgba(0, 0, 0, 0.35);
   }
   50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 0 2px var(--ring-ok);
+    box-shadow:
+      0 0 0 3px var(--ring-ok),
+      0 0 12px rgba(121, 192, 90, 0.8);
   }
 }
 
-/* A refused selection sways the board like a hanging shape, then settles. */
-@keyframes sway {
+@keyframes shake {
   0%,
   100% {
-    transform: translateX(0) rotate(0deg);
+    transform: translateX(0);
   }
-  30% {
-    transform: translateX(-4px) rotate(-0.35deg);
+  25% {
+    transform: translateX(-6px);
   }
-  65% {
-    transform: translateX(3px) rotate(0.25deg);
+  75% {
+    transform: translateX(6px);
   }
 }
 
-/* A score drifts off like something let go of, not like something fired. */
-@keyframes drift-up {
+@keyframes pop-up {
   0% {
     opacity: 0;
-    transform: translate(-50%, 0) scale(0.94);
+    transform: translate(-50%, 0) scale(0.7);
   }
-  22% {
+  25% {
     opacity: 1;
-    transform: translate(-50%, -12px) scale(1);
+    transform: translate(-50%, -14px) scale(1.15);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -46px) scale(1);
+    transform: translate(-50%, -52px) scale(1);
   }
 }
 

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#EFE1CF</color>
-    <color name="colorPrimaryDark">#D5CBE2</color>
-    <color name="colorAccent">#E08A6D</color>
+    <color name="colorPrimary">#7A4F24</color>
+    <color name="colorPrimaryDark">#5F3C1B</color>
+    <color name="colorAccent">#F0A91E</color>
     <!-- Matches the page background so launch never flashes white. -->
-    <color name="splashBackground">#F7ECE2</color>
+    <color name="splashBackground">#7A4F24</color>
 </resources>

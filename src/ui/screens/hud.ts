@@ -7,6 +7,8 @@ import { el, formatClock, starLine } from "../dom";
 /** The score, mode chips, timer and hint button above and below the board. */
 export class Hud {
   private readonly scoreEl = el<HTMLDivElement>("score");
+  private readonly bestEl = el<HTMLDivElement>("score-best");
+  private readonly sumEl = el<HTMLElement>("selection-sum").querySelector("b")!;
   private readonly chipLeft = el<HTMLDivElement>("chip-left");
   private readonly chipRight = el<HTMLDivElement>("chip-right");
   private readonly timerBar = el<HTMLDivElement>("timer-bar");
@@ -18,10 +20,19 @@ export class Hud {
   /** Games played today, shown in endless mode. */
   gamesToday = 1;
   bestToday = 0;
+  bestForMode = 0;
+
+  setSelectionSum(sum: number): void {
+    this.sumEl.textContent = String(sum);
+    const root = this.sumEl.parentElement!;
+    root.classList.toggle("active", sum > 0);
+    root.classList.toggle("ready", sum === 10);
+  }
 
   render(state: GameState): void {
     const { config, score, hintsLeft, status, remainingMs } = state;
     this.scoreEl.textContent = String(score);
+    this.bestEl.textContent = `BEST ${Math.max(this.bestForMode, score)}`;
     this.hintBadge.textContent = String(hintsLeft);
     this.hintBtn.disabled = hintsLeft === 0 || status !== "playing";
     this.hintBtn.classList.toggle("hidden", config.hints === 0);
@@ -57,23 +68,14 @@ export class Hud {
     this.noticeEl.textContent = this.notice(state);
   }
 
-  /**
-   * The line under the board. It never counts the tiles that are left: a
-   * running tally turns a calm board into a chore, and the board itself
-   * already shows how much is gone. Only what the player cannot see goes here.
-   */
   private notice(state: GameState): string {
     if (state.config.spawn) {
       if (state.status === "lost") return "보드가 가득 찼어요.";
-      return emptyIndices(state.board).length <= 6 ? "곧 가득 차요" : "";
+      const room = emptyIndices(state.board).length;
+      return room <= 6 ? "곧 가득 차요!" : "";
     }
     if (state.status === "lost") return "10을 만들 수 있는 숫자가 없어요.";
-    if (state.config.mode !== "story") return "";
-    // Stars earned so far, and the one number that is still worth chasing.
-    // Listing all three targets at once was a wall of asterisks nobody read.
-    const earned = stars(state);
-    const line = starLine(earned);
-    if (earned === 3) return line;
-    return `${line} · 다음 별 ${state.config.starTargets[earned]}칸 이하`;
+    if (state.config.mode !== "story") return "10을 만들어 점수를 올리세요";
+    return starLine(stars(state));
   }
 }

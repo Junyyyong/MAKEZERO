@@ -38,7 +38,6 @@ src/
       index.css             나머지를 불러오는 진입점
       tokens.css            팔레트 · 리셋 · 화면 틀     ← 스킨은 여기부터
       title.css / game.css / story.css / overlay.css
-      records.css / tutorial.css
       motion.css            애니메이션과 모션 최소화 옵션
   main.ts               진입점
 public/story/           캐릭터 이미지 (교체 대상)
@@ -66,7 +65,6 @@ ui  →  content  →  core
 | 캐릭터 · 대사 | `content/chapters.ts` |
 | 튜토리얼 내용 | `content/tutorial.ts` |
 | 색·폰트 등 스킨 | `ui/styles/tokens.css` 부터 |
-| 화면 아래 기념비 | `ui/styles/tokens.css` 의 `--monument` |
 | 보드 화면 배치 | `ui/boardView.ts` 의 `layout()` |
 | 작은 화면 대응 | `ui/styles/game.css` 하단 `@media (max-height: ...)` |
 
@@ -93,7 +91,3 @@ npm run test:layout
 ```
 
 밸런스 숫자를 바꾸면 마지막 테스트가 먼저 알려줍니다.
-
-## 작업 기록
-
-무엇을 언제 왜 바꿨는지는 [`docs/WORKLOG.md`](./WORKLOG.md) 에 시간순으로 쌓습니다. 사람과 여러 AI 도구가 같이 보는 파일이라, 코드를 바꿨으면 거기에도 한 줄 남겨주세요.

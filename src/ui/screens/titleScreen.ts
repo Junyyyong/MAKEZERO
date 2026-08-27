@@ -5,14 +5,21 @@ import type { Progress } from "../storage";
 
 /** Mode picker, with whatever progress the player has made so far. */
 export class TitleScreen {
-  constructor(onPick: (mode: GameMode) => void, onRules: () => void) {
+  private readonly modes = el<HTMLElement>("mode-list");
+
+  constructor(onPick: (mode: GameMode) => void, onRules: () => void, onSettings: () => void) {
     for (const mode of ["story", "timeAttack", "endless"] as const) {
       el<HTMLButtonElement>(`mode-${mode}`).addEventListener("click", () => onPick(mode));
     }
+    el<HTMLButtonElement>("btn-title-play").addEventListener("click", () => {
+      this.modes.classList.toggle("collapsed");
+    });
     el<HTMLButtonElement>("btn-title-rules").addEventListener("click", onRules);
+    el<HTMLButtonElement>("btn-title-settings").addEventListener("click", onSettings);
   }
 
   render(progress: Progress): void {
+    this.modes.classList.add("collapsed");
     const stage = progress.stage;
     el("desc-story").textContent =
       stage > TOTAL_STAGES ? "모두 클리어" : `스테이지 ${stage} · ${chapterFor(stage).title}`;

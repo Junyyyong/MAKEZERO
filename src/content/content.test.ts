@@ -43,34 +43,21 @@ describe("stage curve", () => {
     for (let stage = 2; stage <= TOTAL_STAGES; stage++) {
       const prev = stageConfig(stage - 1);
       const next = stageConfig(stage);
+      expect(next.width * next.rows).toBeGreaterThanOrEqual(prev.width * prev.rows);
       expect(next.hints).toBeLessThanOrEqual(prev.hints);
-      for (let tier = 0; tier < 3; tier++) {
-        expect(next.starTargets[tier]!).toBeLessThanOrEqual(prev.starTargets[tier]!);
-      }
+      expect(next.groupWeights[0]!).toBeGreaterThanOrEqual(prev.groupWeights[0]!);
+      expect(next.groupWeights[3]!).toBeLessThanOrEqual(prev.groupWeights[3]!);
     }
   });
 
-  it("grows the board a row at a time, never shrinking it", () => {
-    let rows = 0;
+  it("keeps nine columns and grows the story board from five to nine rows", () => {
+    expect(stageConfig(1)).toMatchObject({ width: 9, rows: 5 });
+    expect(stageConfig(TOTAL_STAGES)).toMatchObject({ width: 9, rows: 9 });
     for (const stage of everyStage) {
       const config = stageConfig(stage);
-      expect(config.width).toBe(9);
-      expect(config.rows).toBeGreaterThanOrEqual(rows);
-      rows = config.rows;
+      expect(config.deck).toBeUndefined();
       expect(config.stage).toBe(stage);
       expect(config.mode).toBe("story");
-    }
-    expect(stageConfig(1).rows).toBe(6);
-    expect(stageConfig(TOTAL_STAGES).rows).toBe(11);
-  });
-
-  it("deals a full even deck on every stage, one digit per cell", () => {
-    for (const stage of everyStage) {
-      const config = stageConfig(stage);
-      // Nine columns, so a row is one more of every digit. The deck exactly
-      // fills the board, which is what keeps a stage clearable.
-      expect(config.deck?.slice(1)).toEqual(Array(9).fill(config.rows));
-      expect(config.deck?.reduce((a, b) => a + b, 0)).toBe(config.width * config.rows);
     }
   });
 
@@ -80,17 +67,21 @@ describe("stage curve", () => {
       const prev = checkpoints[i - 1]!;
       const next = checkpoints[i]!;
       const changed =
+        next.width !== prev.width ||
+        next.rows !== prev.rows ||
         next.hints !== prev.hints ||
-        next.starTargets.some((t, tier) => t !== prev.starTargets[tier]);
+        next.starTargets.some((t, tier) => t !== prev.starTargets[tier]) ||
+        next.groupWeights.some((weight, i) => weight !== prev.groupWeights[i]);
       expect(changed, `stages plateau between checkpoint ${i - 1} and ${i}`).toBe(true);
     }
   });
 
   it("reaches its hardest settings exactly at the final stage", () => {
     const last = stageConfig(TOTAL_STAGES);
+    expect(last.width).toBe(9);
+    expect(last.rows).toBe(9);
     expect(last.hints).toBe(1);
-    expect(last.rows).toBe(11);
-    expect(last.starTargets[2]).toBe(3);
+    expect(last.groupWeights[0]).toBeGreaterThan(last.groupWeights[3]!);
   });
 
   it("deals a playable opening board on every stage", () => {
@@ -108,14 +99,16 @@ describe("star targets", () => {
       const [one, two, three] = stageConfig(stage).starTargets;
       expect(one).toBeGreaterThan(two);
       expect(two).toBeGreaterThan(three);
-      expect(three).toBeGreaterThan(0); // a perfect clear depends on the deal
+      expect(three).toBeGreaterThanOrEqual(0);
     }
   });
 
-  it("tightens every target from the first stage to the last", () => {
+  it("tightens the share of the board allowed to survive", () => {
     for (let tier = 0; tier < 3; tier++) {
-      expect(stageConfig(TOTAL_STAGES).starTargets[tier]!).toBeLessThan(
-        stageConfig(1).starTargets[tier]!,
+      const first = stageConfig(1);
+      const last = stageConfig(TOTAL_STAGES);
+      expect(last.starTargets[tier]! / (last.width * last.rows)).toBeLessThan(
+        first.starTargets[tier]! / (first.width * first.rows),
       );
     }
   });
