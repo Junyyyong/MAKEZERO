@@ -44,7 +44,7 @@
 
         <div class="title-links">
           <button class="text-btn" id="btn-title-tutorial">튜토리얼</button>
-          <button class="text-btn" id="btn-title-records">내 기록</button>
+          <button class="text-btn" id="btn-title-gallery">갤러리</button>
           <button class="text-btn" id="btn-title-settings">설정</button>
           <button class="text-btn" id="btn-title-rules">규칙 보기</button>
         </div>
@@ -93,6 +93,14 @@
           <button class="round-btn" id="btn-hint" aria-label="힌트">
             <span class="glyph">&#128161;</span><span class="badge" id="badge-hint">3</span>
           </button>
+          <button class="round-btn hidden" id="btn-split" aria-label="블록 나누기">
+            <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M5 4v4a4 4 0 0 0 4 4h6" stroke-linejoin="round" />
+              <path d="M5 20v-4a4 4 0 0 1 4-4h6" stroke-linejoin="round" />
+              <path d="m16 9 3 3-3 3" stroke-linejoin="round" />
+            </svg>
+            <span class="badge" id="badge-split">3</span>
+          </button>
           <button class="round-btn hidden" id="btn-undo" aria-label="한 수 물리기">
             <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 9h9a5 5 0 0 1 0 10h-3" stroke-linejoin="round" />
@@ -122,20 +130,24 @@
         </div>
       </section>
 
-      <!-- ── records ───────────────────────────────────────────── -->
-      <section class="screen records-screen hidden" id="screen-records">
+      <!-- ── gallery ───────────────────────────────────────────── -->
+      <section class="screen gallery-screen hidden" id="screen-gallery">
         <header class="hud">
-          <button class="icon-btn" id="btn-records-back" aria-label="모드 선택으로">
+          <button class="icon-btn" id="btn-gallery-back" aria-label="모드 선택으로">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
             </svg>
           </button>
-          <div class="score-block"><div class="records-title">내 기록</div></div>
+          <div class="score-block"><div class="gallery-title">갤러리</div></div>
           <span class="icon-spacer"></span>
         </header>
 
-        <div class="records-body">
+        <div class="gallery-body">
           <div class="record-cards">
+            <div class="record-card">
+              <span class="record-label">모은 그림</span>
+              <b class="record-value" id="record-plates">0</b>
+            </div>
             <div class="record-card">
               <span class="record-label">타임어택 최고</span>
               <b class="record-value" id="record-timeattack">0</b>
@@ -144,13 +156,14 @@
               <span class="record-label">무제한 최고</span>
               <b class="record-value" id="record-endless">0</b>
             </div>
-            <div class="record-card">
-              <span class="record-label">모은 별</span>
-              <b class="record-value" id="record-stars">0</b>
-            </div>
           </div>
-          <h2 class="records-heading">스토리</h2>
-          <ol class="stage-list" id="stage-list"></ol>
+          <div class="plate-grid" id="plate-grid"></div>
+        </div>
+
+        <!-- One picture, filling the screen. Tapping anywhere closes it. -->
+        <div class="plate-view hidden" id="plate-view">
+          <div class="plate-full" id="plate-full"></div>
+          <p class="plate-caption" id="plate-caption"></p>
         </div>
       </section>
 

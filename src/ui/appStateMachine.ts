@@ -7,18 +7,18 @@ export type AppState =
   | "paused"
   | "result"
   | "story"
-  | "records"
+  | "gallery"
   | "settings";
 
 const ALLOWED: Readonly<Record<AppState, readonly AppState[]>> = {
   splash: ["mainMenu"],
-  mainMenu: ["tutorial", "inGame", "records", "settings"],
+  mainMenu: ["tutorial", "inGame", "gallery", "settings"],
   tutorial: ["mainMenu"],
   inGame: ["paused", "result", "mainMenu"],
   paused: ["inGame", "mainMenu"],
   result: ["inGame", "mainMenu", "story"],
   story: ["inGame", "mainMenu", "result"],
-  records: ["mainMenu"],
+  gallery: ["mainMenu"],
   settings: ["mainMenu"],
 };
 

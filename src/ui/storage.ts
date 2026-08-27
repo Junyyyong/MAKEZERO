@@ -19,7 +19,8 @@ export interface Progress {
   /** Chapters whose story beat has already played. */
   seenChapters: string[];
   /** Best star grade per stage, indexed from zero. */
-  stageStars: number[];
+  /** Stages whose picture has been uncovered and kept. */
+  collected: number[];
   /** Whether the player has been through, or skipped, the tutorial. */
   tutorialDone: boolean;
 }
@@ -90,7 +91,7 @@ function blankProgress(): Progress {
     bestTimeAttack: 0,
     bestEndless: 0,
     seenChapters: [],
-    stageStars: [],
+    collected: [],
     tutorialDone: false,
   };
 }
@@ -107,8 +108,8 @@ export function loadProgress(): Progress {
       seenChapters: Array.isArray(parsed.seenChapters)
         ? parsed.seenChapters.filter((id): id is string => typeof id === "string")
         : [],
-      stageStars: Array.isArray(parsed.stageStars)
-        ? parsed.stageStars.map((n) => Math.min(Math.max(Number(n) || 0, 0), 3))
+      collected: Array.isArray(parsed.collected)
+        ? parsed.collected.map((n) => Number(n) || 0).filter((n) => n >= 1)
         : [],
       tutorialDone: parsed.tutorialDone === true,
     };
@@ -120,14 +121,12 @@ export function saveProgress(progress: Progress): void {
 }
 
 /** Keeps the best grade a stage has ever earned. */
-export function recordStageStars(progress: Progress, stage: number, earned: number): Progress {
-  const stageStars = [...progress.stageStars];
-  while (stageStars.length < stage) stageStars.push(0);
-  if (earned <= (stageStars[stage - 1] ?? 0)) return progress;
-  stageStars[stage - 1] = earned;
-  return { ...progress, stageStars };
+/** Adds a stage's picture to the collection. Collecting twice changes nothing. */
+export function collectPlate(progress: Progress, stage: number): Progress {
+  if (progress.collected.includes(stage)) return progress;
+  return { ...progress, collected: [...progress.collected, stage].sort((a, b) => a - b) };
 }
 
-export function totalStars(progress: Progress): number {
-  return progress.stageStars.reduce((a, b) => a + b, 0);
+export function totalCollected(progress: Progress): number {
+  return progress.collected.length;
 }

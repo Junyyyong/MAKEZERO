@@ -1,8 +1,8 @@
 import { emptyIndices } from "../../core/board";
-import { stars } from "../../core/game";
+import { canSplit } from "../../core/game";
 import type { GameState } from "../../core/game";
 import { chapterFor } from "../../content/chapters";
-import { el, formatClock, starLine } from "../dom";
+import { el, formatClock } from "../dom";
 
 /** The score, mode chips, timer and hint button above and below the board. */
 export class Hud {
@@ -18,6 +18,8 @@ export class Hud {
   private readonly hintBadge = el<HTMLSpanElement>("badge-hint");
   readonly undoBtn = el<HTMLButtonElement>("btn-undo");
   private readonly undoBadge = el<HTMLSpanElement>("badge-undo");
+  readonly splitBtn = el<HTMLButtonElement>("btn-split");
+  private readonly splitBadge = el<HTMLSpanElement>("badge-split");
 
   /** Games played today, shown in endless mode. */
   gamesToday = 1;
@@ -30,6 +32,14 @@ export class Hud {
     root.classList.toggle("active", sum > 0);
     root.classList.toggle("ready", sum === 10);
   }
+
+  /** An override for the line under the board, or null to let it speak again. */
+  setNotice(text: string | null): void {
+    this.override = text;
+    if (text !== null) this.noticeEl.textContent = text;
+  }
+
+  private override: string | null = null;
 
   render(state: GameState): void {
     const { config, score, hintsLeft, status, remainingMs } = state;
@@ -46,6 +56,10 @@ export class Hud {
     this.undoBtn.disabled = state.undosLeft === 0 || !state.previous;
     this.undoBtn.classList.toggle("hidden", config.undos === 0);
     this.undoBtn.classList.toggle("urge", status === "lost" && !this.undoBtn.disabled);
+
+    this.splitBadge.textContent = String(state.splitsLeft);
+    this.splitBtn.disabled = !canSplit(state);
+    this.splitBtn.classList.toggle("hidden", config.splits === 0);
 
     const timed = config.timeLimitMs !== undefined;
     this.timerBar.classList.toggle("hidden", !timed);
@@ -75,7 +89,7 @@ export class Hud {
       this.timerBar.classList.toggle("urgent", room <= 0.15);
     }
 
-    this.noticeEl.textContent = this.notice(state);
+    this.noticeEl.textContent = this.override ?? this.notice(state);
   }
 
   private notice(state: GameState): string {
@@ -90,7 +104,7 @@ export class Hud {
         : "10을 만들 수 있는 숫자가 없어요.";
     }
     if (state.config.mode !== "story") return "10을 만들어 점수를 올리세요";
-    if (state.status === "won") return starLine(stars(state));
-    return "한 칸도 남기지 않는 게 목표예요";
+    if (state.status === "won") return "그림이 전부 드러났어요";
+    return "한 칸도 남기지 않으면 그림을 얻어요";
   }
 }

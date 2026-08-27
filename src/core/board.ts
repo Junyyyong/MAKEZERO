@@ -18,6 +18,117 @@ export const MAX_VALUE = 9;
 export const EASY_GROUPS: readonly number[] = [2, 3, 3, 2];
 export const HARD_GROUPS: readonly number[] = [6, 3, 1, 0];
 
+/**
+ * Every way 2 to 5 digits add to ten, smallest first. About thirty of them.
+ *
+ * Built on first use, not at import: rules.ts and board.ts refer to each other,
+ * so anything that reads TARGET_SUM while the modules are still loading blows
+ * the stack.
+ *
+ * The dealer works from this list rather than rolling digits one at a time.
+ * Rolling was the old way and it skewed the board badly: a group of five that
+ * adds to ten averages two a tile, so the board filled with 1s and 2s — 55% of
+ * every deal — while a 9 turned up on one tile in a hundred. The player spent
+ * the small numbers on long combinations and was left with 7s, 8s and 9s that
+ * had nothing to pair with.
+ */
+let groupCache: readonly (readonly number[])[] | undefined;
+export function allGroups(): readonly (readonly number[])[] {
+  if (groupCache) return groupCache;
+  const out: number[][] = [];
+  const build = (start: number, sum: number, picked: number[]) => {
+    if (sum === TARGET_SUM && picked.length >= MIN_SELECTION) {
+      out.push([...picked]);
+      return;
+    }
+    if (sum >= TARGET_SUM || picked.length === MAX_SELECTION) return;
+    for (let value = start; value <= MAX_VALUE; value++) {
+      if (sum + value > TARGET_SUM) break;
+      picked.push(value);
+      build(value, sum + value, picked);
+      picked.pop();
+    }
+  };
+  build(MIN_VALUE, 0, []);
+  groupCache = out;
+  return out;
+}
+
+/**
+ * How common each digit should be, 1 to 9. Values are relative, not counts.
+ *
+ * This is the dial that decides what a board *feels* like, and it decides the
+ * group sizes on its own: a group of five can only be made of 1s and 2s, so a
+ * deal that wants few 1s ends up dealing mostly pairs without being told to.
+ */
+export const GENTLE_DIGITS: readonly number[] = [0, 23, 18, 14, 12, 10, 8, 6, 5, 4];
+export const LEVEL_DIGITS: readonly number[] = [0, 12, 12, 12, 11, 11, 11, 11, 10, 10];
+
+/**
+ * Deals whole groups, choosing each one to pull the board's digit histogram
+ * toward `digitWeights`.
+ *
+ * Dealing in groups is what makes a board clearable at all — every clear takes
+ * exactly ten away, so a board that is not a union of tens can never be
+ * emptied. Choosing *which* group by what the board is short of is what keeps
+ * the digits spread the way the stage asked for.
+ */
+export function createWeightedBoard(
+  rng: Rng,
+  width: number,
+  rows: number,
+  digitWeights: readonly number[],
+): Board {
+  const capacity = width * rows;
+  const total = digitWeights.reduce((sum, weight) => sum + weight, 0) || 1;
+  // How many of each digit the finished board should hold.
+  const want = digitWeights.map((weight) => (weight / total) * capacity);
+  const placed = new Array(MAX_VALUE + 1).fill(0);
+  const values: number[] = [];
+
+  while (values.length < capacity) {
+    const room = capacity - values.length;
+    const groups = allGroups();
+    const usable = groups.filter((group) => {
+      if (group.length > room) return false;
+      // Never leave a single cell behind: no group can fill it.
+      return room - group.length !== 1;
+    });
+    const pool = usable.length > 0 ? usable : groups.filter((group) => group.length <= room);
+    if (pool.length === 0) break;
+
+    // Score by how badly the board still wants these digits, so a shortage
+    // pulls groups containing that digit to the front.
+    let best = -Infinity;
+    let chosen = pool[0]!;
+    for (const group of pool) {
+      let score = 0;
+      for (const value of group) score += (want[value] ?? 0) - (placed[value] ?? 0);
+      // Per tile, not per group. Summed, a group of five always outscores a
+      // pair simply by having more terms, and the board fills with 1s and 2s
+      // again — which is the whole thing this dealer exists to stop.
+      score /= group.length;
+      // A nudge of noise, or every board of a size would deal identically.
+      score += (rng() - 0.5) * 0.6;
+      if (score > best) {
+        best = score;
+        chosen = group;
+      }
+    }
+
+    for (const value of chosen) {
+      values.push(value);
+      placed[value] = (placed[value] ?? 0) + 1;
+    }
+  }
+
+  for (let i = values.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [values[i], values[j]] = [values[j]!, values[i]!];
+  }
+  return { width, cells: values.map((value) => ({ value, cleared: false })) };
+}
+
 export function rowOf(board: Board, i: number): number {
   return Math.floor(i / board.width);
 }

@@ -3,11 +3,16 @@ import {
   collapseRows,
   createBoard,
   createDeck,
+  createWeightedBoard,
   createSparseBoard,
+  MAX_VALUE,
   emptyIndices,
+  isAlive,
   placeGroup,
+  valueAt,
+  valueCounts,
 } from "./board";
-import { findHint, hasAnyMove } from "./solver";
+import { canEmpty, findHint, hasAnyMove } from "./solver";
 import { mulberry32, randomSeed } from "./rng";
 import { evaluateSelection } from "./rules";
 import { MIN_SELECTION } from "./rules";
@@ -22,6 +27,8 @@ export interface GameState {
   hintsLeft: number;
   /** Moves still available to take back. */
   undosLeft: number;
+  /** Blocks still available to break into smaller ones. */
+  splitsLeft: number;
   /**
    * The state one move ago, or undefined at the start of a run.
    *
@@ -50,10 +57,17 @@ export interface CommitOutcome {
 }
 
 const MAX_DEAL_ATTEMPTS = 20;
+/** Most pieces one block may be broken into. Four keeps the board readable. */
+const MAX_SPLIT_PARTS = 4;
+/** How many random breaks to try before giving up on a block. */
+const SPLIT_ATTEMPTS = 24;
 
 function deal(config: RunConfig, rngSeed: number): Board {
   const rng = mulberry32(rngSeed);
   if (config.deck) return createDeck(rng, config.width, config.deck);
+  if (config.digitWeights && !config.spawn) {
+    return createWeightedBoard(rng, config.width, config.rows, config.digitWeights);
+  }
   return config.spawn
     ? createSparseBoard(rng, config.width, config.rows, config.spawn.initialFill, config.groupWeights)
     : createBoard(rng, config.width, config.rows, config.groupWeights);
@@ -102,6 +116,7 @@ export function newGame(config: RunConfig, seed: number = randomSeed()): GameSta
     score: 0,
     hintsLeft: config.hints,
     undosLeft: config.undos,
+    splitsLeft: config.splits,
     status: "playing",
     startingCells: board.cells.length,
     remainingMs: config.timeLimitMs ?? 0,
@@ -167,9 +182,10 @@ export function commitSelection(state: GameState, indices: readonly number[]): C
   for (const i of indices) cells[i]!.cleared = true;
   // A board that tiles keep landing on is a fixed frame: cleared squares stay
   // put as landing room instead of closing up.
-  const { board, removed } = state.config.spawn
-    ? { board: { width: state.board.width, cells }, removed: 0 }
-    : collapseRows({ width: state.board.width, cells });
+  const { board, removed } =
+    state.config.spawn || state.config.keepBoard
+      ? { board: { width: state.board.width, cells }, removed: 0 }
+      : collapseRows({ width: state.board.width, cells });
   const next = settleStatus({
     ...state,
     board,
@@ -205,9 +221,90 @@ export function undo(state: GameState): GameState {
   return { ...state.previous, undosLeft: state.undosLeft - 1, status: "playing" };
 }
 
-/** Hints and take-backs spent so far. Three stars asks for none of either. */
+/**
+ * Breaks one block into smaller ones that add up to the same thing.
+ *
+ * How it breaks is random, and deliberately so — the item is "break this",
+ * not "turn this into what I want". The pieces that do not stay in the
+ * original square land in squares that have already been cleared, which is
+ * the honest cost: a split covers part of the picture back up.
+ *
+ * The one thing that is *not* left to chance is whether the board survives it.
+ * A split keeps the total, so it cannot break the arithmetic — but a clear may
+ * hold at most five blocks, and breaking a block inside a group of four can
+ * leave a group of six that no single clear can take. So every candidate split
+ * is checked against `canEmpty` before it is allowed, and rolled again if it
+ * would strand the board. The promise that a story board can always be emptied
+ * survives the item.
+ */
+export function canSplit(state: GameState): boolean {
+  return (
+    state.status === "playing" &&
+    state.splitsLeft > 0 &&
+    // The pieces have to land somewhere, and the only room on the board is
+    // squares that have already been cleared. A full board cannot be split.
+    emptyIndices(state.board).length > 0
+  );
+}
+
+export function splitTile(state: GameState, index: number, rngSeed?: number): GameState {
+  if (state.status !== "playing" || state.splitsLeft <= 0) return state;
+  if (!isAlive(state.board, index)) return state;
+
+  const value = valueAt(state.board, index);
+  if (value < 2) return state;
+
+  const holes = emptyIndices(state.board);
+  const rng = mulberry32(rngSeed ?? state.nextSeed);
+  const most = Math.min(value, MAX_SPLIT_PARTS, holes.length + 1);
+  if (most < 2) return state;
+
+  for (let attempt = 0; attempt < SPLIT_ATTEMPTS; attempt++) {
+    const parts = splitValue(rng, value, 2 + Math.floor(rng() * (most - 1)));
+    const counts = valueCounts(state.board) as number[];
+    counts[value] = (counts[value] ?? 0) - 1;
+    for (const part of parts) counts[part] = (counts[part] ?? 0) + 1;
+    if (!canEmpty(counts)) continue;
+
+    const cells = state.board.cells.map((cell) => ({ ...cell }));
+    cells[index] = { value: parts[0]!, cleared: false };
+    const free = [...holes];
+    for (const part of parts.slice(1)) {
+      const at = free.splice(Math.floor(rng() * free.length), 1)[0]!;
+      cells[at] = { value: part, cleared: false };
+    }
+    return settleStatus({
+      ...state,
+      board: { width: state.board.width, cells },
+      splitsLeft: state.splitsLeft - 1,
+      previous: state.config.undos > 0 ? state : undefined,
+      nextSeed: state.nextSeed + 1,
+    });
+  }
+  return state;
+}
+
+/** Breaks `value` into `parts` pieces of at least one each, at random. */
+function splitValue(rng: () => number, value: number, parts: number): number[] {
+  const out = new Array(parts).fill(1);
+  let left = value - parts;
+  while (left > 0) {
+    const at = Math.floor(rng() * parts);
+    if (out[at]! >= MAX_VALUE) continue;
+    out[at]! += 1;
+    left--;
+  }
+  return out;
+}
+
+/** Hints, take-backs and splits spent so far. Three stars asks for none of either. */
 export function assistsUsed(state: GameState): number {
-  return state.config.hints - state.hintsLeft + (state.config.undos - state.undosLeft);
+  return (
+    state.config.hints -
+    state.hintsLeft +
+    (state.config.undos - state.undosLeft) +
+    (state.config.splits - state.splitsLeft)
+  );
 }
 
 /**

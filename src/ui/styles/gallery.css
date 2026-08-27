@@ -1,0 +1,132 @@
+/* The collection: one picture per stage, plus the two mode high scores. */
+
+.gallery-screen {
+  position: relative; /* the full-size picture is pinned to this screen */
+}
+
+.gallery-title {
+  font-size: 22px;
+  font-weight: 800;
+  text-shadow: 0 2px 3px rgba(60, 34, 12, 0.55);
+}
+
+.icon-spacer {
+  width: 44px;
+}
+
+.gallery-body {
+  flex: 1;
+  min-height: 0;
+  padding: 4px 14px 18px;
+  overflow-y: auto;
+}
+
+.record-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.record-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  padding: 14px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.record-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.record-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.gallery-heading {
+  margin: 22px 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+/* ── the collection ─────────────────────────────────────────────────
+   Ninety-nine squares. A stage that has not been finished shows only its
+   number: the picture is the reward, so showing it early would spend it. */
+.plate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.plate {
+  aspect-ratio: 1;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  background-position: center;
+  background-size: cover;
+  border: 1px solid rgba(217, 155, 54, 0.22);
+  border-radius: 10px;
+  transition: transform 160ms ease;
+}
+
+.plate:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.plate.locked {
+  color: rgba(217, 200, 234, 0.34);
+  cursor: default;
+  background: rgba(0, 0, 0, 0.22);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* One picture, filling the screen, over everything else on the page. */
+.plate-view {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  background: rgba(10, 3, 22, 0.9);
+  backdrop-filter: blur(4px);
+}
+
+.plate-view.hidden {
+  display: none;
+}
+
+.plate-full {
+  width: min(88vw, 420px);
+  aspect-ratio: 1;
+  background-position: center;
+  background-size: cover;
+  border: 1px solid rgba(217, 155, 54, 0.3);
+  border-radius: 16px;
+}
+
+.plate-caption {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}

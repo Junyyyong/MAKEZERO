@@ -101,3 +101,9 @@
   40% { transform: scale(1); }
   100% { opacity: .55; transform: scale(.94); }
 }
+
+/* Blocks waiting to be picked for a split: a slow breath, never a flash. */
+@keyframes offer {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.96); }
+}
