@@ -1,4 +1,3 @@
-import { aliveCount } from "../core/board";
 import { commitSelection, newGame, stars, tick, useHint } from "../core/game";
 import type { GameState } from "../core/game";
 import { isSelectionValid } from "../core/rules";
@@ -241,13 +240,10 @@ export class App {
 
   /** Grades the stage, unlocks the next one, then plays any chapter beat. */
   private finishStage(stage: number, earned: number): void {
-    const left = aliveCount(this.state.board);
-    const targets = this.state.config.starTargets;
-
     if (earned === 0) {
       this.overlay.open({
         title: "아쉬워요",
-        body: `${starLine(0)}\n${left}개가 남았어요.\n별 하나까지 ${targets[0]}개 이하로 줄여야 해요.`,
+        body: `${starLine(0)}\n별 하나에 조금 못 미쳤어요.`,
         primary: { label: "다시 도전", action: () => this.startStage(stage) },
       });
       return;
@@ -269,11 +265,11 @@ export class App {
       this.playChapter(chapter, stage);
       return;
     }
-    this.showStageResult(stage, earned, left);
+    this.showStageResult(stage, earned);
   }
 
-  private showStageResult(stage: number, earned: number, left: number): void {
-    const summary = `${starLine(earned)}\n${left}개 남음 · 점수 ${this.state.score}점`;
+  private showStageResult(stage: number, earned: number): void {
+    const summary = `${starLine(earned)}\n점수 ${this.state.score}점`;
     if (stage >= TOTAL_STAGES) {
       this.overlay.open({
         title: "완주!",

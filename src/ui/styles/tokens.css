@@ -1,40 +1,36 @@
 /*
- * Broadway at night: a deep velvet house, warm marquee bulbs, and brass.
- *
- * The whole skin lives in these tokens. Every other file reads them, so a new
- * look means editing this block and nothing else.
+ * Black-box theatre: warm marquee bulbs, polished brass and burgundy velvet.
+ * Shared colours stay here so every screen belongs to the same stage.
  */
 :root {
-  /* The house */
-  --house-deep: #150b2e;
-  --house: #241247;
-  --house-lit: #3a1d69;
-  --velvet: #2d1550;
+  --night: #050408;
+  --house-deep: #09070a;
+  --house: #110b0e;
+  --house-lit: #211318;
+  --velvet: #3a001f;
+  --velvet-deep: #19000e;
 
-  /* Brass and bulbs */
-  --brass: #e8b44c;
-  --brass-bright: #ffd782;
-  --marquee: #ffe9b0;
+  --brass-dark: #8e5311;
+  --brass: #d79224;
+  --brass-bright: #ffc85a;
+  --marquee: #fff0ba;
+  --bulb: #fff7d0;
   --spotlight: #fff6dd;
 
-  /* The stage floor the tiles sit on */
-  --stage: #1b0f38;
-  --stage-edge: #0e0722;
+  --stage: #08070a;
+  --stage-edge: #000;
+  --tile-face: #fff8e8;
+  --tile-face-low: #f1dfba;
+  --tile-ink: #121013;
+  --tile-sel: #ffe7a0;
 
-  /* Tiles: lit boards under the marquee */
-  --tile-face: #f7ecd8;
-  --tile-face-low: #e2d0b2;
-  --tile-ink: #3a1d69;
-  --tile-sel: #ffe9a8;
+  --ring-sel: var(--brass-bright);
+  --ring-ok: #77e0ab;
+  --ring-bad: #ff607a;
 
-  --ring-sel: var(--brass);
-  --ring-ok: #57d9a3;
-  --ring-bad: #ff6b8a;
-
-  --ink: #f4ecff;
-  --ink-soft: #c3aee6;
-
-  --gap: 3px;
+  --ink: #fff8e8;
+  --ink-soft: #e7d7b6;
+  --gap: 2px;
 }
 
 * {
@@ -49,35 +45,57 @@ body {
 }
 
 body {
-  font-family: "Trebuchet MS", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
   color: var(--ink);
-  background: var(--house-deep);
+  background: #030205;
   overscroll-behavior: none;
   user-select: none;
 }
 
-/*
- * The auditorium: a spotlight from above, a velvet wash, and a faint sheen of
- * vertical light like a curtain catching the house lights.
- */
 #app {
   position: relative;
   height: 100dvh;
+  overflow: hidden;
   background:
-    radial-gradient(120% 60% at 50% -10%, rgba(255, 233, 176, 0.16) 0%, transparent 60%),
-    repeating-linear-gradient(
-      91deg,
-      rgba(255, 255, 255, 0.022) 0 2px,
-      transparent 2px 9px
-    ),
-    linear-gradient(180deg, var(--house) 0%, var(--velvet) 45%, var(--house-deep) 100%);
+    radial-gradient(90% 42% at 50% 5%, rgba(255, 193, 75, 0.08), transparent 62%),
+    linear-gradient(90deg, rgba(70, 0, 35, 0.34), transparent 13% 87%, rgba(70, 0, 35, 0.34)),
+    linear-gradient(180deg, #050407 0%, #0b080b 60%, #17000d 100%);
+}
+
+#app::before,
+#app::after {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  bottom: 0;
+  width: 14%;
+  content: "";
+  opacity: 0.45;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(87deg, transparent 0 14px, rgba(255, 255, 255, 0.025) 15px 17px),
+    linear-gradient(90deg, var(--velvet-deep), var(--velvet), transparent);
+}
+
+#app::before {
+  left: 0;
+}
+
+#app::after {
+  right: 0;
+  transform: scaleX(-1);
 }
 
 .screen {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+  padding:
+    env(safe-area-inset-top)
+    env(safe-area-inset-right)
+    env(safe-area-inset-bottom)
     env(safe-area-inset-left);
 }
 
@@ -85,3 +103,4 @@ body {
 .round-btn.hidden {
   display: none;
 }
+

@@ -1,4 +1,4 @@
-import { aliveCount, emptyIndices } from "../../core/board";
+import { emptyIndices } from "../../core/board";
 import { stars } from "../../core/game";
 import type { GameState } from "../../core/game";
 import { chapterFor } from "../../content/chapters";
@@ -58,15 +58,13 @@ export class Hud {
   }
 
   private notice(state: GameState): string {
-    const left = aliveCount(state.board);
     if (state.config.spawn) {
       if (state.status === "lost") return "보드가 가득 찼어요.";
       const room = emptyIndices(state.board).length;
-      return room <= 6 ? `빈 칸 ${room}개 — 곧 가득 차요!` : `빈 칸 ${room}개`;
+      return room <= 6 ? "곧 가득 차요!" : "";
     }
     if (state.status === "lost") return "10을 만들 수 있는 숫자가 없어요.";
-    if (state.config.mode !== "story") return `${left}개 남음`;
-    const [one, two, three] = state.config.starTargets;
-    return `${left}개 남음 · ${starLine(stars(state))} (★ ${one} · ★★ ${two} · ★★★ ${three} 이하)`;
+    if (state.config.mode !== "story") return "10을 만들어 점수를 올리세요";
+    return starLine(stars(state));
   }
 }

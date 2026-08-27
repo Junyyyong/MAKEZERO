@@ -1,35 +1,54 @@
-/* Score row, chips, timer, board frame and action buttons. */
+/* The game screen follows the supplied black-and-gold theatre reference. */
+.game-screen {
+  background:
+    radial-gradient(42% 18% at 50% 12%, rgba(255, 194, 72, 0.1), transparent 72%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.25), transparent 48%);
+}
+
+.bulb-rail {
+  flex: 0 0 28px;
+  margin-top: 2px;
+  border-bottom: 1px solid rgba(215, 146, 36, 0.55);
+  background:
+    radial-gradient(circle, var(--bulb) 0 3px, var(--brass-bright) 4px, rgba(255, 158, 21, 0.22) 7px, transparent 8px)
+      8px 4px / 30px 22px repeat-x;
+  filter: drop-shadow(0 0 6px rgba(255, 170, 36, 0.75));
+}
+
 .hud {
   display: grid;
-  grid-template-columns: 44px 1fr 44px;
+  grid-template-columns: 52px 1fr 52px;
   align-items: center;
-  gap: 8px;
-  padding: 10px 14px 2px;
+  gap: 10px;
+  flex: 0 0 auto;
+  padding: 8px 14px 2px;
 }
 
 .icon-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  font-size: 22px;
-  font-weight: 700;
-  color: #5c3a17;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--ink);
   cursor: pointer;
-  color: var(--brass-bright);
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(232, 180, 76, 0.35);
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  background: radial-gradient(circle at 50% 40%, #262025, #09080a 68%);
+  border: 2px solid var(--brass);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 215, 128, 0.12),
+    0 0 12px rgba(218, 145, 34, 0.22);
 }
 
 .icon-btn svg {
-  width: 22px;
-  height: 22px;
+  width: 25px;
+  height: 25px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 2.4;
+  stroke-width: 3;
   stroke-linecap: round;
 }
 
@@ -38,33 +57,77 @@
 }
 
 .score-block {
+  position: relative;
+  justify-self: center;
+  min-width: 92px;
+  padding: 2px 16px 4px;
   text-align: center;
+  background: linear-gradient(180deg, #191216, #050406);
+  border: 2px solid var(--brass);
+  border-radius: 48% / 34%;
+  box-shadow:
+    inset 0 0 18px rgba(255, 185, 61, 0.12),
+    0 0 22px rgba(255, 171, 35, 0.18);
+}
+
+.score-block::before,
+.score-block::after {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  height: 5px;
+  content: "";
+  background:
+    radial-gradient(circle, var(--bulb) 0 1.5px, var(--brass-bright) 2px, transparent 3px)
+      0 0 / 13px 5px repeat-x;
+  filter: drop-shadow(0 0 3px var(--brass-bright));
+}
+
+.score-block::before {
+  top: 4px;
+}
+
+.score-block::after {
+  bottom: 4px;
 }
 
 .score {
-  font-size: 34px;
+  padding: 7px 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(40px, 12vw, 58px);
   font-weight: 800;
-  line-height: 1.1;
-  color: var(--brass-bright);
-  text-shadow: 0 0 18px rgba(255, 215, 130, 0.55);
+  line-height: 1;
+  color: var(--marquee);
+  text-shadow:
+    0 1px 0 #6b3a08,
+    0 0 7px rgba(255, 245, 195, 0.95),
+    0 0 20px rgba(255, 173, 35, 0.85);
   font-variant-numeric: tabular-nums;
 }
 
 .sub-hud {
   display: flex;
   justify-content: space-between;
-  gap: 8px;
-  padding: 6px 14px 10px;
+  gap: 10px;
+  flex: 0 0 auto;
+  padding: 5px 14px 0;
 }
 
 .chip {
-  padding: 6px 14px;
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink-soft);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(232, 180, 76, 0.22);
+  max-width: 46%;
+  overflow: hidden;
+  padding: 7px 15px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: linear-gradient(180deg, rgba(31, 25, 29, 0.98), rgba(5, 4, 6, 0.98));
+  border: 1px solid var(--brass);
   border-radius: 999px;
+  box-shadow:
+    inset 0 0 10px rgba(255, 192, 72, 0.06),
+    0 0 8px rgba(214, 141, 28, 0.12);
 }
 
 .chip b {
@@ -72,16 +135,42 @@
 }
 
 .crown {
-  color: #d99a1a;
+  color: var(--brass-bright);
+}
+
+.deco-fans {
+  display: flex;
+  justify-content: space-between;
+  flex: 0 0 21px;
+  margin: 0 24%;
+  overflow: hidden;
+}
+
+.deco-fans span {
+  width: 68px;
+  height: 38px;
+  opacity: 0.8;
+  background: repeating-conic-gradient(
+    from 255deg at 50% 100%,
+    transparent 0 8deg,
+    var(--brass) 9deg 10deg,
+    transparent 11deg 19deg
+  );
+}
+
+.deco-fans span:last-child {
+  transform: scaleX(-1);
 }
 
 .timer-bar {
-  height: 8px;
-  margin: 0 14px 8px;
+  flex: 0 0 7px;
+  height: 7px;
+  margin: 0 14px 6px;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 4px;
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.6);
+  background: #060507;
+  border: 1px solid rgba(215, 146, 36, 0.4);
+  border-radius: 999px;
+  box-shadow: inset 0 1px 3px #000;
 }
 
 .timer-bar.hidden {
@@ -91,108 +180,69 @@
 .timer-bar span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, var(--brass-bright), var(--brass));
+  background: linear-gradient(90deg, var(--brass), var(--marquee));
+  box-shadow: 0 0 8px var(--brass-bright);
   transform-origin: left center;
 }
 
 .timer-bar.urgent span {
-  background: linear-gradient(90deg, #ff9f4d, #ff4f7b);
+  background: linear-gradient(90deg, #ffb12b, #e43048);
 }
 
-/*
- * A transparent box that just centres the board in whatever room is left. It
- * must NOT carry the frame: the tiles are sized to fit both directions, so a
- * frame stretched to full width would leave the tiles floating in a margin.
- * The frame belongs to .board, which is exactly the size of the tiles.
- *
- * Its height comes from flex, never from the board inside it, so measuring it
- * to size the tiles cannot feed back into its own size.
- */
 .board-wrap {
   position: relative;
   display: flex;
-  flex: 0 1 auto;
-  align-items: flex-start;
+  flex: 1 1 auto;
+  align-items: center;
   justify-content: center;
   min-height: 0;
-  margin: 0 12px;
+  margin: 0 7px;
   overflow: hidden;
-}
-
-/*
- * Below the board: the stage the character dances on. It takes whatever room
- * the board does not, which on a tall phone is a lot and on a short one is
- * nothing — the board always wins the argument.
- */
-.stage-floor {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
-  margin: 0 12px;
-  overflow: hidden;
-}
-
-.stage-floor::before {
-  position: absolute;
-  inset: auto 0 0;
-  height: 62%;
-  content: "";
-  background: radial-gradient(60% 100% at 50% 100%, rgba(255, 233, 176, 0.13) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-.stage-floor img {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  max-width: 62%;
-  max-height: 100%;
-  transform: translateX(-50%);
-  object-fit: contain;
 }
 
 .board-wrap.scrolls {
-  align-items: start;
+  align-items: flex-start;
   overflow-y: auto;
   scrollbar-width: thin;
 }
 
-/* The playfield frame, sized to the tiles it holds. The track list is written
-   from JS; repeat() cannot take its count from a custom property. */
 .board {
   display: grid;
   gap: var(--gap);
-  padding: 6px;
-  background:
-    linear-gradient(180deg, var(--stage) 0%, var(--stage-edge) 100%);
-  border: 1px solid rgba(232, 180, 76, 0.25);
+  padding: 7px;
+  background: linear-gradient(180deg, #111014, #020203);
+  border: 2px solid var(--brass);
   border-radius: 12px;
   box-shadow:
-    inset 0 3px 14px rgba(0, 0, 0, 0.6),
-    0 6px 24px rgba(0, 0, 0, 0.45);
+    inset 0 0 0 2px #000,
+    inset 0 0 18px rgba(255, 194, 73, 0.08),
+    0 0 16px rgba(219, 146, 34, 0.24);
   touch-action: none;
 }
 
 .tile {
   position: relative;
-  width: var(--tile, 38px);
-  height: var(--tile, 38px);
   display: flex;
   align-items: center;
   justify-content: center;
+  width: var(--tile, 38px);
+  height: var(--tile, 38px);
   padding: 0;
-  font-family: inherit;
-  font-size: calc(var(--tile, 38px) * 0.58);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: calc(var(--tile, 38px) * 0.56);
   font-weight: 800;
+  line-height: 1;
   color: var(--tile-ink);
   cursor: pointer;
-  background: linear-gradient(160deg, var(--tile-face) 0%, var(--tile-face-low) 100%);
-  border: none;
+  background:
+    radial-gradient(circle at 50% 32%, #fffef8 0%, transparent 62%),
+    linear-gradient(160deg, var(--tile-face), var(--tile-face-low));
+  border: 1px solid rgba(87, 52, 10, 0.42);
   border-radius: 6px;
   box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.75),
-    inset 0 -3px 0 rgba(90, 60, 20, 0.28),
-    0 2px 6px rgba(0, 0, 0, 0.45);
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 -3px 8px rgba(157, 101, 26, 0.16),
+    0 1px 3px rgba(0, 0, 0, 0.7);
   transition:
     transform 90ms ease,
     box-shadow 90ms ease,
@@ -200,25 +250,26 @@
 }
 
 .tile.cleared {
-  color: rgba(255, 233, 176, 0.1);
-  background: rgba(0, 0, 0, 0.28);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.55);
+  color: transparent;
   cursor: default;
+  background: #09080a;
+  border-color: rgba(215, 146, 36, 0.16);
+  box-shadow: inset 0 1px 5px #000;
 }
 
 .tile.sel {
   z-index: 1;
-  background: linear-gradient(160deg, #fff2cd 0%, var(--tile-sel) 100%);
-  transform: scale(1.08);
+  background: linear-gradient(160deg, #fffdf3, var(--tile-sel));
+  transform: scale(1.06);
   box-shadow:
     0 0 0 3px var(--ring-sel),
-    0 3px 8px rgba(0, 0, 0, 0.45);
+    0 0 14px rgba(255, 191, 65, 0.85);
 }
 
 .board.ok .tile.sel {
   box-shadow:
     0 0 0 3px var(--ring-ok),
-    0 3px 10px rgba(0, 0, 0, 0.45);
+    0 0 16px rgba(87, 217, 163, 0.8);
 }
 
 .tile.hint {
@@ -231,47 +282,63 @@
 
 .pop {
   position: absolute;
-  font-size: 22px;
+  font-family: Georgia, serif;
+  font-size: 24px;
   font-weight: 800;
-  color: var(--brass-bright);
-  text-shadow: 0 0 14px rgba(255, 215, 130, 0.8);
+  color: var(--marquee);
+  text-shadow: 0 0 12px var(--brass-bright);
   pointer-events: none;
   animation: pop-up 700ms ease-out forwards;
 }
 
 .notice {
-  min-height: 20px;
-  margin: 8px 14px 0;
-  font-size: 14px;
-  font-weight: 700;
+  flex: 0 0 22px;
+  min-height: 22px;
+  margin: 5px 14px 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 1px;
   text-align: center;
-  color: var(--ink-soft);
+  color: var(--marquee);
+  text-shadow: 0 0 8px rgba(255, 190, 72, 0.45);
 }
 
 .actions {
   display: flex;
   justify-content: center;
+  flex: 0 0 auto;
   gap: 44px;
-  padding: 10px 0 18px;
+  padding: 5px 0 13px;
 }
 
 .round-btn {
   position: relative;
-  width: 68px;
-  height: 68px;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 70px;
+  height: 70px;
   font-size: 30px;
-  color: #5c3a17;
+  color: var(--marquee);
   cursor: pointer;
-  background: radial-gradient(circle at 35% 28%, var(--brass-bright) 0%, var(--brass) 62%, #a97c1f 100%);
-  border: none;
+  background:
+    radial-gradient(circle, #2b2024 0 45%, #070608 47% 58%, var(--brass) 60% 63%, #080608 65%);
+  border: 2px solid var(--brass);
   border-radius: 50%;
   box-shadow:
-    inset 0 3px 0 rgba(255, 255, 255, 0.45),
-    0 0 22px rgba(255, 215, 130, 0.35),
-    0 4px 10px rgba(0, 0, 0, 0.5);
+    inset 0 0 0 5px #080608,
+    inset 0 0 0 7px var(--brass),
+    0 0 18px rgba(255, 176, 37, 0.35);
+}
+
+.round-btn::before {
+  position: absolute;
+  inset: -1px;
+  content: "";
+  border: 5px dotted var(--bulb);
+  border-radius: 50%;
+  filter: drop-shadow(0 0 4px var(--brass-bright));
+  pointer-events: none;
 }
 
 .round-btn:active:not(:disabled) {
@@ -280,51 +347,44 @@
 
 .round-btn:disabled {
   cursor: default;
-  filter: grayscale(0.6);
+  filter: grayscale(0.65);
   opacity: 0.5;
 }
 
 .round-btn .glyph {
-  font-weight: 800;
+  z-index: 1;
   line-height: 1;
 }
 
-.round-btn svg.glyph {
-  width: 30px;
-  height: 30px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
+.badge {
+  position: absolute;
+  z-index: 2;
+  top: -5px;
+  right: -5px;
+  min-width: 26px;
+  padding: 2px 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  background: #d93445;
+  border: 2px solid #fff2c6;
+  border-radius: 999px;
 }
 
 .round-btn.urge {
   animation: hint-pulse 900ms ease-in-out infinite;
 }
 
-.badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  min-width: 24px;
-  padding: 2px 6px;
-  font-size: 13px;
-  font-weight: 800;
-  color: #fff;
-  background: #ff4f7b;
-  border: 2px solid rgba(255, 246, 221, 0.9);
-  border-radius: 12px;
-}
-
 .overlay {
   position: fixed;
+  z-index: 20;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(30, 17, 6, 0.72);
-  backdrop-filter: blur(3px);
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(5px);
 }
 
 .overlay.hidden {
@@ -332,85 +392,116 @@
 }
 
 .panel {
+  position: relative;
   width: min(360px, 100%);
-  padding: 26px 22px;
+  padding: 30px 24px 26px;
   text-align: center;
-  background: linear-gradient(160deg, #8b5c2b 0%, #6d451f 100%);
-  border: 3px solid #c79a5c;
-  border-radius: 18px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  background:
+    linear-gradient(135deg, transparent 10px, #111014 0) top left,
+    linear-gradient(225deg, transparent 10px, #111014 0) top right,
+    linear-gradient(315deg, transparent 10px, #111014 0) bottom right,
+    linear-gradient(45deg, transparent 10px, #111014 0) bottom left;
+  background-size: 51% 51%;
+  background-repeat: no-repeat;
+  border: 2px solid var(--brass);
+  box-shadow:
+    inset 0 0 30px rgba(255, 183, 49, 0.06),
+    0 14px 42px rgba(0, 0, 0, 0.75);
 }
 
-/*
- * Short screens: a phone in landscape, a small window, or a browser whose
- * bars are eating the viewport. The chrome gives up its room first so the
- * board keeps tiles big enough to hit — shrinking the tiles is the last
- * resort, not the first.
- */
-@media (max-height: 660px) {
+.panel::before {
+  position: absolute;
+  inset: 7px;
+  content: "";
+  border: 1px solid rgba(215, 146, 36, 0.48);
+  pointer-events: none;
+}
+
+@media (max-height: 700px) {
+  .bulb-rail {
+    flex-basis: 20px;
+    background-position: 8px 1px;
+  }
+
   .hud {
-    grid-template-columns: 38px 1fr 38px;
-    padding: 4px 10px 0;
+    grid-template-columns: 42px 1fr 42px;
+    padding-top: 4px;
   }
 
   .icon-btn {
-    width: 38px;
-    height: 38px;
+    width: 42px;
+    height: 42px;
+    font-size: 22px;
+  }
+
+  .score-block {
+    min-width: 76px;
   }
 
   .score {
-    font-size: 24px;
+    padding: 5px 0;
+    font-size: 36px;
   }
 
   .sub-hud {
-    padding: 4px 10px 6px;
+    padding-top: 3px;
   }
 
   .chip {
-    padding: 3px 10px;
+    padding: 4px 11px;
     font-size: 12px;
   }
 
-  .timer-bar {
-    height: 6px;
-    margin: 0 10px 4px;
-  }
-
-  .board-wrap {
-    margin: 0 8px;
+  .deco-fans {
+    flex-basis: 12px;
   }
 
   .notice {
-    margin: 4px 10px 0;
+    flex-basis: 18px;
+    min-height: 18px;
+    margin-top: 2px;
     font-size: 12px;
   }
 
   .actions {
-    gap: 28px;
-    padding: 4px 0 8px;
+    padding: 2px 0 7px;
   }
 
   .round-btn {
-    width: 50px;
-    height: 50px;
-    font-size: 22px;
-  }
-
-  .round-btn svg.glyph {
-    width: 22px;
-    height: 22px;
+    width: 52px;
+    height: 52px;
+    font-size: 23px;
   }
 }
 
-/* Tighter still, and the notice is the first thing that can go: the star
-   targets are also on the results panel. */
 @media (max-height: 520px) {
+  .bulb-rail,
+  .deco-fans,
   .notice {
     display: none;
   }
 
+  .hud {
+    grid-template-columns: 36px 1fr 36px;
+    padding: 2px 8px;
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .score {
+    padding: 2px 0;
+    font-size: 28px;
+  }
+
+  .sub-hud {
+    padding: 2px 8px 3px;
+  }
+
   .actions {
-    padding: 2px 0 6px;
+    padding: 2px 0 4px;
   }
 
   .round-btn {

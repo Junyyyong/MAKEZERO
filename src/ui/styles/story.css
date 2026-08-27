@@ -10,9 +10,9 @@
   width: min(360px, 100%);
   padding: 24px 22px;
   text-align: center;
-  background: linear-gradient(160deg, var(--house-lit) 0%, var(--house-deep) 100%);
-  border: 1px solid rgba(232, 180, 76, 0.45);
-  border-radius: 18px;
+  background: linear-gradient(160deg, #171116 0%, #050406 100%);
+  border: 2px solid var(--brass);
+  border-radius: 8px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
 }
 

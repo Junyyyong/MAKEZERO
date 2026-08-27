@@ -2,7 +2,10 @@
 
 .panel-title {
   margin: 0 0 10px;
-  font-size: 26px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 28px;
+  color: var(--marquee);
+  text-shadow: 0 0 12px rgba(255, 185, 59, 0.45);
 }
 
 .panel-body {
@@ -32,11 +35,11 @@
   font-family: inherit;
   font-size: 17px;
   font-weight: 800;
-  color: #5c3a17;
+  color: #151014;
   cursor: pointer;
-  background: linear-gradient(#f3dcb4, #d8b076);
-  border: none;
-  border-radius: 12px;
+  background: linear-gradient(#fff3cb, #ddb36a);
+  border: 1px solid var(--brass-bright);
+  border-radius: 8px;
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.55),
     inset 0 -3px 0 rgba(103, 64, 25, 0.35);
@@ -47,8 +50,8 @@
 }
 
 .wood-btn.ghost {
-  color: var(--ink-soft);
-  background: rgba(255, 233, 198, 0.12);
-  border: 2px solid rgba(255, 233, 198, 0.4);
+  color: var(--marquee);
+  background: #09080a;
+  border: 1px solid var(--brass);
   box-shadow: none;
 }

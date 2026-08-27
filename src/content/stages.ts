@@ -1,19 +1,15 @@
-import { EASY_GROUPS, evenDeck } from "../core/board";
+import { EASY_GROUPS, HARD_GROUPS, evenDeck } from "../core/board";
 import { TOTAL_STAGES } from "./chapters";
 import type { RunConfig } from "../core/types";
 
 /**
- * Every stage deals the same 81 tiles: nine of each digit on a 9x9 board.
- *
- * That deck is the puzzle. Clearing it with pairs empties all but its last
- * tile — 81 is odd and 5 only pairs with itself, so one 5 always survives.
- * Chasing long chains scores far more but strands about 27 tiles, so stars and
- * score pull in opposite directions and a run has to pick one.
- *
- * Difficulty is the targets and the help, not the deck. Tuning lives here.
+ * Story stages grow from a compact opening board to the 8x9 theatre board in
+ * the visual reference. More tiles alone would create more possible matches,
+ * so the deal also shifts from flexible long groups toward rigid pairs while
+ * hints disappear and the star targets tighten.
  */
-const EASIEST = { hints: 5, stars: [24, 10, 3] };
-const HARDEST = { hints: 1, stars: [12, 4, 1] };
+const EASIEST = { width: 6, rows: 7, hints: 4, stars: [0.34, 0.18, 0.08] };
+const HARDEST = { width: 8, rows: 9, hints: 1, stars: [0.24, 0.12, 0.03] };
 
 export const BOARD_WIDTH = 9;
 export const DECK = evenDeck(9);
@@ -21,20 +17,20 @@ export const DECK = evenDeck(9);
 export function stageConfig(stage: number): RunConfig {
   const clamped = Math.min(Math.max(stage, 1), TOTAL_STAGES);
   const t = TOTAL_STAGES > 1 ? (clamped - 1) / (TOTAL_STAGES - 1) : 0;
-  const lerp = (from: number, to: number) => Math.round(from + (to - from) * t);
+  const lerp = (from: number, to: number) => from + (to - from) * t;
+  const width = Math.round(lerp(EASIEST.width, HARDEST.width));
+  const rows = Math.round(lerp(EASIEST.rows, HARDEST.rows));
+  const cells = width * rows;
+  const target = (tier: number) =>
+    Math.max(tier === 2 ? 0 : 2, Math.round(cells * lerp(EASIEST.stars[tier]!, HARDEST.stars[tier]!)));
 
   return {
     mode: "story",
-    width: BOARD_WIDTH,
-    rows: 9,
-    deck: DECK,
-    groupWeights: EASY_GROUPS,
-    hints: lerp(EASIEST.hints, HARDEST.hints),
-    starTargets: [
-      lerp(EASIEST.stars[0]!, HARDEST.stars[0]!),
-      lerp(EASIEST.stars[1]!, HARDEST.stars[1]!),
-      lerp(EASIEST.stars[2]!, HARDEST.stars[2]!),
-    ],
+    width,
+    rows,
+    groupWeights: EASY_GROUPS.map((easy, i) => lerp(easy, HARD_GROUPS[i] ?? easy)),
+    hints: Math.round(lerp(EASIEST.hints, HARDEST.hints)),
+    starTargets: [target(0), target(1), target(2)],
     stage,
   };
 }
