@@ -85,7 +85,9 @@ async function state() {
   return page.evaluate(() => ({
     selected: [...document.querySelectorAll("#board .tile.sel")].map((t) => Number(t.textContent)),
     cleared: [...document.querySelectorAll("#board .tile.cleared")].length,
-    score: Number(document.getElementById("score").textContent),
+    // Story shows no score any more, so a clear is read off the board: a
+    // fresh board has nothing cleared, so any cleared square means it landed.
+    reveal: document.getElementById("stat-a-value").textContent,
     scrolled: window.scrollY !== 0 || document.documentElement.scrollTop !== 0,
     overflow: document.documentElement.scrollHeight - document.documentElement.clientHeight,
   }));
@@ -103,7 +105,7 @@ async function sweep(steps) {
 
   const label = `${String(steps).padStart(2)}회 이동 · ${row.map((t) => t.value).join(" ")}`;
   const outcome =
-    got.score > 0 ? "cleared" : got.selected.length > 0 ? "held" : "rejected";
+    got.cleared > 0 ? "cleared" : got.selected.length > 0 ? "held" : "rejected";
   if (outcome !== want.outcome) {
     fail(`${label}: ${want.taken.join("+")} 이면 ${want.outcome} 여야 하는데 ${outcome}`);
     return null;
@@ -156,8 +158,8 @@ for (const steps of [1, 1, 2, 5, 40]) {
     const after = await state();
     if (after.selected.length !== 0) {
       fail(`5칸 합 ${picked.sum}: 선택이 남아 있습니다 (${after.selected.join()})`);
-    } else if (after.score !== 0) {
-      fail(`5칸 합 ${picked.sum}: 지워지면 안 되는데 점수가 올랐습니다`);
+    } else if (after.cleared !== 0) {
+      fail(`5칸 합 ${picked.sum}: 지워지면 안 되는데 블록이 사라졌습니다`);
     } else {
       ok(`5칸을 골랐는데 합이 ${picked.sum} — 바로 거절하고 선택을 놓았습니다`);
     }
