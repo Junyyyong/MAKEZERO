@@ -42,6 +42,13 @@ export interface GameState {
   startingCells: number;
   /** Time attack only; milliseconds still on the clock. */
   remainingMs: number;
+  /**
+   * Milliseconds since the run started, counted in every mode.
+   *
+   * Story is scored on time now — a stage keeps a best time — so the clock
+   * runs whether or not anything is counting down.
+   */
+  elapsedMs: number;
   /** Spawn modes only; milliseconds until the next batch of tiles arrives. */
   untilSpawnMs: number;
   /** Batches delivered so far, which is what shortens the gap between them. */
@@ -120,6 +127,7 @@ export function newGame(config: RunConfig, seed: number = randomSeed()): GameSta
     status: "playing",
     startingCells: board.cells.length,
     remainingMs: config.timeLimitMs ?? 0,
+    elapsedMs: 0,
     untilSpawnMs: spawnIntervalMs(config, 0),
     spawnCount: 0,
     nextSeed,
@@ -132,7 +140,7 @@ export function newGame(config: RunConfig, seed: number = randomSeed()): GameSta
  */
 export function tick(state: GameState, deltaMs: number): GameState {
   if (state.status !== "playing") return state;
-  let next = state;
+  let next: GameState = { ...state, elapsedMs: state.elapsedMs + deltaMs };
 
   if (next.config.timeLimitMs !== undefined) {
     const remainingMs = Math.max(0, next.remainingMs - deltaMs);

@@ -28,6 +28,7 @@ function stateWith(board: Board, overrides: Partial<GameState> = {}): GameState 
     status: "playing",
     startingCells: board.cells.length,
     remainingMs: config.timeLimitMs ?? 0,
+    elapsedMs: 0,
     untilSpawnMs: Infinity,
     spawnCount: 0,
     nextSeed: 1,

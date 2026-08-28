@@ -21,8 +21,10 @@ export interface BoardViewOptions {
   onCommit(selection: readonly number[]): void;
   /** Fired when a block is chosen to be broken up, while splitting is armed. */
   onSplit?(index: number): void;
+  /** Fired when a selection is refused — the combo it was building is over. */
+  onReject?(): void;
   /** Keeps the bottom sum indicator in sync with taps and drags. */
-  onSelectionChange?(sum: number): void;
+  onSelectionChange?(values: readonly number[]): void;
   /**
    * Largest a tile may be drawn. A game board wants to fill the screen, but a
    * small teaching board would blow up to enormous tiles without a cap.
@@ -224,6 +226,7 @@ export class BoardView {
     void this.options.grid.offsetWidth; // restart the animation
     this.options.grid.classList.add("shake");
 
+    this.options.onReject?.();
     if (blamed.length === 0) return;
     this.busted = [...blamed];
     window.clearTimeout(this.bustTimer);
@@ -377,7 +380,7 @@ export class BoardView {
   }
 
   private emitSelection(): void {
-    this.options.onSelectionChange?.(this.selectionSum());
+    this.options.onSelectionChange?.(this.selection.map((i) => valueAt(this.board, i)));
   }
 
   // ---- rendering ---------------------------------------------------------
@@ -499,6 +502,9 @@ export class BoardView {
     this.board.cells.forEach((cell, i) => {
       const tile = this.tiles[i]!;
       tile.textContent = cell.value > 0 ? String(cell.value) : "";
+      // Each digit has its own colour, so a board can be read by shape as
+      // well as by number — see the palette in game.css.
+      tile.dataset.v = String(cell.value);
       tile.className = [
         "tile",
         cell.cleared ? "cleared" : "",

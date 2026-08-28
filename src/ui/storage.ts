@@ -21,6 +21,8 @@ export interface Progress {
   /** Best star grade per stage, indexed from zero. */
   /** Stages whose picture has been uncovered and kept. */
   collected: number[];
+  /** Best clear time per stage, in milliseconds, indexed by stage - 1. */
+  bestTimes: number[];
   /** Whether the player has been through, or skipped, the tutorial. */
   tutorialDone: boolean;
 }
@@ -92,6 +94,7 @@ function blankProgress(): Progress {
     bestEndless: 0,
     seenChapters: [],
     collected: [],
+    bestTimes: [],
     tutorialDone: false,
   };
 }
@@ -107,6 +110,9 @@ export function loadProgress(): Progress {
       bestEndless: Number(parsed.bestEndless) || 0,
       seenChapters: Array.isArray(parsed.seenChapters)
         ? parsed.seenChapters.filter((id): id is string => typeof id === "string")
+        : [],
+      bestTimes: Array.isArray(parsed.bestTimes)
+        ? parsed.bestTimes.map((n) => Math.max(0, Number(n) || 0))
         : [],
       collected: Array.isArray(parsed.collected)
         ? parsed.collected.map((n) => Number(n) || 0).filter((n) => n >= 1)
@@ -125,6 +131,20 @@ export function saveProgress(progress: Progress): void {
 export function collectPlate(progress: Progress, stage: number): Progress {
   if (progress.collected.includes(stage)) return progress;
   return { ...progress, collected: [...progress.collected, stage].sort((a, b) => a - b) };
+}
+
+/** Records a clear time, keeping only the best one for that stage. */
+export function recordStageTime(progress: Progress, stage: number, ms: number): Progress {
+  const bestTimes = [...progress.bestTimes];
+  while (bestTimes.length < stage) bestTimes.push(0);
+  const held = bestTimes[stage - 1] ?? 0;
+  if (held !== 0 && held <= ms) return progress;
+  bestTimes[stage - 1] = ms;
+  return { ...progress, bestTimes };
+}
+
+export function bestTimeFor(progress: Progress, stage: number): number {
+  return progress.bestTimes[stage - 1] ?? 0;
 }
 
 export function totalCollected(progress: Progress): number {

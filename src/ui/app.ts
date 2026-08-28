@@ -9,7 +9,7 @@ import type { Chapter } from "../content/chapters";
 import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
 import { BoardView } from "./boardView";
 import { AppStateMachine } from "./appStateMachine";
-import { el } from "./dom";
+import { el, formatClock } from "./dom";
 import { Hud } from "./screens/hud";
 import { Overlay } from "./screens/overlay";
 import { StoryScreen } from "./screens/storyScreen";
@@ -20,7 +20,9 @@ import {
   loadDaily,
   loadProgress,
   loadSettings,
+  bestTimeFor,
   collectPlate,
+  recordStageTime,
   totalCollected,
   saveDaily,
   saveProgress,
@@ -82,7 +84,10 @@ export class App {
       isValid: (selection) => isSelectionValid(this.state.board, selection),
       onCommit: (selection) => this.commit(selection),
       onSplit: (index) => this.onSplit(index),
-      onSelectionChange: (sum) => this.hud.setSelectionSum(sum),
+      onReject: () => {
+        this.hud.combo = 0;
+      },
+      onSelectionChange: (values) => this.hud.setSelection(values),
     });
     this.title = new TitleScreen(
       (mode) => this.startMode(mode),
@@ -176,6 +181,7 @@ export class App {
 
   private beginRun(config: RunConfig): void {
     this.state = newGame(config);
+    this.hud.combo = 0;
     this.flow.enter("inGame");
     this.show("game");
     el<HTMLDivElement>("plate-done").classList.add("hidden");
@@ -183,7 +189,9 @@ export class App {
     this.view.setBoard(this.state.board);
     this.view.setInteractive(true);
     this.render();
-    if (config.timeLimitMs !== undefined || config.spawn) this.startClock();
+    // Every mode runs a clock now: story is timed too, so a stage can keep a
+    // best time.
+    this.startClock();
   }
 
   // ---- clock -------------------------------------------------------------
@@ -226,7 +234,7 @@ export class App {
     if (this.flow.current !== "paused") return;
     this.flow.enter("inGame");
     this.view.setInteractive(true);
-    if (this.state.config.timeLimitMs !== undefined || this.state.config.spawn) this.startClock();
+    this.startClock();
   }
 
   // ---- moves -------------------------------------------------------------
@@ -235,6 +243,7 @@ export class App {
     const anchor = selection[selection.length - 1]!;
     const { state, result } = commitSelection(this.state, selection);
     if (!result.ok) return;
+    this.hud.combo += 1;
     this.view.popScore(anchor, result.score);
     this.state = state;
     this.recordScore();
@@ -329,8 +338,6 @@ export class App {
     // The HUD goes first: it decides whether the timer bar shows and how many
     // lines the notice takes, which is how much room the board is left with.
     // Measuring the board before that sizes its tiles against a stale box.
-    this.hud.gamesToday = this.daily.games;
-    this.hud.bestToday = this.daily.best;
     this.hud.bestForMode =
       this.state.config.mode === "story"
         ? this.progress.bestStory
@@ -424,9 +431,12 @@ export class App {
   private finishStage(stage: number): void {
     const left = aliveCount(this.state.board);
     if (left > 0) {
+      const reveal = Math.round(((this.state.board.cells.length - left) / this.state.board.cells.length) * 100);
       this.overlay.open({
-        title: "아쉬워요",
-        body: `${left}칸이 남았어요.\n이 판은 전부 지울 수 있어요 — 한 번 더 해볼까요?`,
+        title: "GAME OVER",
+        body:
+          `REVEAL ${reveal}% · TIME ${formatClock(this.state.elapsedMs)}\n` +
+          `${left}칸이 남았어요.\n이 판은 전부 지울 수 있어요 — 한 번 더 해볼까요?`,
         primary: { label: "다시 도전", action: () => this.startStage(stage) },
         secondary: { label: "모드 선택", action: () => this.showTitle() },
       });
@@ -434,6 +444,7 @@ export class App {
     }
 
     this.progress = collectPlate(this.progress, stage);
+    this.progress = recordStageTime(this.progress, stage, this.state.elapsedMs);
     if (stage >= this.progress.stage) {
       this.progress = { ...this.progress, stage: Math.min(stage + 1, TOTAL_STAGES + 1) };
     }
@@ -458,7 +469,12 @@ export class App {
   private showStageResult(stage: number): void {
     const plate = plateFor(stage);
     const held = totalCollected(this.progress);
-    const body = `${plate.title}\n모은 그림 ${held} / ${TOTAL_STAGES}\n점수 ${this.state.score}점`;
+    const time = formatClock(this.state.elapsedMs);
+    const best = bestTimeFor(this.progress, stage);
+    const bestLine = best === this.state.elapsedMs ? "새 최고 기록!" : `최고 ${formatClock(best)}`;
+    const body =
+      `${plate.title}\nREVEAL 100% · TIME ${time}\n${bestLine}\n` +
+      `모은 그림 ${held} / ${TOTAL_STAGES}`;
     if (stage >= TOTAL_STAGES) {
       this.overlay.open({
         title: "그림을 모두 모았어요",

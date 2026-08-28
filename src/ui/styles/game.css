@@ -196,10 +196,13 @@
   font-size: calc(var(--tile, 38px) * 0.54);
   font-weight: 900;
   line-height: 1;
-  color: var(--tile-ink);
+  /* White numerals on a coloured face, ringed in the night colour so the
+     block reads against the picture surfacing behind it. */
+  color: #fff;
+  text-shadow: 0 2px 0 rgba(20, 8, 50, 0.45);
   cursor: pointer;
-  background: linear-gradient(160deg, var(--tile-face), var(--tile-face-low));
-  border: 1px solid rgba(42, 17, 99, 0.35);
+  background: linear-gradient(180deg, var(--face-lit, #7a8bd8), var(--face, #3d5be0));
+  border: 1px solid rgba(20, 8, 50, 0.55);
   border-radius: 6px;
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.85),
@@ -280,18 +283,25 @@
 }
 
 .selection-sum {
-  position: absolute;
-  left: 14px;
+  /* Its own row under the board, the width of the board: the equation grows
+     as blocks are added, and there is nothing beside it to push. */
   display: flex;
-  align-items: baseline;
-  gap: 6px;
-  min-width: 62px;
-  padding: 7px 10px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  margin: 8px 16px 0;
+  padding: 6px 12px;
   color: var(--ink-soft);
-  background: rgba(255,255,255,.045);
-  border: 1px solid rgba(217,155,54,.24);
+  background: rgba(94, 201, 245, 0.06);
+  border: 1px solid var(--cool-dim);
   border-radius: 12px;
-  transition: transform 140ms ease, color 140ms ease, border-color 140ms ease;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.selection-sum.ready {
+  background: rgba(255, 198, 53, 0.12);
+  border-color: rgba(255, 198, 53, 0.5);
 }
 
 .selection-sum span { font-size: 9px; font-weight: 900; letter-spacing: 1px; }
@@ -374,7 +384,41 @@
   .notice { flex-basis: 18px; min-height: 18px; font-size: 11px; }
   .actions { padding: 2px 0 6px; }
   .round-btn { width: 52px; height: 52px; font-size: 23px; }
-  .selection-sum { right: calc(50% + 38px); padding: 5px 8px; }
+  /* Landscape is the tightest case in the game: nine rows of blocks plus the
+     equation row. Everything around the board gives up what it can so the
+     blocks stay above the thumb floor. */
+  .selection-sum {
+    min-height: 26px;
+    margin: 2px 12px 0;
+    padding: 2px 8px;
+  }
+
+  .sum-terms {
+    min-height: 18px;
+  }
+
+  .sum-term {
+    min-width: 18px;
+    padding: 0 4px;
+    font-size: 13px;
+  }
+
+  .run-stats {
+    gap: 6px;
+    padding: 2px 12px 4px;
+  }
+
+  .run-stat {
+    padding: 2px 4px;
+  }
+
+  .run-stat-value {
+    font-size: 14px;
+  }
+
+  .run-stat-label {
+    font-size: 9px;
+  }
 }
 
 @media (max-height: 520px) {
@@ -467,4 +511,130 @@
   background: rgba(20, 8, 50, 0.72);
   border-radius: 999px;
   animation: drift-up-settle 620ms ease 260ms both;
+}
+
+/* ── one colour per digit ──────────────────────────────────────────── */
+.tile[data-v="1"] { --face: var(--v1); }
+.tile[data-v="2"] { --face: var(--v2); }
+.tile[data-v="3"] { --face: var(--v3); }
+.tile[data-v="4"] { --face: var(--v4); }
+.tile[data-v="5"] { --face: var(--v5); }
+.tile[data-v="6"] { --face: var(--v6); }
+.tile[data-v="7"] { --face: var(--v7); }
+.tile[data-v="8"] { --face: var(--v8); }
+.tile[data-v="9"] { --face: var(--v9); }
+
+/* The lit top edge is the face again, lightened — one rule instead of
+   nine more colours to keep in step. */
+.tile:not(.cleared) {
+  --face-lit: color-mix(in srgb, var(--face) 72%, white);
+}
+
+/* Chosen: the block lifts and goes pale, whatever colour it was. */
+.tile.sel {
+  --face: var(--cool);
+  --face-lit: #eaf9ff;
+
+  color: var(--tile-ink);
+  text-shadow: none;
+}
+
+/* ── what the run is measured by ──────────────────────────────────────
+   Three slots, the same three in every mode; only the labels change. Fixed
+   widths so a ticking clock never nudges the ones beside it. */
+.run-title {
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  color: var(--cool);
+}
+
+.run-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px 16px 10px;
+}
+
+.run-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  padding: 6px 4px;
+  background: rgba(94, 201, 245, 0.06);
+  border: 1px solid var(--cool-dim);
+  border-radius: 10px;
+}
+
+.run-stat-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+}
+
+.run-stat-value {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── the equation ─────────────────────────────────────────────────────
+   The selection written out — 2 + 3 + 2 = ? — with each term in its own
+   digit colour, so the row and the board say the same thing. */
+.sum-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  color: var(--ink-soft);
+}
+
+.sum-terms {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  min-height: 22px;
+}
+
+.sum-term {
+  min-width: 22px;
+  padding: 1px 5px;
+  font-size: 15px;
+  font-weight: 900;
+  color: #fff;
+  text-align: center;
+  background: var(--face, var(--cool-deep));
+  border-radius: 5px;
+}
+
+.sum-term[data-v="1"] { --face: var(--v1); }
+.sum-term[data-v="2"] { --face: var(--v2); }
+.sum-term[data-v="3"] { --face: var(--v3); }
+.sum-term[data-v="4"] { --face: var(--v4); }
+.sum-term[data-v="5"] { --face: var(--v5); }
+.sum-term[data-v="6"] { --face: var(--v6); }
+.sum-term[data-v="7"] { --face: var(--v7); }
+.sum-term[data-v="8"] { --face: var(--v8); }
+.sum-term[data-v="9"] { --face: var(--v9); }
+
+.sum-plus,
+.sum-eq {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-soft);
+}
+
+.sum-total {
+  min-width: 26px;
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--ink-soft);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.selection-sum.ready .sum-total {
+  color: var(--warm);
 }

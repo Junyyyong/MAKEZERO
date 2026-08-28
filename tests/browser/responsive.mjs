@@ -110,7 +110,7 @@ async function check(page, label, mode) {
   return true;
 }
 
-const SKIP = { stage: 1, bestStory: 0, bestTimeAttack: 0, bestEndless: 0, seenChapters: [], collected: [], tutorialDone: true };
+const SKIP = { stage: 1, bestStory: 0, bestTimeAttack: 0, bestEndless: 0, seenChapters: [], collected: [], bestTimes: [], tutorialDone: true };
 // The story board grows with the stage, so the last one is the tallest thing
 // the game ever has to fit (9x4 at stage 1, 9x11 at stage 99). Checking stage 1
 // alone would miss it entirely.
