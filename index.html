@@ -106,9 +106,6 @@
           </div>
         </div>
 
-        <!-- Future character art lives here. The empty stage is intentional. -->
-        <div class="stage-floor" id="stage-floor" aria-label="캐릭터 무대"></div>
-
         <p class="notice" id="notice" role="status" aria-live="polite"></p>
 
         <div class="selection-sum" id="selection-sum" aria-live="polite">
@@ -138,6 +135,81 @@
             <span class="badge" id="badge-undo">3</span>
           </button>
         </footer>
+      </section>
+
+      <!-- ── chapter select ────────────────────────────────────── -->
+      <section class="screen picker-screen hidden" id="screen-chapters">
+        <header class="hud">
+          <button class="icon-btn" id="btn-chapters-back" aria-label="메인으로">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div class="score-block">
+            <div class="picker-title">CHAPTERS</div>
+            <div class="picker-sub" id="chapters-sub">0 / 99</div>
+          </div>
+          <span class="icon-spacer"></span>
+        </header>
+        <div class="picker-body">
+          <ol class="chapter-list" id="chapter-list"></ol>
+        </div>
+      </section>
+
+      <!-- ── stage select ──────────────────────────────────────── -->
+      <section class="screen picker-screen hidden" id="screen-stages">
+        <header class="hud">
+          <button class="icon-btn" id="btn-stages-back" aria-label="챕터 선택으로">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div class="score-block">
+            <div class="picker-title" id="stages-title">CHAPTER 1</div>
+            <div class="picker-sub" id="stages-sub">0 / 9</div>
+          </div>
+          <span class="icon-spacer"></span>
+        </header>
+        <div class="picker-body">
+          <div class="stage-grid" id="stage-grid"></div>
+          <p class="picker-legend">
+            <span class="legend-dot done"></span> 완료
+            <span class="legend-dot open"></span> 플레이 가능
+            <span class="legend-dot shut"></span> 잠김
+          </p>
+        </div>
+
+        <!-- What a stage is before it is started. -->
+        <div class="stage-card hidden" id="stage-card">
+          <div class="stage-card-panel">
+            <button class="card-close" id="btn-card-close" aria-label="닫기">✕</button>
+            <h2 class="card-title" id="card-title">STAGE 1</h2>
+            <p class="card-body">모든 블록을 제거해<br />숨겨진 그림을 완성하세요!</p>
+            <div class="card-plate" id="card-plate"><span id="card-plate-lock">?</span></div>
+            <p class="card-best">BEST TIME<b id="card-best">--:--</b></p>
+            <button class="wood-btn" id="btn-card-start">게임 시작</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── mode start (time attack, endless) ─────────────────── -->
+      <section class="screen intro-screen hidden" id="screen-intro">
+        <header class="hud">
+          <button class="icon-btn" id="btn-intro-back" aria-label="메인으로">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <span class="icon-spacer"></span>
+          <span class="icon-spacer"></span>
+        </header>
+        <div class="intro-body">
+          <h2 class="intro-title" id="intro-title">TIME ATTACK</h2>
+          <div class="intro-mark" id="intro-mark">60</div>
+          <p class="intro-note" id="intro-note"></p>
+          <dl class="intro-stats" id="intro-stats"></dl>
+          <button class="wood-btn" id="btn-intro-start">START</button>
+        </div>
       </section>
 
       <!-- ── tutorial ──────────────────────────────────────────── -->

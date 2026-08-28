@@ -447,28 +447,7 @@ export class BoardView {
 
     const byWidth = (box.width - padX - gap * (width - 1)) / width;
 
-    /*
-     * The game screen sizes the board's box from its width through this ratio,
-     * so the rows a stage adds push the character stage down instead of
-     * shrinking the tiles.
-     *
-     * It has to be the ratio of the *whole frame*, not of the tile grid. A
-     * board is `cols` tiles plus `cols - 1` gaps plus its padding across, and
-     * the same sum with `rows` down — those constants do not scale with the
-     * tile, so `cols / rows` leaves a wide board's box a few pixels short and
-     * the tile is floored one pixel below what fits. One pixel over nine
-     * columns is a visibly wider margin in the modes with the fewest rows.
-     */
-    const wanted = Math.max(MIN_TILE_PX, Math.floor(byWidth));
-    const frameW = width * wanted + gap * (width - 1) + padX;
-    const frameH = rows * wanted + gap * (rows - 1) + padY;
-    this.options.wrap.style.setProperty("--board-ratio", `${frameW} / ${frameH}`);
-
-    // Read back after setting the ratio: on a screen with room this is the
-    // height the frame just asked for, and on a short one it is whatever the
-    // column could actually spare, which is what shrinks the tiles.
-    const byHeight =
-      (this.options.wrap.clientHeight - padY - gap * (rows - 1)) / rows;
+    const byHeight = (this.options.wrap.clientHeight - padY - gap * (rows - 1)) / rows;
     const cap = this.options.maxTilePx ?? Infinity;
     const tile = Math.max(MIN_TILE_PX, Math.floor(Math.min(byWidth, byHeight, cap)));
 
