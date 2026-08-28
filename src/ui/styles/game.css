@@ -122,7 +122,6 @@
 .sub-hud,
 .timer-bar,
 .selection-sum,
-.stage-floor,
 .notice,
 .actions {
   touch-action: none;
@@ -149,18 +148,27 @@
 .sub-hud,
 .timer-bar,
 .selection-sum,
-.stage-floor,
 .notice,
 .actions {
   touch-action: none;
 }
 
+/*
+ * The board takes whatever room the chrome leaves, and nothing else competes
+ * for it.
+ *
+ * It used to be an aspect-ratio box that reserved its own height and left the
+ * rest to a character stage. That box is a flex item, so on a screen where the
+ * chrome grew — the stats row and the equation row both arrived — it shrank
+ * vertically, and an aspect-ratio box that loses height loses width with it.
+ * The blocks ended up in a column down the middle with margins either side.
+ * Sizing is left to layout(), which already fits the board to both directions.
+ */
 .board-wrap {
-  flex: 0 1 auto;
-  align-items: flex-start;
+  flex: 1 1 auto;
+  align-items: center;
   width: calc(100% - 28px);
   margin: 0 14px;
-  aspect-ratio: var(--board-ratio, 1 / 1);
 }
 
 .board-wrap:not(.scrolls) {
@@ -241,25 +249,6 @@
 }
 
 /* Intentionally empty until character art and reactions are added. */
-.stage-floor {
-  position: relative;
-  flex: 1 1 90px;
-  min-height: 36px;
-  margin: 0 14px;
-  overflow: hidden;
-  background: radial-gradient(48% 52% at 50% 100%, rgba(115, 74, 161, 0.16), transparent 75%);
-}
-
-.stage-floor > img {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  max-width: 68%;
-  max-height: 100%;
-  object-fit: contain;
-  transform: translateX(-50%);
-}
-
 .notice {
   flex: 0 0 22px;
   min-height: 22px;
@@ -380,8 +369,7 @@
   .score-best { font-size: 8px; }
   .sub-hud { padding-top: 4px; padding-bottom: 6px; }
   .chip { padding: 4px 10px; font-size: 11px; }
-  .stage-floor { flex-basis: 24px; min-height: 12px; }
-  .notice { flex-basis: 18px; min-height: 18px; font-size: 11px; }
+    .notice { flex-basis: 18px; min-height: 18px; font-size: 11px; }
   .actions { padding: 2px 0 6px; }
   .round-btn { width: 52px; height: 52px; font-size: 23px; }
   /* Landscape is the tightest case in the game: nine rows of blocks plus the
@@ -422,8 +410,7 @@
 }
 
 @media (max-height: 520px) {
-  .stage-floor,
-  .notice { display: none; }
+    .notice { display: none; }
   .hud { grid-template-columns: 34px 1fr 34px; padding: 2px 8px; }
   .icon-btn { width: 34px; height: 34px; }
   .score { font-size: 26px; }

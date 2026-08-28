@@ -14,6 +14,8 @@ import { Hud } from "./screens/hud";
 import { Overlay } from "./screens/overlay";
 import { StoryScreen } from "./screens/storyScreen";
 import { GalleryScreen } from "./screens/galleryScreen";
+import { IntroScreen } from "./screens/introScreen";
+import { PickerScreen } from "./screens/pickerScreen";
 import { TitleScreen } from "./screens/titleScreen";
 import { TutorialScreen } from "./screens/tutorialScreen";
 import {
@@ -22,6 +24,7 @@ import {
   loadSettings,
   bestTimeFor,
   collectPlate,
+  recordEndlessTime,
   recordStageTime,
   totalCollected,
   saveDaily,
@@ -36,7 +39,16 @@ const RULES_TEXT = `숫자를 골라 합이 <b>정확히 10</b>이 되면 지워
 <b>어느 칸이든 상관없습니다.</b> 멀리 떨어져 있어도, 사이에 무엇이 있어도 함께 고를 수 있습니다.
 같은 숫자끼리 지우는 규칙은 없습니다. 3+3은 6이라 지워지지 않아요.`;
 
-type Screen = "splash" | "title" | "game" | "story" | "tutorial" | "gallery";
+type Screen =
+  | "splash"
+  | "title"
+  | "game"
+  | "story"
+  | "tutorial"
+  | "gallery"
+  | "chapters"
+  | "stages"
+  | "intro";
 
 /** How long the finished picture is held before the results panel. */
 const PLATE_HOLD_MS = 2000;
@@ -58,6 +70,8 @@ export class App {
   private readonly title: TitleScreen;
   private readonly tutorial = new TutorialScreen();
   private readonly gallery: GalleryScreen;
+  private readonly picker: PickerScreen;
+  private readonly intro: IntroScreen;
 
   private frame: number | undefined;
   private lastFrameMs = 0;
@@ -70,6 +84,9 @@ export class App {
     story: el("screen-story"),
     tutorial: el("screen-tutorial"),
     gallery: el("screen-gallery"),
+    chapters: el("screen-chapters"),
+    stages: el("screen-stages"),
+    intro: el("screen-intro"),
   };
 
   constructor() {
@@ -90,13 +107,23 @@ export class App {
       onSelectionChange: (values) => this.hud.setSelection(values),
     });
     this.title = new TitleScreen(
-      (mode) => this.startMode(mode),
+      (mode) => this.chooseMode(mode),
       () => this.showRules(),
       () => this.showSettings(),
     );
 
     this.gallery = new GalleryScreen(() => this.showTitle());
-    el<HTMLButtonElement>("btn-back").addEventListener("click", () => this.showTitle());
+    this.picker = new PickerScreen(
+      (index) => this.showStages(index),
+      (stage) => this.startStage(stage),
+      () => this.showTitle(),
+      () => this.showChapters(),
+    );
+    this.intro = new IntroScreen(
+      (mode) => this.startMode(mode),
+      () => this.showTitle(),
+    );
+    el<HTMLButtonElement>("btn-back").addEventListener("click", () => this.leaveRun());
     el<HTMLButtonElement>("btn-pause").addEventListener("click", () => this.pause());
     el<HTMLButtonElement>("btn-title-tutorial").addEventListener("click", () => this.showTutorial());
     el<HTMLButtonElement>("btn-title-gallery").addEventListener("click", () => this.showGallery());
@@ -161,6 +188,62 @@ export class App {
     this.gallery.render(this.progress);
     this.flow.enter("gallery");
     this.show("gallery");
+  }
+
+  /**
+   * Where a mode goes when it is picked on the title screen.
+   *
+   * Nothing starts a run from here any more. Story has ninety-nine stages and
+   * a picture behind each, which is worth choosing between; the timed modes
+   * get a screen that says what is about to be measured. `startMode` and
+   * `startStage` are what actually begin a run, and the results panel calls
+   * them directly so "다시 하기" replays instead of walking back out here.
+   */
+  private chooseMode(mode: GameMode): void {
+    if (mode === "story") {
+      this.showChapters();
+      return;
+    }
+    this.showIntro(mode);
+  }
+
+  private showChapters(): void {
+    this.stopClock();
+    this.view.setInteractive(false);
+    this.progress = loadProgress();
+    this.picker.renderChapters(this.progress);
+    this.flow.enter("chapters");
+    this.show("chapters");
+  }
+
+  private showStages(chapterIndex: number): void {
+    this.stopClock();
+    this.view.setInteractive(false);
+    this.progress = loadProgress();
+    this.picker.renderStages(this.progress, chapterIndex);
+    this.flow.enter("stages");
+    this.show("stages");
+  }
+
+  private showIntro(mode: GameMode): void {
+    this.stopClock();
+    this.view.setInteractive(false);
+    this.progress = loadProgress();
+    this.intro.render(mode, this.progress, this.progress.bestEndlessMs);
+    this.flow.enter("intro");
+    this.show("intro");
+  }
+
+  /**
+   * The back arrow on the game screen: out of a stage is back to the grid it
+   * was picked from, out of a timed run is back to the title.
+   */
+  private leaveRun(): void {
+    if (this.state.config.mode === "story") {
+      this.showStages(PickerScreen.chapterOf(this.state.config.stage ?? 1));
+      return;
+    }
+    this.showTitle();
   }
 
   private startMode(mode: GameMode): void {
@@ -380,6 +463,10 @@ export class App {
       });
       return;
     }
+    // Endless has no score to beat but the one thing it does measure is how
+    // long the board was kept alive, so that is kept too.
+    this.progress = recordEndlessTime(this.progress, this.state.elapsedMs);
+    saveProgress(this.progress);
     this.overlay.open({
       title: "보드가 가득 찼어요",
       body: `점수 ${score}점\n오늘 최고 ${this.daily.best}점\n최고 기록 ${this.progress.bestEndless}점`,
@@ -438,7 +525,11 @@ export class App {
           `REVEAL ${reveal}% · TIME ${formatClock(this.state.elapsedMs)}\n` +
           `${left}칸이 남았어요.\n이 판은 전부 지울 수 있어요 — 한 번 더 해볼까요?`,
         primary: { label: "다시 도전", action: () => this.startStage(stage) },
-        secondary: { label: "모드 선택", action: () => this.showTitle() },
+        // Back to the grid this stage was picked from, not all the way out.
+        secondary: {
+          label: "스테이지 선택",
+          action: () => this.showStages(PickerScreen.chapterOf(stage)),
+        },
       });
       return;
     }

@@ -16,6 +16,8 @@ export interface Progress {
   bestStory: number;
   bestTimeAttack: number;
   bestEndless: number;
+  /** Longest an endless run has survived, in milliseconds. */
+  bestEndlessMs: number;
   /** Chapters whose story beat has already played. */
   seenChapters: string[];
   /** Best star grade per stage, indexed from zero. */
@@ -92,6 +94,7 @@ function blankProgress(): Progress {
     bestStory: 0,
     bestTimeAttack: 0,
     bestEndless: 0,
+    bestEndlessMs: 0,
     seenChapters: [],
     collected: [],
     bestTimes: [],
@@ -108,6 +111,7 @@ export function loadProgress(): Progress {
       bestStory: Number(parsed.bestStory) || 0,
       bestTimeAttack: Number(parsed.bestTimeAttack) || 0,
       bestEndless: Number(parsed.bestEndless) || 0,
+      bestEndlessMs: Math.max(0, Number(parsed.bestEndlessMs) || 0),
       seenChapters: Array.isArray(parsed.seenChapters)
         ? parsed.seenChapters.filter((id): id is string => typeof id === "string")
         : [],
@@ -141,6 +145,12 @@ export function recordStageTime(progress: Progress, stage: number, ms: number): 
   if (held !== 0 && held <= ms) return progress;
   bestTimes[stage - 1] = ms;
   return { ...progress, bestTimes };
+}
+
+/** Records how long an endless run lasted, keeping only the longest. */
+export function recordEndlessTime(progress: Progress, ms: number): Progress {
+  if (ms <= progress.bestEndlessMs) return progress;
+  return { ...progress, bestEndlessMs: ms };
 }
 
 export function bestTimeFor(progress: Progress, stage: number): number {

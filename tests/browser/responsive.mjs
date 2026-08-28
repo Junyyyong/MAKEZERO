@@ -110,6 +110,41 @@ async function check(page, label, mode) {
   return true;
 }
 
+/**
+ * Walks from the title screen into a run.
+ *
+ * A mode is no longer one tap: story goes through the chapter list, the stage
+ * grid and the stage card, and the timed modes get a start screen. The
+ * furthest-open chapter and stage are taken, which is the stage `progress`
+ * was set to.
+ */
+async function startRun(page, id) {
+  await page.click(`#${id}`);
+  await page.waitForTimeout(260);
+  if (id !== "mode-story") {
+    await page.click("#btn-intro-start");
+    await page.waitForTimeout(260);
+    return;
+  }
+  await page.locator(".chapter-row:not(.shut)").last().click();
+  await page.waitForTimeout(240);
+  await page.locator(".stage-cell:not(.shut)").last().click();
+  await page.waitForTimeout(240);
+  await page.click("#btn-card-start");
+  await page.waitForTimeout(260);
+}
+
+/** Back out of a run all the way to the title, whichever way it was entered. */
+async function backToTitle(page, id) {
+  await page.click("#btn-back");
+  await page.waitForTimeout(140);
+  if (id !== "mode-story") return;
+  await page.click("#btn-stages-back");
+  await page.waitForTimeout(140);
+  await page.click("#btn-chapters-back");
+  await page.waitForTimeout(140);
+}
+
 const SKIP = { stage: 1, bestStory: 0, bestTimeAttack: 0, bestEndless: 0, seenChapters: [], collected: [], bestTimes: [], tutorialDone: true };
 // The story board grows with the stage, so the last one is the tallest thing
 // the game ever has to fit (9x4 at stage 1, 9x11 at stage 99). Checking stage 1
@@ -125,14 +160,12 @@ for (const [label, width, height] of SCREENS) {
 
   let good = true;
   for (const [mode, id] of [["스토리", "mode-story"], ["타임어택", "mode-timeAttack"], ["무제한", "mode-endless"]]) {
-    await page.click(`#${id}`);
-    await page.waitForTimeout(260);
+    await startRun(page, id);
     if (!(await check(page, label, mode))) good = false;
-    await page.click("#btn-back");
-    await page.waitForTimeout(120);
+    await backToTitle(page, id);
   }
 
-  const m = await (async () => { await page.click("#mode-story"); await page.waitForTimeout(240); return inspect(page); })();
+  const m = await (async () => { await startRun(page, "mode-story"); return inspect(page); })();
   if (good) ok(`${String(label).padEnd(20)} ${width}x${height}  타일 ${String(Math.round(m.tile)).padStart(3)}px  프레임 여백 ${Math.round(m.frameSlackX)}px`);
   await page.close();
 }
@@ -144,8 +177,7 @@ for (const [label, width, height] of SCREENS) {
   await page.goto(BASE, { waitUntil: "networkidle" });
   await page.evaluate((p) => localStorage.setItem("makezero.progress.v1", JSON.stringify(p)), LAST_STAGE);
   await page.reload({ waitUntil: "networkidle" });
-  await page.click("#mode-story");
-  await page.waitForTimeout(260);
+  await startRun(page, "mode-story");
   const m = await inspect(page);
   if (await check(page, label, "스토리 99")) {
     ok(`${String(label).padEnd(20)} ${width}x${height}  스테이지 99  타일 ${String(Math.round(m.tile)).padStart(3)}px`);
@@ -160,8 +192,7 @@ for (const [label, width, height] of SCREENS) {
   await page.goto(BASE, { waitUntil: "networkidle" });
   await page.evaluate((p) => localStorage.setItem("makezero.progress.v1", JSON.stringify(p)), SKIP);
   await page.reload({ waitUntil: "networkidle" });
-  await page.click("#mode-story");
-  await page.waitForTimeout(240);
+  await startRun(page, "mode-story");
   const before = (await inspect(page)).tile;
 
   await page.setViewportSize({ width: 852, height: 393 });

@@ -29,15 +29,18 @@ src/
     storage.ts            진행 상황 저장 (localStorage)
     screens/
       titleScreen.ts        모드 선택
+      pickerScreen.ts       챕터 목록 · 스테이지 그리드 · 스테이지 카드
+      introScreen.ts        타임어택 · 무제한 시작 화면
       tutorialScreen.ts     직접 해보는 튜토리얼
-      recordsScreen.ts      내 기록
+      galleryScreen.ts      모은 그림
       hud.ts                점수 · 칩 · 타이머 · 힌트
       overlay.ts            결과 패널 · 규칙 패널
       storyScreen.ts        챕터 연출
     styles/
       index.css             나머지를 불러오는 진입점
       tokens.css            팔레트 · 리셋 · 화면 틀     ← 스킨은 여기부터
-      title.css / game.css / story.css / overlay.css
+      title.css / game.css / picker.css / gallery.css
+      story.css / tutorial.css / overlay.css
       motion.css            애니메이션과 모션 최소화 옵션
   main.ts               진입점
 public/story/           캐릭터 이미지 (교체 대상)

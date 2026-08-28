@@ -8,15 +8,26 @@ export type AppState =
   | "result"
   | "story"
   | "gallery"
-  | "settings";
+  | "settings"
+  | "chapters"
+  | "stages"
+  | "intro";
 
 const ALLOWED: Readonly<Record<AppState, readonly AppState[]>> = {
   splash: ["mainMenu"],
-  mainMenu: ["tutorial", "inGame", "gallery", "settings"],
+  mainMenu: ["tutorial", "inGame", "gallery", "settings", "chapters", "intro"],
+  // Picking where to play. Story goes through the chapter list and the stage
+  // grid; the timed modes get one start screen each. Nothing here starts a
+  // run except the last step, so backing out is always the way it came.
+  chapters: ["mainMenu", "stages"],
+  stages: ["chapters", "mainMenu", "inGame"],
+  intro: ["mainMenu", "inGame"],
   tutorial: ["mainMenu"],
-  inGame: ["paused", "result", "mainMenu"],
+  inGame: ["paused", "result", "mainMenu", "stages"],
   paused: ["inGame", "mainMenu"],
-  result: ["inGame", "mainMenu", "story"],
+  // The results panel offers the gallery, because the picture it just
+  // handed over is in there.
+  result: ["inGame", "mainMenu", "story", "gallery", "stages"],
   story: ["inGame", "mainMenu", "result"],
   gallery: ["mainMenu"],
   settings: ["mainMenu"],

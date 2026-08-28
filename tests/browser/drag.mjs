@@ -45,14 +45,46 @@ const page = await browser.newPage({ viewport: { width: 393, height: 852 }, devi
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 
+/**
+ * Walks from the title screen into a run.
+ *
+ * A mode is no longer one tap: story goes through the chapter list, the stage
+ * grid and the stage card, the timed modes through a start screen.
+ */
+async function startRun(id) {
+  await page.click(`#${id}`);
+  await page.waitForTimeout(300);
+  if (id !== "mode-story") {
+    await page.click("#btn-intro-start");
+    await page.waitForTimeout(420);
+    return;
+  }
+  await page.locator(".chapter-row:not(.shut)").last().click();
+  await page.waitForTimeout(280);
+  await page.locator(".stage-cell:not(.shut)").last().click();
+  await page.waitForTimeout(280);
+  await page.click("#btn-card-start");
+  await page.waitForTimeout(420);
+}
+
+/** Back out of a run all the way to the title, whichever way it was entered. */
+async function backToTitle(id) {
+  await page.click("#btn-back");
+  await page.waitForTimeout(300);
+  if (id !== "mode-story") return;
+  await page.click("#btn-stages-back");
+  await page.waitForTimeout(200);
+  await page.click("#btn-chapters-back");
+  await page.waitForTimeout(300);
+}
+
 /** Opens story mode and returns the centre of every tile in the first row. */
 async function openStory() {
   await page.goto(BASE, { waitUntil: "networkidle" });
   await page.evaluate((p) => localStorage.setItem("makezero.progress.v1", JSON.stringify(p)), PROGRESS);
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForTimeout(300);
-  await page.click("#mode-story");
-  await page.waitForTimeout(450);
+  await startRun("mode-story");
   return page.evaluate(() => {
     const cols = Number(document.getElementById("board").dataset.cols);
     return [...document.querySelectorAll("#board .tile")].slice(0, cols).map((tile) => {
@@ -185,19 +217,16 @@ for (const steps of [1, 1, 2, 5, 40]) {
 // Every mode draws its board in the same place, at the same size.
 {
   // The checks above leave the page mid-game; the mode list is on the title.
-  await page.click("#btn-back");
-  await page.waitForTimeout(320);
+  await backToTitle("mode-story");
   const seen = [];
   for (const [name, id] of [["스토리", "mode-story"], ["타임어택", "mode-timeAttack"], ["무제한", "mode-endless"]]) {
-    await page.click(`#${id}`);
-    await page.waitForTimeout(450);
+    await startRun(id);
     seen.push([name, await page.evaluate(() => {
       const board = document.getElementById("board").getBoundingClientRect();
       const tile = document.querySelector("#board .tile").getBoundingClientRect();
       return { left: Math.round(board.left), top: Math.round(board.top), tile: Math.round(tile.width) };
     })]);
-    await page.click("#btn-back");
-    await page.waitForTimeout(300);
+    await backToTitle(id);
   }
   const [, first] = seen[0];
   for (const [name, m] of seen.slice(1)) {
