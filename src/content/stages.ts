@@ -3,36 +3,32 @@ import { TOTAL_STAGES } from "./chapters";
 import type { RunConfig } from "../core/types";
 
 /**
- * The story: ninety-nine stages, on nine columns, ending on a nine-by-eleven
- * board. Every one of them is dealt so that it can be emptied completely, and
- * emptying it is the goal — see docs/BALANCE.md for the measurements behind
- * that claim and behind every number in this file.
+ * The story: ninety-nine stages on one board size — nine by nine, eighty-one
+ * blocks, the same in every mode. Every stage is dealt so that it can be
+ * emptied completely, and emptying it uncovers the picture behind it.
  *
- * Three dials move together across the run, and each one was chosen because a
- * simulated player's chance of emptying the board responds to it:
+ * With the board fixed, two dials are left:
  *
- *   rows          3 → 11   more to hold in your head, and a longer run in
- *                          which one careless move can cost the board. The
- *                          first stage is deliberately tiny: fewer blocks is
- *                          fewer chances to strand one, and a careless line
- *                          empties a 27-square board about half the time
- *                          against two in five at 36
- *   groupWeights  큰 조각 → 짝 위주
- *                          the real difficulty dial. Boards dealt from big
- *                          loose groups leave small flexible numbers behind
- *                          and a careless line still empties them about two
- *                          runs in five; boards dealt from rigid pairs strand
- *                          8s and 9s and a careless line empties them almost
- *                          never
- *   hints 5 → 0, undos 5 → 1
- *                          how much help there is when it goes wrong
+ *   digitWeights  작은 수 위주 → 고른 분포
+ *                 the real one. A board dealt from loose groups leaves small
+ *                 flexible numbers behind and forgives a careless line; a
+ *                 level one spreads 8s and 9s about, and a 9 can only ever
+ *                 pair with a 1. It sets the group sizes too — five blocks
+ *                 adding to ten can only be 1s and 2s.
+ *   hints 5 → 0, undos 8 → 1, splits 3 → 1
+ *                 how much help there is when it goes wrong
  *
- * Note what is NOT a dial: whether the board *can* be emptied. It always can,
- * at every size and every mix. What changes is how easily a wrong move throws
- * it away.
+ * **Eighty-one blocks is a lot to keep clearable.** A line that takes any
+ * legal move empties a 27-block board about half the time and an 81-block one
+ * almost never, so on this size the forgiveness has to come from the
+ * take-backs rather than from the board being small. That is why the early
+ * stages carry so many. See docs/BALANCE.md.
  */
-const EASIEST = { rows: 3, hints: 5, undos: 5, splits: 3, nearly: 0.16 };
-const HARDEST = { rows: 11, hints: 0, undos: 1, splits: 1, nearly: 0.14 };
+const EASIEST = { hints: 5, undos: 8, splits: 3, nearly: 0.16 };
+const HARDEST = { hints: 0, undos: 1, splits: 1, nearly: 0.14 };
+
+/** Nine by nine, every stage and every mode. Eighty-one blocks. */
+export const BOARD_ROWS = 9;
 
 export const BOARD_WIDTH = 9;
 export const DECK = evenDeck(9);
@@ -41,13 +37,12 @@ export function stageConfig(stage: number): RunConfig {
   const clamped = Math.min(Math.max(stage, 1), TOTAL_STAGES);
   const t = TOTAL_STAGES > 1 ? (clamped - 1) / (TOTAL_STAGES - 1) : 0;
   const lerp = (from: number, to: number) => from + (to - from) * t;
-  const rows = Math.round(lerp(EASIEST.rows, HARDEST.rows));
-  const cells = BOARD_WIDTH * rows;
+  const cells = BOARD_WIDTH * BOARD_ROWS;
 
   return {
     mode: "story",
     width: BOARD_WIDTH,
-    rows,
+    rows: BOARD_ROWS,
     groupWeights: EASY_GROUPS,
     digitWeights: GENTLE_DIGITS.map((gentle, i) => lerp(gentle, LEVEL_DIGITS[i] ?? gentle)),
     keepBoard: true,
@@ -69,7 +64,7 @@ export function stageConfig(stage: number): RunConfig {
 export const TIME_ATTACK_CONFIG: RunConfig = {
   mode: "timeAttack",
   width: BOARD_WIDTH,
-  rows: 9,
+  rows: BOARD_ROWS,
   deck: DECK,
   groupWeights: EASY_GROUPS,
   hints: 0,
@@ -88,7 +83,7 @@ export const TIME_ATTACK_CONFIG: RunConfig = {
 export const ENDLESS_CONFIG: RunConfig = {
   mode: "endless",
   width: BOARD_WIDTH,
-  rows: 11,
+  rows: BOARD_ROWS,
   groupWeights: [3, 3, 2, 1],
   hints: 3,
   undos: 0,

@@ -1,27 +1,56 @@
+/*
+ * The palette comes off the wordmark: cyan-to-blue, pink-to-purple, and one
+ * orange for the things that need to be found. Nothing else. If a new colour
+ * feels necessary, it almost certainly belongs to one of these three families
+ * at a different lightness — see public/logo.svg, which is generated from
+ * scripts/build-logo.mjs and uses exactly these stops.
+ */
 :root {
-  --night: #120426;
-  --house-deep: #16062f;
-  --house: #241044;
-  --house-lit: #3a2062;
-  --velvet: #32135a;
-  --velvet-deep: #18062e;
-  --brass-dark: #a56d20;
-  --brass: #d99b36;
-  --brass-bright: #f5bd4f;
-  --marquee: #ffd774;
-  --bulb: #fff2b1;
-  --spotlight: #6b4498;
-  --stage: #210d40;
-  --stage-edge: #10031f;
-  --tile-face: #f8edd5;
-  --tile-face-low: #ead8b6;
-  --tile-ink: #3d1971;
-  --tile-sel: #fff1bd;
-  --ring-sel: #f3b846;
-  --ring-ok: #70d8a4;
-  --ring-bad: #ff6684;
-  --ink: #fff7e7;
-  --ink-soft: #d9c8ea;
+  /* Night: the board sits on this, and so does the wordmark */
+  --night: #150a3a;
+  --house-deep: #1b0f42;
+  --house: #241357;
+  --house-lit: #2f1a6d;
+  --velvet: #2a1163;
+  --velvet-deep: #140832;
+
+  /* Cool: the TAP half. The resting accent — chrome, rings, safe things. */
+  --cool: #5ec9f5;
+  --cool-deep: #3d5be0;
+  --cool-dim: rgba(94, 201, 245, 0.24);
+
+  /* Hot: the TEN half. Anything the player is about to spend or lose. */
+  --hot: #ff5fd2;
+  --hot-deep: #8b3fe0;
+  --hot-dim: rgba(255, 95, 210, 0.22);
+
+  /* Warm: the one orange, kept for what has to be found — score, hints. */
+  --warm: #ffc635;
+  --warm-deep: #ff8a1f;
+
+  /* Legacy names, kept so nothing has to be renamed twice. */
+  --brass-dark: var(--warm-deep);
+  --brass: var(--warm-deep);
+  --brass-bright: var(--warm);
+  --marquee: var(--warm);
+  --bulb: #ffe9a8;
+  --spotlight: var(--hot-deep);
+
+  --stage: #1d1050;
+  --stage-edge: #120731;
+
+  /* Blocks: pale faces so the digits read, on a night that is anything but */
+  --tile-face: #f4f7ff;
+  --tile-face-low: #cdd6f5;
+  --tile-ink: #2a1163;
+  --tile-sel: #bde9ff;
+
+  --ring-sel: var(--cool);
+  --ring-ok: #4ce0a8;
+  --ring-bad: var(--hot);
+
+  --ink: #f2edff;
+  --ink-soft: #b6a9e6;
   --gap: 2px;
 }
 
@@ -55,7 +84,7 @@ body {
 body {
   font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
   color: var(--ink);
-  background: var(--night);
+  background: var(--house-deep);
   overscroll-behavior: none;
   /* A double tap on a tile is two taps, never a zoom. */
   touch-action: manipulation;
@@ -66,10 +95,12 @@ body {
   position: relative;
   height: 100%;
   overflow: hidden;
+  /* Two soft pools of the wordmark's two families, over a night that goes
+     deeper toward the bottom. No texture: the blocks carry the detail. */
   background:
-    radial-gradient(70% 34% at 50% 78%, rgba(105, 64, 151, 0.22), transparent 72%),
-    repeating-linear-gradient(91deg, transparent 0 7px, rgba(255, 255, 255, 0.018) 8px 9px),
-    linear-gradient(180deg, #2b1550 0%, #1c0939 58%, #13052b 100%);
+    radial-gradient(64% 30% at 22% 12%, rgba(61, 91, 224, 0.3), transparent 70%),
+    radial-gradient(58% 28% at 82% 86%, rgba(139, 63, 224, 0.28), transparent 72%),
+    linear-gradient(180deg, #241357 0%, #1b0f42 55%, #140832 100%);
 }
 
 #app::before {
@@ -94,7 +125,6 @@ body {
     env(safe-area-inset-left);
 }
 
-.screen.hidden,
-.round-btn.hidden {
+.screen.hidden {
   display: none;
 }
