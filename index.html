@@ -24,7 +24,6 @@
           <h1 class="brand">
             <img class="brand-mark" src="./logo.svg" alt="TAP to TEN" width="574" height="567" />
           </h1>
-          <p class="tagline">타닥, 타다닥 — 두드려서 10</p>
         </div>
 
         <!-- The collection so far. It fills the middle of the screen with the
@@ -35,10 +34,10 @@
           <div class="collection-strip" id="collection-strip"></div>
         </div>
 
-        <div class="title-actions">
-          <button class="play-btn" id="btn-title-play">PLAY</button>
-
-          <nav class="mode-list collapsed" id="mode-list" aria-label="게임 모드">
+        <!-- The three modes, always out. There was a PLAY button in front of
+             them; it hid the game behind a tap and, once the wordmark grew,
+             the list it opened ran off the bottom of the screen. -->
+        <nav class="mode-list" id="mode-list" aria-label="게임 모드">
             <button class="mode-btn" id="mode-story" data-mode="story">
               <span class="mode-name">스토리</span>
               <span class="mode-desc" id="desc-story">스테이지 1</span>
@@ -51,8 +50,7 @@
               <span class="mode-name">무제한</span>
               <span class="mode-desc" id="desc-endless">끝까지 지우기</span>
             </button>
-          </nav>
-        </div>
+        </nav>
 
         <div class="title-links">
           <button class="text-btn" id="btn-title-tutorial">튜토리얼</button>
@@ -91,6 +89,11 @@
 
         <div class="board-wrap" id="board-wrap">
           <div class="board" id="board"></div>
+          <!-- The finished picture, whole. It fades in over the blocks that
+               uncovered it, so the last clear resolves into one image. -->
+          <div class="plate-done hidden" id="plate-done">
+            <span class="plate-done-label" id="plate-done-label"></span>
+          </div>
         </div>
 
         <!-- Future character art lives here. The empty stage is intentional. -->

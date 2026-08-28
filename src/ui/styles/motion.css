@@ -113,3 +113,14 @@
   from { opacity: 0; transform: scale(0.86); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* The finished picture settling over the blocks that uncovered it. */
+@keyframes plate-settle {
+  from { opacity: 0; transform: scale(1.04); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes drift-up-settle {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
