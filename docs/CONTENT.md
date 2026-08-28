@@ -1,3 +1,17 @@
+# 로고
+
+워드마크는 폰트가 아니라 **블록으로 그린 그림**입니다. `scripts/build-logo.mjs` 가 글자 비트맵에서 SVG를 만듭니다.
+
+```bash
+node scripts/build-logo.mjs > public/logo.svg
+```
+
+- 글자 모양은 스크립트 맨 위 `GLYPHS` / `SMALL` 의 `#` 격자입니다. 한 줄이 한 픽셀 행이에요
+- 색은 `cool`(TAP) · `warm`(to) · `hot`(TEN) 그라데이션 세 개뿐이고, **`tokens.css` 의 팔레트와 같은 값**입니다. 한쪽을 바꾸면 다른 쪽도 바꿔야 합니다
+- `CELL` 은 블록 한 칸, `DEPTH` 는 뒤로 밀린 판의 두께입니다
+
+---
+
 # 그림 (갤러리)
 
 스테이지마다 그림이 한 장 있고, 판을 전부 지우면 그 그림을 얻습니다. 목록은 `src/content/gallery.ts` 의 `PLATES` 입니다.

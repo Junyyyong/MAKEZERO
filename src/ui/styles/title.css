@@ -11,7 +11,7 @@
   font-size: clamp(36px, 12vw, 54px);
   font-weight: 900;
   letter-spacing: 3px;
-  color: var(--marquee);
+  color: var(--cool);
   text-shadow: 0 0 22px rgba(245, 189, 79, 0.34);
   animation: splash-rise 700ms cubic-bezier(.2,.8,.2,1) both;
 }
@@ -19,7 +19,7 @@
 .splash-logo span {
   font-size: 0.5em;
   font-style: italic;
-  color: var(--brass);
+  color: var(--cool);
 }
 
 .splash-pulse {
@@ -57,30 +57,25 @@
 }
 
 /* A marquee sign: brass letters with the bulbs glowing behind them. */
+/*
+ * The wordmark is drawn, not set: it is made of the same blocks the game is
+ * made of, so a font could not do it. scripts/build-logo.mjs generates it.
+ */
 .brand {
   margin: 0;
-  font-size: clamp(34px, 11vw, 52px);
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 800;
-  letter-spacing: 3px;
-  color: var(--marquee);
-  text-shadow:
-    0 0 6px rgba(255, 215, 130, 0.9),
-    0 0 26px rgba(255, 190, 90, 0.55),
-    0 4px 0 rgba(0, 0, 0, 0.35);
+  line-height: 0;
 }
 
-.brand-to {
-  font-size: 0.52em;
-  font-weight: 700;
-  font-style: italic;
-  letter-spacing: 1px;
-  color: var(--brass);
-  text-shadow: 0 0 14px rgba(232, 180, 76, 0.6);
+.brand-mark {
+  width: min(78vw, 300px);
+  height: auto;
+  /* A little of the night thrown back up at it, so it sits on the background
+     rather than on top of it. */
+  filter: drop-shadow(0 10px 24px rgba(20, 8, 50, 0.7));
 }
 
 .tagline {
-  margin: 10px 0 0;
+  margin: 14px 0 0;
   font-size: 15px;
   letter-spacing: 1px;
   color: var(--ink-soft);
@@ -110,10 +105,10 @@
   padding: 16px 24px;
   font: 900 20px/1 inherit;
   letter-spacing: 3px;
-  color: var(--tile-ink);
+  color: #fff;
   cursor: pointer;
-  background: linear-gradient(160deg, #ffe08a, #e7a83d);
-  border: 1px solid #ffe49a;
+  background: linear-gradient(160deg, var(--hot), var(--hot-deep));
+  border: 1px solid rgba(255, 255, 255, 0.34);
   border-radius: 16px;
   box-shadow: inset 0 2px 0 rgba(255,255,255,.42), 0 8px 20px rgba(8,1,18,.3);
   transition: transform 120ms ease, box-shadow 120ms ease;
@@ -134,7 +129,7 @@
   color: var(--ink);
   cursor: pointer;
   background: linear-gradient(180deg, rgba(31, 25, 29, 0.98), rgba(5, 4, 6, 0.98));
-  border: 1px solid var(--brass);
+  border: 1px solid var(--cool-dim);
   border-radius: 999px;
   box-shadow:
     inset 0 0 12px rgba(255, 192, 72, 0.06),
@@ -148,7 +143,7 @@
 .mode-name {
   font-size: 21px;
   font-weight: 800;
-  color: var(--marquee);
+  color: var(--cool);
 }
 
 .mode-desc {
@@ -162,7 +157,7 @@
   font-family: inherit;
   font-size: 15px;
   font-weight: 700;
-  color: var(--brass);
+  color: var(--cool);
   text-decoration: underline;
   cursor: pointer;
   background: none;

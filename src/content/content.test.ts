@@ -57,9 +57,9 @@ describe("stage curve", () => {
     }
   });
 
-  it("keeps nine columns and grows the story board from three rows to eleven", () => {
-    expect(stageConfig(1)).toMatchObject({ width: 9, rows: 3 });
-    expect(stageConfig(TOTAL_STAGES)).toMatchObject({ width: 9, rows: 11 });
+  it("deals nine by nine on every stage", () => {
+    expect(stageConfig(1)).toMatchObject({ width: 9, rows: 9 });
+    expect(stageConfig(TOTAL_STAGES)).toMatchObject({ width: 9, rows: 9 });
     for (const stage of everyStage) {
       const config = stageConfig(stage);
       expect(config.deck).toBeUndefined();
@@ -87,7 +87,7 @@ describe("stage curve", () => {
   it("reaches its hardest settings exactly at the final stage", () => {
     const last = stageConfig(TOTAL_STAGES);
     expect(last.width).toBe(9);
-    expect(last.rows).toBe(11);
+    expect(last.rows).toBe(9);
     expect(last.hints).toBe(0);
     expect(last.undos).toBe(1);
     // The digit histogram is nearly level by the end: as many 9s as 1s, so

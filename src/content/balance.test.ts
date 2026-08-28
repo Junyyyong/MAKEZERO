@@ -23,12 +23,12 @@ function play(stage: number, seed: number) {
 }
 
 describe("progressive story deal", () => {
-  it("runs ninety-nine stages, from three rows to eleven", () => {
+  it("runs ninety-nine stages, all of them nine by nine", () => {
     expect(TOTAL_STAGES).toBe(99);
     const first = stageConfig(1);
     const last = stageConfig(TOTAL_STAGES);
-    expect(first.width * first.rows).toBe(27);
-    expect(last.width * last.rows).toBe(99);
+    expect(first.width * first.rows).toBe(81);
+    expect(last.width * last.rows).toBe(81);
     // Nine columns throughout, so a block is the same size on every stage.
     for (let stage = 1; stage <= TOTAL_STAGES; stage++) expect(stageConfig(stage).width).toBe(9);
   });
@@ -70,7 +70,7 @@ describe("progressive story deal", () => {
     for (let stage = 2; stage <= TOTAL_STAGES; stage++) {
       const prev = stageConfig(stage - 1);
       const next = stageConfig(stage);
-      expect(next.rows).toBeGreaterThanOrEqual(prev.rows);
+      expect(next.rows).toBe(prev.rows);
       expect(next.hints).toBeLessThanOrEqual(prev.hints);
       expect(next.undos).toBeLessThanOrEqual(prev.undos);
       expect(next.undos).toBeGreaterThan(0); // one take-back, always
