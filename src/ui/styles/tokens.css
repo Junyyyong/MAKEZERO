@@ -49,6 +49,30 @@
   --ring-ok: #4ce0a8;
   --ring-bad: var(--hot);
 
+  /*
+   * One colour per digit. A board of identical white blocks is read one number
+   * at a time; a board of coloured ones is read in groups, which is what the
+   * game actually asks for. They are picked to stay apart at block size and to
+   * live in the same neon family as the wordmark.
+   */
+  --v1: #3d7bf5;
+  --v2: #1fb3a6;
+  --v3: #46c94a;
+  --v4: #9b5cf0;
+  --v5: #ef4b5a;
+  --v6: #f7861f;
+  --v7: #ec4fa0;
+  --v8: #2aa9e8;
+  --v9: #e8b21c;
+
+  /* Panel buttons: go, choose, back. Green reads as "carry on" everywhere. */
+  --go: #46c94a;
+  --go-deep: #2c8f3a;
+  --pick: #3d7bf5;
+  --pick-deep: #2a4fc0;
+  --stop: #ef4b5a;
+  --stop-deep: #b8303f;
+
   --ink: #f2edff;
   --ink-soft: #b6a9e6;
   --gap: 2px;

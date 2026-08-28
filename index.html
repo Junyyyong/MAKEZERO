@@ -69,9 +69,7 @@
             </svg>
           </button>
           <div class="score-block">
-            <div class="score-label">SCORE</div>
-            <div class="score" id="score">0</div>
-            <div class="score-best" id="score-best">BEST 0</div>
+            <div class="run-title" id="run-title">STAGE 1</div>
           </div>
           <button class="icon-btn" id="btn-pause" aria-label="일시정지">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -80,9 +78,21 @@
           </button>
         </header>
 
-        <div class="sub-hud">
-          <div class="chip" id="chip-left">게임 1</div>
-          <div class="chip" id="chip-right">오늘 <b>0</b></div>
+        <!-- What the run is actually measured by. Which of these is showing
+             depends on the mode; the row itself never moves. -->
+        <div class="run-stats">
+          <div class="run-stat" id="stat-a">
+            <span class="run-stat-label">REVEAL</span>
+            <b class="run-stat-value" id="stat-a-value">0%</b>
+          </div>
+          <div class="run-stat" id="stat-b">
+            <span class="run-stat-label">TIME</span>
+            <b class="run-stat-value" id="stat-b-value">00:00</b>
+          </div>
+          <div class="run-stat" id="stat-c">
+            <span class="run-stat-label">COMBO</span>
+            <b class="run-stat-value" id="stat-c-value">0</b>
+          </div>
         </div>
 
         <div class="timer-bar hidden" id="timer-bar"><span id="timer-fill"></span></div>
@@ -101,10 +111,14 @@
 
         <p class="notice" id="notice" role="status" aria-live="polite"></p>
 
+        <div class="selection-sum" id="selection-sum" aria-live="polite">
+          <span class="sum-label">SUM</span>
+          <span class="sum-terms" id="sum-terms"></span>
+          <span class="sum-eq">=</span>
+          <b class="sum-total" id="sum-total">?</b>
+        </div>
+
         <footer class="actions">
-          <div class="selection-sum" id="selection-sum" aria-live="polite">
-            <span>SUM</span><b>0</b>
-          </div>
           <button class="round-btn" id="btn-hint" aria-label="힌트">
             <span class="glyph">&#128161;</span><span class="badge" id="badge-hint">3</span>
           </button>

@@ -1,16 +1,25 @@
-import { emptyIndices } from "../../core/board";
+import { aliveCount, emptyIndices } from "../../core/board";
 import { canSplit } from "../../core/game";
 import type { GameState } from "../../core/game";
-import { chapterFor } from "../../content/chapters";
 import { el, formatClock } from "../dom";
 
-/** The score, mode chips, timer and hint button above and below the board. */
+/**
+ * Everything around the board: what the run is called, the three numbers it is
+ * measured by, the equation being built, and the three tools.
+ *
+ * The three stat slots are the same slots in every mode — only their labels
+ * and values change — so switching modes never moves the board.
+ */
 export class Hud {
-  private readonly scoreEl = el<HTMLDivElement>("score");
-  private readonly bestEl = el<HTMLDivElement>("score-best");
-  private readonly sumEl = el<HTMLElement>("selection-sum").querySelector("b")!;
-  private readonly chipLeft = el<HTMLDivElement>("chip-left");
-  private readonly chipRight = el<HTMLDivElement>("chip-right");
+  private readonly runTitle = el<HTMLDivElement>("run-title");
+  private readonly stats = [
+    { box: el<HTMLDivElement>("stat-a"), value: el<HTMLElement>("stat-a-value") },
+    { box: el<HTMLDivElement>("stat-b"), value: el<HTMLElement>("stat-b-value") },
+    { box: el<HTMLDivElement>("stat-c"), value: el<HTMLElement>("stat-c-value") },
+  ];
+  private readonly sumBox = el<HTMLElement>("selection-sum");
+  private readonly sumTerms = el<HTMLElement>("sum-terms");
+  private readonly sumTotal = el<HTMLElement>("sum-total");
   private readonly timerBar = el<HTMLDivElement>("timer-bar");
   private readonly timerFill = el<HTMLSpanElement>("timer-fill");
   private readonly noticeEl = el<HTMLParagraphElement>("notice");
@@ -21,16 +30,29 @@ export class Hud {
   readonly splitBtn = el<HTMLButtonElement>("btn-split");
   private readonly splitBadge = el<HTMLSpanElement>("badge-split");
 
-  /** Games played today, shown in endless mode. */
-  gamesToday = 1;
-  bestToday = 0;
+  /** Clears in a row without a refused selection between them. */
+  combo = 0;
   bestForMode = 0;
 
-  setSelectionSum(sum: number): void {
-    this.sumEl.textContent = String(sum);
-    const root = this.sumEl.parentElement!;
-    root.classList.toggle("active", sum > 0);
-    root.classList.toggle("ready", sum === 10);
+  /** Shows the equation as it is built: 2 + 3 + 2 = ?, then = 10. */
+  setSelection(values: readonly number[]): void {
+    const sum = values.reduce((total, value) => total + value, 0);
+    this.sumTerms.replaceChildren(
+      ...values.flatMap((value, i) => {
+        const term = document.createElement("b");
+        term.className = "sum-term";
+        term.dataset.v = String(value);
+        term.textContent = String(value);
+        if (i === 0) return [term];
+        const plus = document.createElement("span");
+        plus.className = "sum-plus";
+        plus.textContent = "+";
+        return [plus, term];
+      }),
+    );
+    this.sumTotal.textContent = values.length === 0 ? "?" : String(sum);
+    this.sumBox.classList.toggle("active", values.length > 0);
+    this.sumBox.classList.toggle("ready", sum === 10);
   }
 
   /** An override for the line under the board, or null to let it speak again. */
@@ -42,11 +64,10 @@ export class Hud {
   private override: string | null = null;
 
   render(state: GameState): void {
-    const { config, score, hintsLeft, status, remainingMs } = state;
-    this.scoreEl.textContent = String(score);
-    this.bestEl.textContent = `BEST ${Math.max(this.bestForMode, score)}`;
-    this.hintBadge.textContent = String(hintsLeft);
-    this.hintBtn.disabled = hintsLeft === 0 || status !== "playing";
+    const { config, status, remainingMs, elapsedMs } = state;
+
+    this.hintBadge.textContent = String(state.hintsLeft);
+    this.hintBtn.disabled = state.hintsLeft === 0 || status !== "playing";
     this.hintBtn.classList.toggle("hidden", config.hints === 0);
 
     // Taking a move back is what makes "empty the board" a fair goal, so the
@@ -69,15 +90,20 @@ export class Hud {
     }
 
     if (config.mode === "story") {
-      const stage = config.stage ?? 1;
-      this.chipLeft.textContent = `스테이지 ${stage}`;
-      this.chipRight.textContent = chapterFor(stage).title;
+      this.runTitle.textContent = `STAGE ${config.stage ?? 1}`;
+      this.stat(0, "REVEAL", `${this.revealed(state)}%`);
+      this.stat(1, "TIME", formatClock(elapsedMs));
+      this.stat(2, "COMBO", String(this.combo));
     } else if (config.mode === "timeAttack") {
-      this.chipLeft.textContent = "타임어택";
-      this.chipRight.textContent = formatClock(remainingMs);
+      this.runTitle.textContent = "TIME ATTACK";
+      this.stat(0, "TIME", formatClock(remainingMs));
+      this.stat(1, "SCORE", state.score.toLocaleString());
+      this.stat(2, "COMBO", String(this.combo));
     } else {
-      this.chipLeft.textContent = `게임 ${this.gamesToday}`;
-      this.chipRight.textContent = `오늘 ${Math.max(this.bestToday, score)} ♛`;
+      this.runTitle.textContent = "ENDLESS";
+      this.stat(0, "TIME", formatClock(elapsedMs));
+      this.stat(1, "SCORE", state.score.toLocaleString());
+      this.stat(2, "BEST", this.bestForMode.toLocaleString());
     }
 
     // In endless the timer bar shows how close the board is to overflowing,
@@ -92,11 +118,28 @@ export class Hud {
     this.noticeEl.textContent = this.override ?? this.notice(state);
   }
 
+  /** How much of the picture is uncovered, as a whole percent. */
+  private revealed(state: GameState): number {
+    const total = state.board.cells.length;
+    if (total === 0) return 0;
+    return Math.round(((total - aliveCount(state.board)) / total) * 100);
+  }
+
+  private stat(slot: number, label: string, value: string): void {
+    const target = this.stats[slot]!;
+    target.box.firstElementChild!.textContent = label;
+    target.value.textContent = value;
+  }
+
+  /**
+   * The line under the board. It never counts the blocks that are left: the
+   * board already shows that, and REVEAL puts a number on it. Only what the
+   * player cannot see goes here.
+   */
   private notice(state: GameState): string {
     if (state.config.spawn) {
       if (state.status === "lost") return "보드가 가득 찼어요.";
-      const room = emptyIndices(state.board).length;
-      return room <= 6 ? "곧 가득 차요!" : "";
+      return emptyIndices(state.board).length <= 6 ? "곧 가득 차요" : "";
     }
     if (state.status === "lost") {
       return state.undosLeft > 0 && state.previous
