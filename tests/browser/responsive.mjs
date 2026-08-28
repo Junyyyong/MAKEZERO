@@ -110,21 +110,6 @@ async function check(page, label, mode) {
   return true;
 }
 
-/**
- * The title screen keeps the mode list collapsed behind PLAY, so every run has
- * to open it first. Clicking a mode straight away silently times out against an
- * element the title screen is still covering.
- */
-async function openModes(page) {
-  const collapsed = await page.evaluate(() =>
-    document.getElementById("mode-list")?.classList.contains("collapsed") ?? false,
-  );
-  if (collapsed) {
-    await page.click("#btn-title-play");
-    await page.waitForTimeout(320);
-  }
-}
-
 const SKIP = { stage: 1, bestStory: 0, bestTimeAttack: 0, bestEndless: 0, seenChapters: [], collected: [], tutorialDone: true };
 // The story board grows with the stage, so the last one is the tallest thing
 // the game ever has to fit (9x4 at stage 1, 9x11 at stage 99). Checking stage 1
@@ -140,7 +125,6 @@ for (const [label, width, height] of SCREENS) {
 
   let good = true;
   for (const [mode, id] of [["스토리", "mode-story"], ["타임어택", "mode-timeAttack"], ["무제한", "mode-endless"]]) {
-    await openModes(page);
     await page.click(`#${id}`);
     await page.waitForTimeout(260);
     if (!(await check(page, label, mode))) good = false;
@@ -148,7 +132,7 @@ for (const [label, width, height] of SCREENS) {
     await page.waitForTimeout(120);
   }
 
-  const m = await (async () => { await openModes(page); await page.click("#mode-story"); await page.waitForTimeout(240); return inspect(page); })();
+  const m = await (async () => { await page.click("#mode-story"); await page.waitForTimeout(240); return inspect(page); })();
   if (good) ok(`${String(label).padEnd(20)} ${width}x${height}  타일 ${String(Math.round(m.tile)).padStart(3)}px  프레임 여백 ${Math.round(m.frameSlackX)}px`);
   await page.close();
 }
@@ -160,7 +144,6 @@ for (const [label, width, height] of SCREENS) {
   await page.goto(BASE, { waitUntil: "networkidle" });
   await page.evaluate((p) => localStorage.setItem("makezero.progress.v1", JSON.stringify(p)), LAST_STAGE);
   await page.reload({ waitUntil: "networkidle" });
-  await openModes(page);
   await page.click("#mode-story");
   await page.waitForTimeout(260);
   const m = await inspect(page);
@@ -177,7 +160,6 @@ for (const [label, width, height] of SCREENS) {
   await page.goto(BASE, { waitUntil: "networkidle" });
   await page.evaluate((p) => localStorage.setItem("makezero.progress.v1", JSON.stringify(p)), SKIP);
   await page.reload({ waitUntil: "networkidle" });
-  await openModes(page);
   await page.click("#mode-story");
   await page.waitForTimeout(240);
   const before = (await inspect(page)).tile;

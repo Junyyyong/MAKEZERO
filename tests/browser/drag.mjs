@@ -51,10 +51,6 @@ async function openStory() {
   await page.evaluate((p) => localStorage.setItem("makezero.progress.v1", JSON.stringify(p)), PROGRESS);
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForTimeout(300);
-  if (await page.evaluate(() => document.getElementById("mode-list")?.classList.contains("collapsed"))) {
-    await page.click("#btn-title-play");
-    await page.waitForTimeout(300);
-  }
   await page.click("#mode-story");
   await page.waitForTimeout(450);
   return page.evaluate(() => {
@@ -191,10 +187,6 @@ for (const steps of [1, 1, 2, 5, 40]) {
   await page.waitForTimeout(320);
   const seen = [];
   for (const [name, id] of [["스토리", "mode-story"], ["타임어택", "mode-timeAttack"], ["무제한", "mode-endless"]]) {
-    if (await page.evaluate(() => document.getElementById("mode-list")?.classList.contains("collapsed"))) {
-      await page.click("#btn-title-play");
-      await page.waitForTimeout(300);
-    }
     await page.click(`#${id}`);
     await page.waitForTimeout(450);
     seen.push([name, await page.evaluate(() => {

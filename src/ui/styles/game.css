@@ -433,3 +433,38 @@
 #btn-undo {
   background: linear-gradient(160deg, var(--hot), var(--hot-deep));
 }
+
+/* ── the picture, finished ────────────────────────────────────────────
+   Sized and placed over the board from app.ts, because the board's size is
+   only known once it has been measured. The sliced squares stay underneath
+   and this settles on top of them, so a completed stage resolves from blocks
+   into one picture instead of cutting straight to a results panel. */
+.plate-done {
+  position: absolute;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 12px;
+  background-position: center;
+  background-size: cover;
+  border: 1px solid var(--cool-dim);
+  border-radius: 12px;
+  box-shadow: 0 10px 34px rgba(10, 3, 28, 0.6);
+  pointer-events: none;
+  animation: plate-settle 620ms ease both;
+}
+
+.plate-done.hidden {
+  display: none;
+}
+
+.plate-done-label {
+  padding: 7px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: rgba(20, 8, 50, 0.72);
+  border-radius: 999px;
+  animation: drift-up-settle 620ms ease 260ms both;
+}

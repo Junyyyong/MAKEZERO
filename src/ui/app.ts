@@ -36,6 +36,9 @@ const RULES_TEXT = `숫자를 골라 합이 <b>정확히 10</b>이 되면 지워
 
 type Screen = "splash" | "title" | "game" | "story" | "tutorial" | "gallery";
 
+/** How long the finished picture is held before the results panel. */
+const PLATE_HOLD_MS = 2000;
+
 /** Owns the run in progress and moves between screens. */
 export class App {
   private state: GameState;
@@ -175,6 +178,7 @@ export class App {
     this.state = newGame(config);
     this.flow.enter("inGame");
     this.show("game");
+    el<HTMLDivElement>("plate-done").classList.add("hidden");
     this.view.setBackdrop(config.mode === "story" ? artFor(config.stage ?? 1) : null);
     this.view.setBoard(this.state.board);
     this.view.setInteractive(true);
@@ -389,6 +393,34 @@ export class App {
    * picture behind it is the player's, or it is not and the stage is unfinished.
    * Every board can be emptied, so an unfinished one is always worth another go.
    */
+  /**
+   * Holds the finished picture on screen for a beat before anything else.
+   *
+   * Without it the last clear and the results panel land in the same instant,
+   * and the thing the whole stage was for — the picture — is never actually
+   * looked at. The panel waits.
+   */
+  private showFinishedPlate(stage: number, then: () => void): void {
+    const board = el<HTMLDivElement>("board").getBoundingClientRect();
+    const wrap = el<HTMLDivElement>("board-wrap").getBoundingClientRect();
+    const done = el<HTMLDivElement>("plate-done");
+    done.style.left = `${board.left - wrap.left}px`;
+    done.style.top = `${board.top - wrap.top}px`;
+    done.style.width = `${board.width}px`;
+    done.style.height = `${board.height}px`;
+    done.style.backgroundImage = artFor(stage);
+    el<HTMLSpanElement>("plate-done-label").textContent = `${plateFor(stage).title} 완성!`;
+    // The score pops from the last clear are still drifting over the board;
+    // let them go, or they float across the finished picture.
+    for (const pop of el<HTMLDivElement>("board-wrap").querySelectorAll(".pop")) pop.remove();
+    done.classList.remove("hidden");
+
+    window.setTimeout(() => {
+      done.classList.add("hidden");
+      then();
+    }, PLATE_HOLD_MS);
+  }
+
   private finishStage(stage: number): void {
     const left = aliveCount(this.state.board);
     if (left > 0) {
@@ -408,16 +440,19 @@ export class App {
     saveProgress(this.progress);
 
     const chapter = chapterFor(stage);
-    if (isChapterFinale(stage) && !this.progress.seenChapters.includes(chapter.id)) {
-      this.progress = {
-        ...this.progress,
-        seenChapters: [...this.progress.seenChapters, chapter.id],
-      };
-      saveProgress(this.progress);
-      this.playChapter(chapter, stage);
-      return;
-    }
-    this.showStageResult(stage);
+    const next = () => {
+      if (isChapterFinale(stage) && !this.progress.seenChapters.includes(chapter.id)) {
+        this.progress = {
+          ...this.progress,
+          seenChapters: [...this.progress.seenChapters, chapter.id],
+        };
+        saveProgress(this.progress);
+        this.playChapter(chapter, stage);
+        return;
+      }
+      this.showStageResult(stage);
+    };
+    this.showFinishedPlate(stage, next);
   }
 
   private showStageResult(stage: number): void {
