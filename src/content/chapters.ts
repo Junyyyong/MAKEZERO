@@ -19,7 +19,7 @@ export interface Chapter {
 export const CHAPTERS: readonly Chapter[] = [
   {
     id: "sprout",
-    title: "1장 · 첫 그루터기",
+    title: "1장",
     character: "./story/sprout.svg",
     characterName: "새싹",
     lines: [
@@ -30,7 +30,7 @@ export const CHAPTERS: readonly Chapter[] = [
   },
   {
     id: "clearing",
-    title: "2장 · 볕 드는 빈터",
+    title: "2장",
     character: "./story/grove.svg",
     characterName: "빈터지기",
     lines: [
@@ -41,7 +41,7 @@ export const CHAPTERS: readonly Chapter[] = [
   },
   {
     id: "grove",
-    title: "3장 · 안개 낀 숲",
+    title: "3장",
     character: "./story/grove.svg",
     characterName: "안개지기",
     lines: [
@@ -52,7 +52,7 @@ export const CHAPTERS: readonly Chapter[] = [
   },
   {
     id: "brook",
-    title: "4장 · 얕은 개울",
+    title: "4장",
     character: "./story/sprout.svg",
     characterName: "개울지기",
     lines: [
@@ -63,7 +63,7 @@ export const CHAPTERS: readonly Chapter[] = [
   },
   {
     id: "hollow",
-    title: "5장 · 깊은 구멍",
+    title: "5장",
     character: "./story/hollow.svg",
     characterName: "구멍지기",
     lines: [
@@ -74,7 +74,7 @@ export const CHAPTERS: readonly Chapter[] = [
   },
   {
     id: "roots",
-    title: "6장 · 뒤엉킨 뿌리",
+    title: "6장",
     character: "./story/hollow.svg",
     characterName: "뿌리지기",
     lines: [
@@ -85,7 +85,7 @@ export const CHAPTERS: readonly Chapter[] = [
   },
   {
     id: "ridge",
-    title: "7장 · 바람 부는 능선",
+    title: "7장",
     character: "./story/grove.svg",
     characterName: "능선지기",
     lines: [
@@ -96,7 +96,7 @@ export const CHAPTERS: readonly Chapter[] = [
   },
   {
     id: "mist",
-    title: "8장 · 물안개",
+    title: "8장",
     character: "./story/grove.svg",
     characterName: "물안개",
     lines: [
@@ -107,7 +107,7 @@ export const CHAPTERS: readonly Chapter[] = [
   },
   {
     id: "canopy",
-    title: "9장 · 우듬지",
+    title: "9장",
     character: "./story/canopy.svg",
     characterName: "우듬지",
     lines: [
@@ -118,7 +118,7 @@ export const CHAPTERS: readonly Chapter[] = [
   },
   {
     id: "starfall",
-    title: "10장 · 별이 지는 밤",
+    title: "10장",
     character: "./story/canopy.svg",
     characterName: "별지기",
     lines: [
@@ -129,7 +129,7 @@ export const CHAPTERS: readonly Chapter[] = [
   },
   {
     id: "stump",
-    title: "11장 · 다시 그루터기",
+    title: "11장",
     character: "./story/sprout.svg",
     characterName: "새싹",
     lines: [
