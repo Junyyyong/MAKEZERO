@@ -2,10 +2,9 @@ import {
   CHAPTERS,
   STAGES_PER_CHAPTER,
   TOTAL_STAGES,
-  chapterFor,
   chapterIndexFor,
 } from "../../content/chapters";
-import { artFor, plateFor } from "../../content/gallery";
+import { artFor } from "../../content/gallery";
 import { el, formatClock } from "../dom";
 import { bestTimeFor } from "../storage";
 import type { Progress } from "../storage";
@@ -148,7 +147,4 @@ export class PickerScreen {
     return chapterIndexFor(Math.min(stage, TOTAL_STAGES));
   }
 
-  static titleOf(stage: number): string {
-    return `${chapterFor(stage).title} · ${plateFor(stage).title}`;
-  }
 }
