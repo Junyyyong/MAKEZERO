@@ -27,10 +27,12 @@ src/
     boardView.ts          타일 렌더링 · 탭/드래그 입력 · 화면 맞춤
     dom.ts                작은 헬퍼 (el, 별 문자열, 시계 포맷)
     storage.ts            진행 상황 저장 (localStorage)
+    feedback.ts           효과음(WebAudio 합성) · 진동
     screens/
       titleScreen.ts        모드 선택
       pickerScreen.ts       챕터 목록 · 스테이지 그리드 · 스테이지 카드
       introScreen.ts        타임어택 · 무제한 시작 화면
+      settingsScreen.ts     효과음 · 진동 스위치
       tutorialScreen.ts     직접 해보는 튜토리얼
       galleryScreen.ts      모은 그림
       hud.ts                점수 · 칩 · 타이머 · 힌트

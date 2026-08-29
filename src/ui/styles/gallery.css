@@ -114,8 +114,60 @@
   display: none;
 }
 
+/* The picture with an arrow on each side. On a narrow phone the arrows sit
+   over the edges of the picture rather than pushing it smaller. */
+.plate-stage {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.plate-arrow {
+  display: grid;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  color: var(--ink);
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--cool-dim);
+  border-radius: 50%;
+  transition: opacity 160ms ease, transform 120ms ease;
+}
+
+.plate-arrow svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 2.4;
+}
+
+.plate-arrow:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+/* Kept in place rather than removed: the picture must not jump sideways
+   when it reaches the end of the collection. */
+.plate-arrow:disabled {
+  cursor: default;
+  opacity: 0.18;
+}
+
+.plate-sub {
+  margin: -6px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(182, 169, 230, 0.7);
+}
+
 .plate-full {
-  width: min(88vw, 420px);
+  flex: 0 1 auto;
+  width: min(72vw, 420px);
   aspect-ratio: 1;
   background-position: center;
   background-size: cover;

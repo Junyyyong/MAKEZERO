@@ -1,7 +1,7 @@
-import { TOTAL_STAGES } from "../../content/chapters";
+import { TOTAL_STAGES, chapterFor } from "../../content/chapters";
 import { artFor, plateFor } from "../../content/gallery";
-import { el } from "../dom";
-import { totalCollected } from "../storage";
+import { el, formatClock } from "../dom";
+import { bestTimeFor, totalCollected } from "../storage";
 import type { Progress } from "../storage";
 
 /**
@@ -19,17 +19,33 @@ export class GalleryScreen {
   private readonly view = el<HTMLDivElement>("plate-view");
   private readonly full = el<HTMLDivElement>("plate-full");
   private readonly caption = el<HTMLParagraphElement>("plate-caption");
+  private readonly sub = el<HTMLParagraphElement>("plate-sub");
+  private readonly prevBtn = el<HTMLButtonElement>("btn-plate-prev");
+  private readonly nextBtn = el<HTMLButtonElement>("btn-plate-next");
+
+  /** The collected stages, in order — what the arrows walk. */
+  private held: number[] = [];
+  private shown = 0;
+  private progress: Progress | undefined;
 
   constructor(onBack: () => void) {
     el<HTMLButtonElement>("btn-gallery-back").addEventListener("click", () => {
       if (this.closeView()) return; // the picture first, the screen after
       onBack();
     });
-    this.view.addEventListener("click", () => this.closeView());
+    // Only the backdrop closes it. Tapping the picture or an arrow must not,
+    // or the arrows would be unusable.
+    this.view.addEventListener("click", (event) => {
+      if (event.target === this.view) this.closeView();
+    });
+    this.prevBtn.addEventListener("click", () => this.step(-1));
+    this.nextBtn.addEventListener("click", () => this.step(1));
   }
 
   render(progress: Progress): void {
     this.closeView();
+    this.progress = progress;
+    this.held = [...progress.collected].sort((a, b) => a - b);
     this.plates.textContent = `${totalCollected(progress)} / ${TOTAL_STAGES}`;
     this.timeAttack.textContent = progress.bestTimeAttack.toLocaleString();
     this.endless.textContent = progress.bestEndless.toLocaleString();
@@ -54,9 +70,28 @@ export class GalleryScreen {
   }
 
   private openView(stage: number): void {
+    this.shown = stage;
     this.full.style.backgroundImage = artFor(stage);
     this.caption.textContent = `${stage}. ${plateFor(stage).title}`;
+
+    // What the picture cost: which chapter it came out of, and the run that
+    // won it. A collection is more interesting when it remembers.
+    const best = this.progress ? bestTimeFor(this.progress, stage) : 0;
+    const time = best === 0 ? "" : ` · ${formatClock(best)}`;
+    this.sub.textContent = `${chapterFor(stage).title}${time}`;
+
+    const at = this.held.indexOf(stage);
+    this.prevBtn.disabled = at <= 0;
+    this.nextBtn.disabled = at < 0 || at >= this.held.length - 1;
     this.view.classList.remove("hidden");
+  }
+
+  /** Moves to the next or previous picture the player actually holds. */
+  private step(by: number): void {
+    const at = this.held.indexOf(this.shown);
+    const next = this.held[at + by];
+    if (at < 0 || next === undefined) return;
+    this.openView(next);
   }
 
   /** Closes the full-size view. Returns whether it had been open. */

@@ -14,7 +14,7 @@
     <div id="app">
       <!-- ── splash ────────────────────────────────────────────── -->
       <section class="screen splash-screen" id="screen-splash" aria-label="TAP to TEN 시작">
-        <div class="splash-logo">TAP <span>to</span> TEN</div>
+        <img class="splash-mark" src="./logo.webp" alt="TAP to TEN" width="900" height="626" />
         <div class="splash-pulse" aria-hidden="true">10</div>
       </section>
 
@@ -22,7 +22,7 @@
       <section class="screen title-screen hidden" id="screen-title">
         <div class="brand-block">
           <h1 class="brand">
-            <img class="brand-mark" src="./logo.svg" alt="TAP to TEN" width="574" height="567" />
+            <img class="brand-mark" src="./logo.webp" alt="TAP to TEN" width="900" height="626" />
           </h1>
         </div>
 
@@ -212,6 +212,47 @@
         </div>
       </section>
 
+      <!-- ── settings ──────────────────────────────────────────── -->
+      <section class="screen picker-screen hidden" id="screen-settings">
+        <header class="hud">
+          <button class="icon-btn" id="btn-settings-back" aria-label="메인으로">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <div class="score-block"><div class="picker-title">설정</div></div>
+          <span class="icon-spacer"></span>
+        </header>
+        <div class="picker-body">
+          <ul class="switch-list">
+            <li class="switch-row">
+              <span class="switch-text">
+                <b>효과음</b>
+                <small>블록을 고르고 지울 때 나는 소리</small>
+              </span>
+              <button class="switch" id="switch-sound" role="switch" aria-checked="true">
+                <span class="switch-knob"></span>
+              </button>
+            </li>
+            <li class="switch-row">
+              <span class="switch-text">
+                <b>진동</b>
+                <small>10이 되거나 틀렸을 때 짧게 울립니다</small>
+              </span>
+              <button class="switch" id="switch-haptics" role="switch" aria-checked="true">
+                <span class="switch-knob"></span>
+              </button>
+            </li>
+          </ul>
+          <p class="settings-note" id="settings-note"></p>
+
+          <div class="settings-links">
+            <button class="text-btn" id="btn-settings-rules">규칙 보기</button>
+            <button class="text-btn" id="btn-settings-tutorial">튜토리얼 다시 보기</button>
+          </div>
+        </div>
+      </section>
+
       <!-- ── tutorial ──────────────────────────────────────────── -->
       <section class="screen tutorial-screen hidden" id="screen-tutorial">
         <header class="tutorial-head">
@@ -261,10 +302,24 @@
           <div class="plate-grid" id="plate-grid"></div>
         </div>
 
-        <!-- One picture, filling the screen. Tapping anywhere closes it. -->
+        <!-- One picture, filling the screen. Tapping the backdrop closes it;
+             the arrows walk the rest of the collection without going back. -->
         <div class="plate-view hidden" id="plate-view">
-          <div class="plate-full" id="plate-full"></div>
+          <div class="plate-stage">
+            <button class="plate-arrow" id="btn-plate-prev" aria-label="이전 그림">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
+              </svg>
+            </button>
+            <div class="plate-full" id="plate-full"></div>
+            <button class="plate-arrow" id="btn-plate-next" aria-label="다음 그림">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 5l7 7-7 7" stroke-linejoin="round" />
+              </svg>
+            </button>
+          </div>
           <p class="plate-caption" id="plate-caption"></p>
+          <p class="plate-sub" id="plate-sub"></p>
         </div>
       </section>
 

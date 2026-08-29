@@ -2,8 +2,8 @@
  * The palette comes off the wordmark: cyan-to-blue, pink-to-purple, and one
  * orange for the things that need to be found. Nothing else. If a new colour
  * feels necessary, it almost certainly belongs to one of these three families
- * at a different lightness — see public/logo.svg, which is generated from
- * scripts/build-logo.mjs and uses exactly these stops.
+ * at a different lightness — see public/logo.webp, the wordmark these were
+ * sampled from.
  */
 :root {
   /* Night: the board sits on this, and so does the wordmark */

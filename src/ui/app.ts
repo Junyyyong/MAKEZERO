@@ -9,6 +9,7 @@ import type { Chapter } from "../content/chapters";
 import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
 import { BoardView } from "./boardView";
 import { AppStateMachine } from "./appStateMachine";
+import { feedback } from "./feedback";
 import { el, formatClock } from "./dom";
 import { Hud } from "./screens/hud";
 import { Overlay } from "./screens/overlay";
@@ -16,6 +17,7 @@ import { StoryScreen } from "./screens/storyScreen";
 import { GalleryScreen } from "./screens/galleryScreen";
 import { IntroScreen } from "./screens/introScreen";
 import { PickerScreen } from "./screens/pickerScreen";
+import { SettingsScreen } from "./screens/settingsScreen";
 import { TitleScreen } from "./screens/titleScreen";
 import { TutorialScreen } from "./screens/tutorialScreen";
 import {
@@ -48,7 +50,8 @@ type Screen =
   | "gallery"
   | "chapters"
   | "stages"
-  | "intro";
+  | "intro"
+  | "settings";
 
 /** How long the finished picture is held before the results panel. */
 const PLATE_HOLD_MS = 2000;
@@ -72,6 +75,9 @@ export class App {
   private readonly gallery: GalleryScreen;
   private readonly picker: PickerScreen;
   private readonly intro: IntroScreen;
+  private readonly settingsScreen: SettingsScreen;
+  /** How many blocks the selection held last time it changed. */
+  private held = 0;
 
   private frame: number | undefined;
   private lastFrameMs = 0;
@@ -87,6 +93,7 @@ export class App {
     chapters: el("screen-chapters"),
     stages: el("screen-stages"),
     intro: el("screen-intro"),
+    settings: el("screen-settings"),
   };
 
   constructor() {
@@ -103,8 +110,16 @@ export class App {
       onSplit: (index) => this.onSplit(index),
       onReject: () => {
         this.hud.combo = 0;
+        this.held = 0;
+        feedback.reject();
       },
-      onSelectionChange: (values) => this.hud.setSelection(values),
+      onSelectionChange: (values) => {
+        // A block joining the selection is the one event the board does not
+        // announce on its own, so it is read off the count.
+        if (values.length > this.held) feedback.pick(values.length);
+        this.held = values.length;
+        this.hud.setSelection(values);
+      },
     });
     this.title = new TitleScreen(
       (mode) => this.chooseMode(mode),
@@ -123,10 +138,36 @@ export class App {
       (mode) => this.startMode(mode),
       () => this.showTitle(),
     );
+    this.settingsScreen = new SettingsScreen(
+      (change) => this.changeSettings(change),
+      () => this.showTitle(),
+    );
     el<HTMLButtonElement>("btn-back").addEventListener("click", () => this.leaveRun());
     el<HTMLButtonElement>("btn-pause").addEventListener("click", () => this.pause());
     el<HTMLButtonElement>("btn-title-tutorial").addEventListener("click", () => this.showTutorial());
     el<HTMLButtonElement>("btn-title-gallery").addEventListener("click", () => this.showGallery());
+    el<HTMLButtonElement>("btn-settings-rules").addEventListener("click", () => this.showRules());
+    el<HTMLButtonElement>("btn-settings-tutorial").addEventListener("click", () => this.showTutorial());
+
+    /*
+     * The first touch anywhere wakes the audio hardware.
+     *
+     * A browser will not let a page make a sound before the player has
+     * interacted with it, and a context opened earlier stays suspended
+     * forever — so this listens at the document, and every button that plays
+     * a sound is downstream of it.
+     *
+     * On the capture phase, not the bubble: the board's own handler picks a
+     * block on the same pointer down, and a bubbling listener would run
+     * after it — leaving the very first block of a session silent.
+     */
+    document.addEventListener("pointerdown", () => feedback.unlock(), { capture: true });
+    // Anything the player deliberately pressed clicks back — except the
+    // buttons that already say something more specific than "pressed".
+    document.addEventListener("click", (event) => {
+      const button = (event.target as HTMLElement | null)?.closest("button");
+      if (button && !button.matches(".round-btn, .switch")) feedback.tap();
+    });
     this.hud.hintBtn.addEventListener("click", () => this.onHint());
     this.hud.undoBtn.addEventListener("click", () => this.onUndo());
     this.hud.splitBtn.addEventListener("click", () => this.armSplit());
@@ -265,6 +306,8 @@ export class App {
   private beginRun(config: RunConfig): void {
     this.state = newGame(config);
     this.hud.combo = 0;
+    this.held = 0;
+    feedback.resetCombo();
     this.flow.enter("inGame");
     this.show("game");
     el<HTMLDivElement>("plate-done").classList.add("hidden");
@@ -326,6 +369,8 @@ export class App {
     const anchor = selection[selection.length - 1]!;
     const { state, result } = commitSelection(this.state, selection);
     if (!result.ok) return;
+    this.held = 0;
+    feedback.clear(selection.length);
     this.hud.combo += 1;
     this.view.popScore(anchor, result.score);
     this.state = state;
@@ -344,6 +389,8 @@ export class App {
   private onUndo(): void {
     const back = undo(this.state);
     if (back === this.state) return;
+    feedback.item();
+    feedback.resetCombo();
     this.overlay.close();
     if (this.flow.current !== "inGame") this.flow.enter("inGame");
     this.state = back;
@@ -374,6 +421,7 @@ export class App {
     this.hud.splitBtn.classList.remove("armed");
     this.hud.setNotice(null);
     if (next === this.state) {
+      feedback.reject();
       this.view.reject([index]);
       this.hud.setNotice("이 블록은 나눌 수 없어요");
       window.setTimeout(() => {
@@ -382,6 +430,7 @@ export class App {
       }, 1400);
       return;
     }
+    feedback.item();
     this.state = next;
     this.view.setBoard(this.state.board);
     this.render();
@@ -390,6 +439,7 @@ export class App {
   private onHint(): void {
     if (this.state.hintsLeft === 0 || this.state.status !== "playing") return;
     const { state, indices } = useHint(this.state);
+    feedback.item();
     this.state = state;
     if (indices) this.view.showHint(indices);
     this.render();
@@ -455,6 +505,7 @@ export class App {
       this.finishStage(config.stage ?? 1);
       return;
     }
+    feedback.fail();
     if (config.mode === "timeAttack") {
       this.overlay.open({
         title: "시간 종료",
@@ -508,6 +559,7 @@ export class App {
     // let them go, or they float across the finished picture.
     for (const pop of el<HTMLDivElement>("board-wrap").querySelectorAll(".pop")) pop.remove();
     done.classList.remove("hidden");
+    feedback.complete();
 
     window.setTimeout(() => {
       done.classList.add("hidden");
@@ -518,6 +570,7 @@ export class App {
   private finishStage(stage: number): void {
     const left = aliveCount(this.state.board);
     if (left > 0) {
+      feedback.fail();
       const reveal = Math.round(((this.state.board.cells.length - left) / this.state.board.cells.length) * 100);
       this.overlay.open({
         title: "GAME OVER",
@@ -596,38 +649,42 @@ export class App {
   }
 
   private showSettings(): void {
-    if (this.flow.current !== "settings") this.flow.enter("settings");
-    this.overlay.open({
-      title: "설정",
-      body: `사운드 ${this.settings.soundOn ? "켜짐" : "꺼짐"}`,
-      primary: {
-        label: this.settings.soundOn ? "사운드 끄기" : "사운드 켜기",
-        action: () => {
-          this.settings = { ...this.settings, soundOn: !this.settings.soundOn };
-          saveSettings(this.settings);
-          this.applySettings();
-          this.showSettings();
-        },
-      },
-      secondary: { label: "닫기", action: () => this.showTitle() },
-    });
+    this.stopClock();
+    this.view.setInteractive(false);
+    this.settingsScreen.render(this.settings);
+    this.flow.enter("settings");
+    this.show("settings");
+  }
+
+  private changeSettings(change: Partial<Settings>): void {
+    this.settings = { ...this.settings, ...change };
+    saveSettings(this.settings);
+    this.applySettings();
+    this.settingsScreen.render(this.settings);
+    // Turning a channel on should demonstrate itself: silence after tapping
+    // "on" reads as a broken switch.
+    if (change.soundOn || change.hapticsOn) feedback.item();
   }
 
   private applySettings(): void {
     document.documentElement.dataset.sound = this.settings.soundOn ? "on" : "off";
+    feedback.setSound(this.settings.soundOn);
+    feedback.setHaptics(this.settings.hapticsOn);
   }
 
   private showRules(): void {
-    const onTitle = !this.screens.title.classList.contains("hidden");
+    // A finished run keeps its result panel; the rules just sat on top of it.
+    // Anywhere else — the title, the settings screen — there is nothing
+    // underneath to put back, and asking for it would be an illegal move.
+    const overResult = this.flow.current === "result";
     this.overlay.open({
       title: "규칙",
       body: RULES_TEXT,
       html: true,
       primary: {
         label: "닫기",
-        // A finished run keeps its result panel; the rules just sat on top.
         action: () => {
-          if (!onTitle && this.state.status !== "playing") this.finishRun();
+          if (overResult) this.finishRun();
         },
       },
       secondary: { label: "모드 선택", action: () => this.showTitle() },
