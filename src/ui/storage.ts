@@ -31,6 +31,8 @@ export interface Progress {
 
 export interface Settings {
   soundOn: boolean;
+  /** Whether the phone buzzes on a pick, a clear and a refusal. */
+  hapticsOn: boolean;
 }
 
 export function todayKey(now: Date = new Date()): string {
@@ -78,9 +80,11 @@ export function saveDaily(stats: DailyStats): void {
 }
 
 export function loadSettings(): Settings {
-  return read(SETTINGS_KEY, { soundOn: true }, (raw) => {
+  // Both default to on: a game that is silent and still until it is switched
+  // on is a game most players never hear.
+  return read(SETTINGS_KEY, { soundOn: true, hapticsOn: true }, (raw) => {
     const parsed = raw as Partial<Settings>;
-    return { soundOn: parsed.soundOn !== false };
+    return { soundOn: parsed.soundOn !== false, hapticsOn: parsed.hapticsOn !== false };
   });
 }
 

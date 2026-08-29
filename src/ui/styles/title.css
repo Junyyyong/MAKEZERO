@@ -7,19 +7,13 @@
   gap: 28px;
 }
 
-.splash-logo {
-  font-size: clamp(36px, 12vw, 54px);
-  font-weight: 900;
-  letter-spacing: 3px;
-  color: var(--cool);
-  text-shadow: 0 0 22px rgba(245, 189, 79, 0.34);
+/* The wordmark, on the way in. The same file the title screen uses, so the
+   splash resolves into the title rather than being replaced by it. */
+.splash-mark {
+  width: min(72vw, 300px);
+  height: auto;
+  filter: drop-shadow(0 12px 28px rgba(20, 8, 50, 0.7));
   animation: splash-rise 700ms cubic-bezier(.2,.8,.2,1) both;
-}
-
-.splash-logo span {
-  font-size: 0.5em;
-  font-style: italic;
-  color: var(--cool);
 }
 
 .splash-pulse {
@@ -63,10 +57,11 @@
   text-align: center;
 }
 
-/* A marquee sign: brass letters with the bulbs glowing behind them. */
 /*
- * The wordmark is drawn, not set: it is made of the same blocks the game is
- * made of, so a font could not do it. scripts/build-logo.mjs generates it.
+ * The wordmark is a picture, not type: it is built out of the same blocks the
+ * game is, which no font could do. public/logo.webp is the artwork, trimmed
+ * to its own edges so the layout can align to the letters and not to a
+ * margin baked into the file.
  */
 .brand {
   margin: 0;
@@ -74,7 +69,7 @@
 }
 
 .brand-mark {
-  width: min(62vw, 236px);
+  width: min(80vw, 320px);
   height: auto;
   /* A little of the night thrown back up at it, so it sits on the background
      rather than on top of it. */
@@ -216,7 +211,7 @@
  */
 @media (max-height: 700px) {
   .brand-mark {
-    width: min(52vw, 190px);
+    width: min(66vw, 260px);
   }
 
   .collection-strip {
@@ -230,7 +225,7 @@
 
 @media (max-height: 580px) {
   .brand-mark {
-    width: min(40vw, 150px);
+    width: min(52vw, 200px);
   }
 
   .title-collection {

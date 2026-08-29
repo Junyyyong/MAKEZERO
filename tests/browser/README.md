@@ -49,6 +49,21 @@ CHROME_PATH=/opt/pw-browsers/chromium npm run test:drag
 쓸어서, 규칙이 말하는 결과(10이면 지워짐 / 넘으면 거절)와 매번 일치하는지 검사합니다.
 드래그 중에 페이지가 스크롤되지 않는지, 세 모드의 보드 위치·타일 크기가 같은지도 같이 봅니다.
 
+## 소리·진동 검사 (`feedback.mjs`)
+
+```bash
+npm run preview
+CHROME_PATH=/opt/pw-browsers/chromium npm run test:feedback
+```
+
+효과음과 진동은 **조용히 고장 납니다** — 안 나는 소리와 없는 소리는 구분이 안 됩니다.
+그래서 `createOscillator` 와 `navigator.vibrate` 를 감싸서 **횟수를 셉니다.**
+
+- 블록을 고르고 지울 때 실제로 소리가 나는가
+- 거절 진동이 성공 진동과 **다른 모양**인가 (단발이 아니라 두 번)
+- 효과음만 꺼도 진동은 남는가, 그 반대도 되는가
+- 설정 스위치가 화면과 `localStorage` 양쪽을 바꾸는가
+
 ## 브라우저를 못 찾을 때
 
 이 환경에는 크로미움이 이미 깔려 있습니다.

@@ -30,7 +30,8 @@ const ALLOWED: Readonly<Record<AppState, readonly AppState[]>> = {
   result: ["inGame", "mainMenu", "story", "gallery", "stages"],
   story: ["inGame", "mainMenu", "result"],
   gallery: ["mainMenu"],
-  settings: ["mainMenu"],
+  // Settings is a screen now, and the tutorial is reachable from it.
+  settings: ["mainMenu", "tutorial"],
 };
 
 /**
