@@ -13,7 +13,7 @@
   background: linear-gradient(160deg, #171116 0%, #050406 100%);
   border: 2px solid var(--brass);
   border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 10px 30px var(--recess);
 }
 
 .story-portrait {

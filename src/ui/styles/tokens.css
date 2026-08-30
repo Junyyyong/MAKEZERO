@@ -8,76 +8,103 @@
  * wordmark has since been replaced by the drawn one in public/cover-logo.svg,
  * which is warmer — so the two no longer match, and the skin is due a pass.
  */
+/*
+ * The palette comes off the cover: a warm paper ground, the wordmark's orange
+ * and yellow, and one deep maroon that every dark thing on screen is made of.
+ *
+ * It is a light skin, and not only because the cover is. Clearing a block
+ * uncovers the picture hidden under it, and those pictures are toy renders on
+ * white — on a night-blue board every cleared square opened as a glaring white
+ * hole. On paper the reveal is seamless, which is the whole point of the mode.
+ *
+ * Nine block colours are spread around the wheel rather than picked to taste:
+ * the board is read in groups, so no two digits may be confusable at 35px.
+ */
 :root {
-  /* Night: the board sits on this, and so does the wordmark */
-  --night: #150a3a;
-  --house-deep: #1b0f42;
-  --house: #241357;
-  --house-lit: #2f1a6d;
-  --velvet: #2a1163;
-  --velvet-deep: #140832;
+  /* Paper: the ground everything sits on, warm rather than white */
+  --paper: #fff6e9;
+  --paper-lit: #fffdf8;
+  --paper-deep: #f6e6d2;
+  --paper-edge: #e8d3ba;
 
-  /* Cool: the TAP half. The resting accent — chrome, rings, safe things. */
-  --cool: #5ec9f5;
-  --cool-deep: #3d5be0;
-  --cool-dim: rgba(94, 201, 245, 0.24);
+  /* Maroon: every dark thing — text, outlines, the shadow under a block */
+  --ink: #3a0f0a;
+  --ink-soft: #8a6552;
+  --ink-faint: #b79a89;
 
-  /* Hot: the TEN half. Anything the player is about to spend or lose. */
-  --hot: #ff5fd2;
-  --hot-deep: #8b3fe0;
-  --hot-dim: rgba(255, 95, 210, 0.22);
+  /* Warm: the wordmark's own two, and the accent everything active uses */
+  --hot: #ff5000;
+  --hot-deep: #d43600;
+  --warm: #ffb500;
+  --warm-deep: #ff8b00;
+  --sun: #fff500;
 
-  /* Warm: the one orange, kept for what has to be found — score, hints. */
-  --warm: #ffc635;
-  --warm-deep: #ff8a1f;
+  /* Cool: kept for the things that must read as calm next to all that orange */
+  --cool: #2c7fe0;
+  --cool-deep: #1f5bb0;
+  --cool-dim: rgba(58, 15, 10, 0.14);
+
+  /* Surfaces: a panel, the slab it presses into, the hollow it presses out of */
+  --panel: rgba(255, 255, 255, 0.72);
+  --panel-lit: rgba(255, 255, 255, 0.94);
+  --panel-deep: rgba(246, 230, 210, 0.9);
+  --slab: rgba(58, 15, 10, 0.22);
+  --slab-hard: rgba(58, 15, 10, 0.32);
+  --recess: rgba(58, 15, 10, 0.12);
+  --sheen: rgba(255, 255, 255, 0.9);
+  --scrim: rgba(58, 15, 10, 0.55);
 
   /* Legacy names, kept so nothing has to be renamed twice. */
+  --night: var(--paper);
+  --house-deep: var(--paper);
+  --house: var(--paper-lit);
+  --house-lit: var(--paper-lit);
+  --velvet: var(--paper-deep);
+  --velvet-deep: var(--paper-deep);
+  --hot-dim: rgba(255, 80, 0, 0.16);
   --brass-dark: var(--warm-deep);
   --brass: var(--warm-deep);
   --brass-bright: var(--warm);
-  --marquee: var(--warm);
-  --bulb: #ffe9a8;
-  --spotlight: var(--hot-deep);
+  --marquee: var(--hot);
+  --bulb: var(--sun);
+  --spotlight: var(--warm);
+  --stage: var(--paper);
+  --stage-edge: var(--paper-edge);
 
-  --stage: #1d1050;
-  --stage-edge: #120731;
+  /* Blocks: saturated faces, white numerals, on paper */
+  --tile-face: #ffffff;
+  --tile-face-low: #f0dcc4;
+  --tile-ink: var(--ink);
+  --tile-sel: #fff2c4;
 
-  /* Blocks: pale faces so the digits read, on a night that is anything but */
-  --tile-face: #f4f7ff;
-  --tile-face-low: #cdd6f5;
-  --tile-ink: #2a1163;
-  --tile-sel: #bde9ff;
-
-  --ring-sel: var(--cool);
-  --ring-ok: #4ce0a8;
-  --ring-bad: var(--hot);
+  --ring-sel: var(--warm-deep);
+  --ring-ok: #16a34a;
+  --ring-bad: #dc2626;
 
   /*
-   * One colour per digit. A board of identical white blocks is read one number
-   * at a time; a board of coloured ones is read in groups, which is what the
-   * game actually asks for. They are picked to stay apart at block size and to
-   * live in the same neon family as the wordmark.
+   * One colour per digit, nine hues spread around the wheel. A board of
+   * identical blocks is read one number at a time; a board of coloured ones is
+   * read in groups, which is what the game actually asks for. They are drawn
+   * from the cast on the cover so the board and the characters are one world.
    */
-  --v1: #3d7bf5;
-  --v2: #1fb3a6;
-  --v3: #46c94a;
-  --v4: #9b5cf0;
-  --v5: #ef4b5a;
-  --v6: #f7861f;
-  --v7: #ec4fa0;
-  --v8: #2aa9e8;
-  --v9: #e8b21c;
+  --v1: #2c7fe0;
+  --v2: #0d9488;
+  --v3: #43a73f;
+  --v4: #7c3aed;
+  --v5: #dc2626;
+  --v6: #ea580c;
+  --v7: #db2777;
+  --v8: #92400e;
+  --v9: #ca8a04;
 
-  /* Panel buttons: go, choose, back. Green reads as "carry on" everywhere. */
-  --go: #46c94a;
-  --go-deep: #2c8f3a;
-  --pick: #3d7bf5;
-  --pick-deep: #2a4fc0;
-  --stop: #ef4b5a;
-  --stop-deep: #b8303f;
+  /* Panel buttons: go, choose, back. Green carries on everywhere. */
+  --go: #22a03f;
+  --go-deep: #16752c;
+  --pick: var(--cool);
+  --pick-deep: var(--cool-deep);
+  --stop: #dc2626;
+  --stop-deep: #a01818;
 
-  --ink: #f2edff;
-  --ink-soft: #b6a9e6;
   --gap: 2px;
 }
 
@@ -111,7 +138,7 @@ body {
 body {
   font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
   color: var(--ink);
-  background: var(--house-deep);
+  background: var(--paper);
   overscroll-behavior: none;
   /* A double tap on a tile is two taps, never a zoom. */
   touch-action: manipulation;
@@ -122,12 +149,12 @@ body {
   position: relative;
   height: 100%;
   overflow: hidden;
-  /* Two soft pools of the wordmark's two families, over a night that goes
-     deeper toward the bottom. No texture: the blocks carry the detail. */
+  /* Two soft pools of the wordmark's own warmth over paper. No texture: the
+     blocks and the pictures carry all the detail there is. */
   background:
-    radial-gradient(64% 30% at 22% 12%, rgba(61, 91, 224, 0.3), transparent 70%),
-    radial-gradient(58% 28% at 82% 86%, rgba(139, 63, 224, 0.28), transparent 72%),
-    linear-gradient(180deg, #241357 0%, #1b0f42 55%, #140832 100%);
+    radial-gradient(62% 30% at 20% 10%, rgba(255, 181, 0, 0.18), transparent 70%),
+    radial-gradient(58% 28% at 84% 88%, rgba(255, 80, 0, 0.12), transparent 72%),
+    linear-gradient(180deg, var(--paper-lit) 0%, var(--paper) 52%, var(--paper-deep) 100%);
 }
 
 #app::before {
@@ -136,7 +163,7 @@ body {
   inset: 0;
   content: "";
   pointer-events: none;
-  background: linear-gradient(90deg, rgba(10, 1, 23, 0.25), transparent 16% 84%, rgba(10, 1, 23, 0.25));
+  background: linear-gradient(90deg, rgba(184, 148, 106, 0.16), transparent 14% 86%, rgba(184, 148, 106, 0.16));
 }
 
 .screen {
