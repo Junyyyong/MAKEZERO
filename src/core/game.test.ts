@@ -446,6 +446,22 @@ describe("time attack rewards", () => {
     expect(after.remainingMs).toBe(clock + 30_000);
   });
 
+  it("never shrinks the board — a cleared row stays as holes", () => {
+    // The frame is fixed. It used to collapse emptied rows, so a good run
+    // watched the board shrink under it (81, 72, 63...) and the refill reward
+    // had fewer and fewer squares to put anything back into.
+    let state = newGame(TIME_ATTACK_CONFIG, 11);
+    const size = state.board.cells.length;
+    for (let move = 0; move < 30; move++) {
+      const picked = findHint(state.board);
+      if (!picked) break;
+      ({ state } = commitSelection(state, picked));
+      expect(state.board.cells.length).toBe(size);
+    }
+    // And something actually happened, or the loop proved nothing.
+    expect(state.score).toBeGreaterThan(0);
+  });
+
   it("leaves the other modes alone", () => {
     const story = { ...newGame(stageConfig(1), 3), score: 96 };
     const { state } = commitSelection(story, findHint(story.board)!);
