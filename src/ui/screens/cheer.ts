@@ -4,10 +4,11 @@ import { el } from "../dom";
  * The beat between the last move and the results panel.
  *
  * A run used to end straight into a panel of numbers, which reads as being
- * marked rather than as having finished something. The board dims, one word
- * lands over it, a character dances — and then it holds on the last frame
- * until the player taps, so the moment ends when they are done with it rather
- * than on a timer.
+ * marked rather than as having finished something. It ends in two beats now.
+ * First the board dims and says what happened and what it was worth, in one
+ * big number, for a few seconds. Then a word lands and a character dances,
+ * holding on the last frame until the player taps — so the moment ends when
+ * they are done with it rather than on a timer.
  *
  * The clips are optional. With `CHEER_CLIPS` empty the word carries the moment
  * on its own and holds for `WORD_ONLY_MS`, so the game never waits on an asset
@@ -23,6 +24,9 @@ interface Clip {
 const CHEER_CLIPS: readonly Clip[] = [
   { video: "./movie/3.webm", sound: "./movie/3.mp3" },
 ];
+
+/** How long the score card holds before the dance. */
+const CARD_MS = 4000;
 
 /** How long the word holds when there is no clip. Long enough to read. */
 const WORD_ONLY_MS = 1400;
@@ -40,6 +44,9 @@ export class Cheer {
   private readonly root = el<HTMLDivElement>("cheer");
   private readonly word = el<HTMLDivElement>("cheer-word");
   private readonly clip = el<HTMLVideoElement>("cheer-clip");
+  private readonly card = el<HTMLDivElement>("cheer-card");
+  private readonly headline = el<HTMLParagraphElement>("cheer-headline");
+  private readonly scoreEl = el<HTMLParagraphElement>("cheer-score");
   private readonly sound = el<HTMLAudioElement>("cheer-sound");
   private timer: number | undefined;
   private soundOn = true;
@@ -53,13 +60,29 @@ export class Cheer {
     this.root.addEventListener("pointerdown", () => this.finish());
   }
 
-  /** Plays the flourish, then calls `then` — once, whichever way it ends. */
-  play(text: string, then: () => void): void {
+  /**
+   * Plays the flourish, then calls `then` — once, whichever way it ends.
+   *
+   * `headline` is what ended the run and `score` what it was worth; they hold
+   * the screen on their own before the dance begins.
+   */
+  play(headline: string, score: number, text: string, then: () => void): void {
     this.word.textContent = text;
+    this.headline.textContent = headline;
+    this.scoreEl.textContent = score.toLocaleString();
     this.done = then;
 
-    this.root.classList.remove("hidden");
-    this.root.classList.remove("cheer-hold");
+    this.root.classList.remove("hidden", "cheer-hold", "cheer-run");
+    this.card.classList.remove("hidden");
+
+    window.clearTimeout(this.timer);
+    this.timer = window.setTimeout(() => this.dance(), CARD_MS);
+  }
+
+  /** Second beat: the word and the dance. */
+  private dance(): void {
+    if (!this.done) return;
+    this.card.classList.add("hidden");
     // Restarting the animation needs the class off for a frame, or a second
     // run in the same session shows the end state and never moves.
     this.root.classList.remove("cheer-run");
@@ -114,6 +137,7 @@ export class Cheer {
     this.hush();
     this.root.classList.add("hidden");
     this.root.classList.remove("cheer-hold");
+    this.card.classList.remove("hidden");
   }
 
   /** Follows the sound switch in settings; the picture always plays. */

@@ -39,7 +39,7 @@
 }
 
 .record-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--ink-soft);
 }
@@ -159,7 +159,7 @@
 
 .plate-sub {
   margin: -6px 0 0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: rgba(182, 169, 230, 0.7);
