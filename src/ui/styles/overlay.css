@@ -81,7 +81,16 @@
   inset: 0;
   z-index: 6;
   display: grid;
-  grid-template-rows: auto auto auto;
+  /*
+   * Three fixed slots, filled or not.
+   *
+   * The rows used to size themselves to whatever was in them, so the word
+   * landed, then the clip appeared and pushed it up, then the tap prompt
+   * appeared and pushed it up again — the whole thing drifted while the player
+   * watched. Every slot now reserves its room from the start and nothing in
+   * here ever moves.
+   */
+  grid-template-rows: 1.2em minmax(0, 46vh) 1.6em;
   align-content: center;
   justify-items: center;
   gap: 3vh;
@@ -107,6 +116,9 @@
 
 .cheer-tap {
   grid-row: 3;
+  /* Reserved from the first frame and revealed in place, so the prompt
+     arriving does not shove the word and the clip upward. */
+  visibility: hidden;
   margin: 0;
   font-size: 14px;
   font-weight: 700;
@@ -116,8 +128,8 @@
   animation: cheer-blink 1.6s ease-in-out infinite;
 }
 
-.cheer-tap.hidden {
-  display: none;
+.cheer-hold .cheer-tap {
+  visibility: visible;
 }
 
 @keyframes cheer-blink {
@@ -145,18 +157,24 @@
   /* A video element paints its own ground where the picture is transparent.
      Saying so explicitly costs nothing and rules it out as a suspect. */
   background: transparent;
+  /* Fills its slot rather than sizing it: a clip of any shape lands in the
+     same place, and swapping one for another moves nothing. */
   width: min(86vw, 420px);
-  height: auto;
-  max-height: 48vh;
+  height: 100%;
   object-fit: contain;
 }
 
+/* Out of sight, still holding its place. */
 .cheer-clip.hidden {
-  display: none;
+  display: block;
+  visibility: hidden;
 }
 
 .cheer-word {
   grid-row: 1;
+  /* The row is a fixed 1.2em of this size, so the text sits in it rather than
+     setting it — the pop animation is a transform and never touches layout. */
+  line-height: 1.2;
   max-width: 100%;
   padding: 0 14px;
   /* Sized for the longest word it ever shows — "GOOD TRY!" — so none of them

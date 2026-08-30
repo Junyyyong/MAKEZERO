@@ -41,7 +41,6 @@ export class Cheer {
   private readonly word = el<HTMLDivElement>("cheer-word");
   private readonly clip = el<HTMLVideoElement>("cheer-clip");
   private readonly sound = el<HTMLAudioElement>("cheer-sound");
-  private readonly tapHint = el<HTMLParagraphElement>("cheer-tap");
   private timer: number | undefined;
   private soundOn = true;
   /** Guards against the clip ending and the cap firing for the same play. */
@@ -61,7 +60,6 @@ export class Cheer {
 
     this.root.classList.remove("hidden");
     this.root.classList.remove("cheer-hold");
-    this.tapHint.classList.add("hidden");
     // Restarting the animation needs the class off for a frame, or a second
     // run in the same session shows the end state and never moves.
     this.root.classList.remove("cheer-run");
@@ -107,7 +105,6 @@ export class Cheer {
     window.clearTimeout(this.timer);
     this.sound.pause();
     this.root.classList.add("cheer-hold");
-    this.tapHint.classList.remove("hidden");
   }
 
   /** Takes it off screen at once — for a run left before it finished. */
@@ -117,7 +114,6 @@ export class Cheer {
     this.hush();
     this.root.classList.add("hidden");
     this.root.classList.remove("cheer-hold");
-    this.tapHint.classList.add("hidden");
   }
 
   /** Follows the sound switch in settings; the picture always plays. */
@@ -139,7 +135,6 @@ export class Cheer {
     this.hush();
     this.root.classList.add("hidden");
     this.root.classList.remove("cheer-hold");
-    this.tapHint.classList.add("hidden");
     then();
   }
 }
