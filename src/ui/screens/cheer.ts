@@ -25,6 +25,20 @@ const CHEER_CLIPS: readonly Clip[] = [
   { video: "./movie/3.webm", sound: "./movie/3.mp3" },
 ];
 
+/**
+ * Four milliseconds of nothing, as a file.
+ *
+ * iOS will not let a page start an `<audio>` element from a timer — and the
+ * clip's soundtrack starts from one, four seconds after the run ended, long
+ * past any touch. What it will allow is an element that has already been
+ * played once inside a real touch: after that the element stays permitted for
+ * the rest of the session, swapping `src` included. So the first touch
+ * anywhere plays this, which is silence at 8kHz and inaudible by
+ * construction, and the soundtrack is allowed when its turn comes.
+ */
+const SILENCE =
+  "data:audio/wav;base64,UklGRkQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==";
+
 /** How long the score card holds before the dance. */
 const CARD_MS = 4000;
 
@@ -40,6 +54,23 @@ const WORD_ONLY_MS = 1400;
  */
 const CLIP_CAP_MS = 15000;
 
+/**
+ * Plays a file from its first frame, whether or not it is the one already
+ * loaded.
+ *
+ * Rewinding is one of two different things depending on that: a new `src`
+ * starts at zero on its own, while the same file over again has to be told.
+ * The old code did both at once — assign, then set `currentTime` — and Safari
+ * throws on a seek into a file it has not read the header of yet, which took
+ * the whole flourish down with it.
+ */
+function start(media: HTMLMediaElement, src: string): Promise<void> {
+  const url = new URL(src, location.href).href;
+  if (media.src === url) media.currentTime = 0;
+  else media.src = url;
+  return media.play();
+}
+
 export class Cheer {
   private readonly root = el<HTMLDivElement>("cheer");
   private readonly word = el<HTMLDivElement>("cheer-word");
@@ -50,6 +81,8 @@ export class Cheer {
   private readonly sound = el<HTMLAudioElement>("cheer-sound");
   private timer: number | undefined;
   private soundOn = true;
+  /** Whether the sound element has been played inside a touch yet. */
+  private primed = false;
   /** Guards against the clip ending and the cap firing for the same play. */
   private done: (() => void) | undefined;
 
@@ -58,6 +91,30 @@ export class Cheer {
     this.clip.addEventListener("ended", () => this.hold());
     this.clip.addEventListener("error", () => this.finish());
     this.root.addEventListener("pointerdown", () => this.finish());
+  }
+
+  /**
+   * Lets the soundtrack play later, by playing silence now.
+   *
+   * Called from the first touch anywhere and a no-op after it works. A
+   * refusal leaves it unprimed so the next touch tries again; the picture
+   * plays either way, muted, which every browser allows unprompted.
+   *
+   * Note this cannot beat the iPhone's hardware silent switch: that mutes
+   * `<audio>` and `<video>` whatever the page does. Only a native audio
+   * session set to playback overrides it, which is the Capacitor shell's job,
+   * not the web layer's.
+   */
+  unlock(): void {
+    if (this.primed) return;
+    this.primed = true;
+    this.sound.src = SILENCE;
+    const started = this.sound.play() as Promise<void> | undefined;
+    void started
+      ?.then(() => this.sound.pause())
+      .catch(() => {
+        this.primed = false;
+      });
   }
 
   /**
@@ -101,19 +158,15 @@ export class Cheer {
     }
 
     this.clip.classList.remove("hidden");
-    this.clip.src = pick.video;
-    this.clip.currentTime = 0;
     // Muted and inline, so this is allowed without a gesture; a refusal still
     // lands on `finish` rather than stalling the run.
-    void this.clip.play().catch(() => this.finish());
+    void start(this.clip, pick.video).catch(() => this.finish());
 
     // The two tracks are the same length and both start here, which is as
     // close to in step as two elements get. Sound is a courtesy: if it will
     // not play, the picture carries on regardless.
     if (pick.sound && this.soundOn) {
-      this.sound.src = pick.sound;
-      this.sound.currentTime = 0;
-      void this.sound.play().catch(() => undefined);
+      void start(this.sound, pick.sound).catch(() => undefined);
     }
 
     this.timer = window.setTimeout(() => this.hold(), CLIP_CAP_MS);
