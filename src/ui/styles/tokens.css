@@ -2,8 +2,11 @@
  * The palette comes off the wordmark: cyan-to-blue, pink-to-purple, and one
  * orange for the things that need to be found. Nothing else. If a new colour
  * feels necessary, it almost certainly belongs to one of these three families
- * at a different lightness — see public/logo.webp, the wordmark these were
- * sampled from.
+ * at a different lightness.
+ *
+ * These were sampled from the block wordmark the game shipped with. The
+ * wordmark has since been replaced by the drawn one in public/cover-logo.svg,
+ * which is warmer — so the two no longer match, and the skin is due a pass.
  */
 :root {
   /* Night: the board sits on this, and so does the wordmark */
