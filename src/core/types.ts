@@ -93,8 +93,6 @@ export interface RunConfig {
    */
   starTargets: readonly [number, number, number];
   timeLimitMs?: number;
-  /** Time attack only: redeal instead of ending. */
-  autoRefill?: boolean;
   /**
    * Endless only. Tiles keep arriving on a timer and the board is a fixed
    * frame that fills up rather than one that shrinks as rows empty, so cleared

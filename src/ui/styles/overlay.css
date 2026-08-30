@@ -81,7 +81,10 @@
   inset: 0;
   z-index: 6;
   display: grid;
-  place-items: center;
+  grid-template-rows: auto auto;
+  align-content: center;
+  justify-items: center;
+  gap: 3vh;
   pointer-events: none;
   /* Half black. The board stays readable underneath — it is what was just
      finished — but everything bright belongs to the word and the clip now. */
@@ -100,13 +103,18 @@
   from { background: rgba(0, 0, 0, 0); }
 }
 
-/* The clip fills the screen's width and keeps its shape. It is layered under
-   the word, which is why both take the same grid cell. */
+/*
+ * The clip sits in the middle of the screen; the word sits above it.
+ *
+ * They used to share one grid cell and the word landed across the dancer's
+ * face. Two rows instead — the word takes what it needs, the clip takes the
+ * rest — and the pair is centred as a block.
+ */
 .cheer-clip {
-  grid-area: 1 / 1;
-  width: min(92vw, 460px);
+  grid-row: 2;
+  width: min(86vw, 420px);
   height: auto;
-  max-height: 62vh;
+  max-height: 48vh;
   object-fit: contain;
 }
 
@@ -115,8 +123,7 @@
 }
 
 .cheer-word {
-  grid-area: 1 / 1;
-  align-self: center;
+  grid-row: 1;
   max-width: 100%;
   padding: 0 14px;
   /* Sized for the longest word it ever shows — "GOOD TRY!" — so none of them

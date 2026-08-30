@@ -182,3 +182,14 @@ body {
 .screen.hidden {
   display: none;
 }
+
+/*
+ * The catch-all. Every `.hidden` rule used to be scoped to one selector, so
+ * adding the class to something new silently did nothing — which is how the
+ * results panel kept showing a second button it had been told to drop. The
+ * scoped rules above and below still win where they need different behaviour
+ * (`.timer-bar.hidden` keeps its space, for one).
+ */
+.hidden {
+  display: none;
+}

@@ -11,7 +11,16 @@ import { el } from "../dom";
  * on its own and holds for `WORD_ONLY_MS`, so the game never waits on an asset
  * to look right. See docs/CONTENT.md for what to hand over.
  */
-const CHEER_CLIPS: readonly string[] = [];
+interface Clip {
+  /** The picture, muted. */
+  video: string;
+  /** Its soundtrack, the same length. Optional. */
+  sound?: string;
+}
+
+const CHEER_CLIPS: readonly Clip[] = [
+  { video: "./movie/3.webm", sound: "./movie/3.mp3" },
+];
 
 /** How long the word holds when there is no clip. Long enough to read. */
 const WORD_ONLY_MS = 1400;
@@ -30,7 +39,9 @@ export class Cheer {
   private readonly root = el<HTMLDivElement>("cheer");
   private readonly word = el<HTMLDivElement>("cheer-word");
   private readonly clip = el<HTMLVideoElement>("cheer-clip");
+  private readonly sound = el<HTMLAudioElement>("cheer-sound");
   private timer: number | undefined;
+  private soundOn = true;
   /** Guards against the clip ending and the cap firing for the same play. */
   private done: (() => void) | undefined;
 
@@ -51,23 +62,33 @@ export class Cheer {
     void this.root.offsetWidth;
     this.root.classList.add("cheer-run");
 
-    const src = CHEER_CLIPS.length
+    const pick = CHEER_CLIPS.length
       ? CHEER_CLIPS[Math.floor(Math.random() * CHEER_CLIPS.length)]!
       : null;
 
     window.clearTimeout(this.timer);
-    if (!src) {
+    if (!pick) {
       this.clip.classList.add("hidden");
       this.timer = window.setTimeout(() => this.finish(), WORD_ONLY_MS);
       return;
     }
 
     this.clip.classList.remove("hidden");
-    this.clip.src = src;
+    this.clip.src = pick.video;
     this.clip.currentTime = 0;
     // Muted and inline, so this is allowed without a gesture; a refusal still
     // lands on `finish` rather than stalling the run.
     void this.clip.play().catch(() => this.finish());
+
+    // The two tracks are the same length and both start here, which is as
+    // close to in step as two elements get. Sound is a courtesy: if it will
+    // not play, the picture carries on regardless.
+    if (pick.sound && this.soundOn) {
+      this.sound.src = pick.sound;
+      this.sound.currentTime = 0;
+      void this.sound.play().catch(() => undefined);
+    }
+
     this.timer = window.setTimeout(() => this.finish(), CLIP_CAP_MS);
   }
 
@@ -75,8 +96,19 @@ export class Cheer {
   stop(): void {
     window.clearTimeout(this.timer);
     this.done = undefined;
-    this.clip.pause();
+    this.hush();
     this.root.classList.add("hidden");
+  }
+
+  /** Follows the sound switch in settings; the picture always plays. */
+  setSound(on: boolean): void {
+    this.soundOn = on;
+    if (!on) this.sound.pause();
+  }
+
+  private hush(): void {
+    this.clip.pause();
+    this.sound.pause();
   }
 
   private finish(): void {
@@ -84,7 +116,7 @@ export class Cheer {
     if (!then) return;
     this.done = undefined;
     window.clearTimeout(this.timer);
-    this.clip.pause();
+    this.hush();
     this.root.classList.add("hidden");
     then();
   }
