@@ -33,6 +33,6 @@ export class SettingsScreen {
     // Say which one it is instead.
     const canBuzz = typeof navigator.vibrate === "function";
     this.note.textContent =
-      settings.hapticsOn && !canBuzz ? "이 기기(또는 브라우저)는 진동을 지원하지 않습니다." : "";
+      settings.hapticsOn && !canBuzz ? "This phone (or browser) cannot vibrate." : "";
   }
 }

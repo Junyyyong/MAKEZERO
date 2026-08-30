@@ -9,7 +9,7 @@ import type { RunConfig } from "../core/types";
  *
  * With the board fixed, two dials are left:
  *
- *   digitWeights  작은 수 위주 → 고른 분포
+ *   digitWeights  small numbers mostly → an even spread
  *                 the real one. A board dealt from loose groups leaves small
  *                 flexible numbers behind and forgives a careless line; a
  *                 level one spreads 8s and 9s about, and a 9 can only ever

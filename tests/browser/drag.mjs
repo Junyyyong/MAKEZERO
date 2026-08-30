@@ -45,46 +45,33 @@ const page = await browser.newPage({ viewport: { width: 393, height: 852 }, devi
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e)));
 
-/**
- * Walks from the title screen into a run.
- *
- * A mode is no longer one tap: story goes through the chapter list, the stage
- * grid and the stage card, the timed modes through a start screen.
- */
+/** Walks from the title screen into a run. Both modes go through a start screen. */
 async function startRun(id) {
   await page.click(`#${id}`);
   await page.waitForTimeout(300);
-  if (id !== "mode-story") {
-    await page.click("#btn-intro-start");
-    await page.waitForTimeout(420);
-    return;
-  }
-  await page.locator(".chapter-row:not(.shut)").last().click();
-  await page.waitForTimeout(280);
-  await page.locator(".stage-cell:not(.shut)").last().click();
-  await page.waitForTimeout(280);
-  await page.click("#btn-card-start");
+  await page.click("#btn-intro-start");
   await page.waitForTimeout(420);
 }
 
-/** Back out of a run all the way to the title, whichever way it was entered. */
-async function backToTitle(id) {
+/** Back out of a run to the title. */
+async function backToTitle() {
   await page.click("#btn-back");
-  await page.waitForTimeout(300);
-  if (id !== "mode-story") return;
-  await page.click("#btn-stages-back");
-  await page.waitForTimeout(200);
-  await page.click("#btn-chapters-back");
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(320);
 }
 
-/** Opens story mode and returns the centre of every tile in the first row. */
+/**
+ * Opens a run and returns the centre of every tile in the first row.
+ *
+ * Time attack, because it deals a full nine-by-nine deck. Endless starts
+ * sparse, so its first row has gaps and none of the sweeps below would mean
+ * anything.
+ */
 async function openStory() {
   await page.goto(BASE, { waitUntil: "networkidle" });
   await page.evaluate((p) => localStorage.setItem("makezero.progress.v1", JSON.stringify(p)), PROGRESS);
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForTimeout(300);
-  await startRun("mode-story");
+  await startRun("mode-timeAttack");
   return page.evaluate(() => {
     const cols = Number(document.getElementById("board").dataset.cols);
     return [...document.querySelectorAll("#board .tile")].slice(0, cols).map((tile) => {
@@ -135,19 +122,19 @@ async function sweep(steps) {
   const got = await state();
   await page.mouse.up();
 
-  const label = `${String(steps).padStart(2)}회 이동 · ${row.map((t) => t.value).join(" ")}`;
+  const label = `${String(steps).padStart(2)} moves · ${row.map((t) => t.value).join(" ")}`;
   const outcome =
     got.cleared > 0 ? "cleared" : got.selected.length > 0 ? "held" : "rejected";
   if (outcome !== want.outcome) {
-    fail(`${label}: ${want.taken.join("+")} 이면 ${want.outcome} 여야 하는데 ${outcome}`);
+    fail(`${label}: ${want.taken.join("+")} should be ${want.outcome}, got ${outcome}`);
     return null;
   }
   if (want.outcome === "cleared" && got.cleared !== want.taken.length) {
-    fail(`${label}: ${want.taken.length}칸이 지워져야 하는데 ${got.cleared}칸`);
+    fail(`${label}: ${want.taken.length} blocks should clear, ${got.cleared} did`);
     return null;
   }
   if (want.outcome === "held" && got.selected.join() !== want.taken.join()) {
-    fail(`${label}: ${want.taken.join()} 이 선택돼야 하는데 ${got.selected.join()}`);
+    fail(`${label}: expected ${want.taken.join()} selected, got ${got.selected.join()}`);
     return null;
   }
   ok(`${label} → ${want.outcome}`);
@@ -159,7 +146,7 @@ async function sweep(steps) {
 for (const steps of [1, 1, 2, 5, 40]) {
   const got = await sweep(steps);
   if (got && (got.scrolled || got.overflow > 1)) {
-    fail(`${steps}회 이동: 드래그하는 동안 페이지가 스크롤됐습니다 (${got.overflow}px)`);
+    fail(`${steps} moves: the page scrolled during the drag (${got.overflow}px)`);
   }
 }
 
@@ -180,7 +167,7 @@ for (const steps of [1, 1, 2, 5, 40]) {
       return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; }) };
   });
   if (!picked) {
-    ok("다섯 칸이 10 미만인 조합이 이 판에 없어 건너뜀");
+    ok("skipped — no five blocks on this board add to less than ten");
   } else {
     for (const point of picked.points) {
       await page.mouse.click(point.x, point.y);
@@ -189,11 +176,11 @@ for (const steps of [1, 1, 2, 5, 40]) {
     await page.waitForTimeout(120);
     const after = await state();
     if (after.selected.length !== 0) {
-      fail(`5칸 합 ${picked.sum}: 선택이 남아 있습니다 (${after.selected.join()})`);
+      fail(`five blocks summing ${picked.sum}: selection still held (${after.selected.join()})`);
     } else if (after.cleared !== 0) {
-      fail(`5칸 합 ${picked.sum}: 지워지면 안 되는데 블록이 사라졌습니다`);
+      fail(`five blocks summing ${picked.sum}: blocks cleared when they should not have`);
     } else {
-      ok(`5칸을 골랐는데 합이 ${picked.sum} — 바로 거절하고 선택을 놓았습니다`);
+      ok(`five blocks summing ${picked.sum} — refused at once and the selection let go`);
     }
   }
 }
@@ -210,39 +197,39 @@ for (const steps of [1, 1, 2, 5, 40]) {
   await page.mouse.move(wrap.x, wrap.y - 260, { steps: 12 });
   const got = await state();
   await page.mouse.up();
-  if (got.scrolled || got.overflow > 1) fail(`보드 바깥에서 시작한 드래그가 페이지를 움직였습니다`);
-  else ok("보드 바깥에서 시작한 드래그도 페이지를 움직이지 않습니다");
+  if (got.scrolled || got.overflow > 1) fail(`a drag started outside the board moved the page`);
+  else ok("a drag started outside the board does not move the page");
 }
 
 // Every mode draws its board in the same place, at the same size.
 {
   // The checks above leave the page mid-game; the mode list is on the title.
-  await backToTitle("mode-story");
+  await backToTitle();
   const seen = [];
-  for (const [name, id] of [["스토리", "mode-story"], ["타임어택", "mode-timeAttack"], ["무제한", "mode-endless"]]) {
+  for (const [name, id] of [["time attack", "mode-timeAttack"], ["endless", "mode-endless"]]) {
     await startRun(id);
     seen.push([name, await page.evaluate(() => {
       const board = document.getElementById("board").getBoundingClientRect();
       const tile = document.querySelector("#board .tile").getBoundingClientRect();
       return { left: Math.round(board.left), top: Math.round(board.top), tile: Math.round(tile.width) };
     })]);
-    await backToTitle(id);
+    await backToTitle();
   }
   const [, first] = seen[0];
   for (const [name, m] of seen.slice(1)) {
     for (const key of ["left", "top", "tile"]) {
       if (Math.abs(m[key] - first[key]) > 1) {
-        fail(`${name}: 보드 ${key} 가 스토리와 ${Math.abs(m[key] - first[key])}px 다릅니다`);
+        fail(`${name}: board ${key} differs by ${Math.abs(m[key] - first[key])}px`);
       }
     }
   }
-  ok(`세 모드가 같은 자리·같은 타일 크기 (${first.left}px 여백, 타일 ${first.tile}px)`);
+  ok(`every mode draws the board in the same place, same tile size (${first.left}px margin, ${first.tile}px tiles)`);
 }
 
 if (errors.length) {
-  for (const e of errors) fail(`페이지 오류: ${e}`);
+  for (const e of errors) fail(`page error: ${e}`);
 } else {
-  ok("드래그 중 페이지 오류 없음");
+  ok("no page errors while dragging");
 }
 
 await browser.close();

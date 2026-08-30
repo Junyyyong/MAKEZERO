@@ -15,7 +15,7 @@
       <!-- ── splash ────────────────────────────────────────────── -->
       <!-- The cover art fills the screen edge to edge. It already carries the
            wordmark and the cast, so nothing is drawn on top of it. -->
-      <section class="screen splash-screen" id="screen-splash" aria-label="TAP to TEN 시작">
+      <section class="screen splash-screen" id="screen-splash" aria-label="TAP to TEN">
         <img class="splash-cover" src="./cover.webp" alt="TAP to TEN" width="1080" height="2418" />
       </section>
 
@@ -27,36 +27,32 @@
           </h1>
         </div>
 
-        <!-- The three modes, always out. There was a PLAY button in front of
-             them; it hid the game behind a tap and, once the wordmark grew,
-             the list it opened ran off the bottom of the screen. -->
-        <nav class="mode-list" id="mode-list" aria-label="게임 모드">
-            <button class="mode-btn" id="mode-story" data-mode="story">
-              <span class="mode-name">스토리</span>
-              <span class="mode-desc" id="desc-story">스테이지 1</span>
-            </button>
+        <!-- The modes, always out. There was a PLAY button in front of them;
+             it hid the game behind a tap and, once the wordmark grew, the list
+             it opened ran off the bottom of the screen. -->
+        <nav class="mode-list" id="mode-list" aria-label="Game modes">
             <button class="mode-btn" id="mode-timeAttack" data-mode="timeAttack">
-              <span class="mode-name">타임어택</span>
-              <span class="mode-desc" id="desc-timeAttack">60초 도전</span>
+              <span class="mode-name">TIME ATTACK</span>
+              <span class="mode-desc" id="desc-timeAttack">60 seconds</span>
             </button>
             <button class="mode-btn" id="mode-endless" data-mode="endless">
-              <span class="mode-name">무제한</span>
-              <span class="mode-desc" id="desc-endless">끝까지 지우기</span>
+              <span class="mode-name">ENDLESS</span>
+              <span class="mode-desc" id="desc-endless">Play until the board fills</span>
             </button>
         </nav>
 
         <div class="title-links">
-          <button class="text-btn" id="btn-title-tutorial">튜토리얼</button>
-          <button class="text-btn" id="btn-title-gallery">갤러리</button>
-          <button class="text-btn" id="btn-title-settings">설정</button>
-          <button class="text-btn" id="btn-title-rules">규칙 보기</button>
+          <button class="text-btn" id="btn-title-tutorial">How to play</button>
+          <button class="text-btn" id="btn-title-gallery">Records</button>
+          <button class="text-btn" id="btn-title-settings">Settings</button>
+          <button class="text-btn" id="btn-title-rules">Rules</button>
         </div>
       </section>
 
       <!-- ── game ──────────────────────────────────────────────── -->
       <section class="screen game-screen hidden" id="screen-game">
         <header class="hud">
-          <button class="icon-btn" id="btn-back" aria-label="모드 선택으로">
+          <button class="icon-btn" id="btn-back" aria-label="Back to modes">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
             </svg>
@@ -64,7 +60,7 @@
           <div class="score-block">
             <div class="run-title" id="run-title">STAGE 1</div>
           </div>
-          <button class="icon-btn" id="btn-pause" aria-label="일시정지">
+          <button class="icon-btn" id="btn-pause" aria-label="Pause">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M9 6v12M15 6v12" />
             </svg>
@@ -109,10 +105,10 @@
         </div>
 
         <footer class="actions">
-          <button class="round-btn" id="btn-hint" aria-label="힌트">
+          <button class="round-btn" id="btn-hint" aria-label="Hint">
             <span class="glyph">&#128161;</span><span class="badge" id="badge-hint">3</span>
           </button>
-          <button class="round-btn hidden" id="btn-split" aria-label="블록 나누기">
+          <button class="round-btn hidden" id="btn-split" aria-label="Split a block">
             <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M5 4v4a4 4 0 0 0 4 4h6" stroke-linejoin="round" />
               <path d="M5 20v-4a4 4 0 0 1 4-4h6" stroke-linejoin="round" />
@@ -120,7 +116,7 @@
             </svg>
             <span class="badge" id="badge-split">3</span>
           </button>
-          <button class="round-btn hidden" id="btn-undo" aria-label="한 수 물리기">
+          <button class="round-btn hidden" id="btn-undo" aria-label="Undo">
             <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M4 9h9a5 5 0 0 1 0 10h-3" stroke-linejoin="round" />
               <path d="M7 5 3.5 9 7 13" stroke-linejoin="round" />
@@ -133,7 +129,7 @@
       <!-- ── chapter select ────────────────────────────────────── -->
       <section class="screen picker-screen hidden" id="screen-chapters">
         <header class="hud">
-          <button class="icon-btn" id="btn-chapters-back" aria-label="메인으로">
+          <button class="icon-btn" id="btn-chapters-back" aria-label="Back to menu">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
             </svg>
@@ -152,7 +148,7 @@
       <!-- ── stage select ──────────────────────────────────────── -->
       <section class="screen picker-screen hidden" id="screen-stages">
         <header class="hud">
-          <button class="icon-btn" id="btn-stages-back" aria-label="챕터 선택으로">
+          <button class="icon-btn" id="btn-stages-back" aria-label="Back to chapters">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
             </svg>
@@ -166,21 +162,21 @@
         <div class="picker-body">
           <div class="stage-grid" id="stage-grid"></div>
           <p class="picker-legend">
-            <span class="legend-dot done"></span> 완료
-            <span class="legend-dot open"></span> 플레이 가능
-            <span class="legend-dot shut"></span> 잠김
+            <span class="legend-dot done"></span> Done
+            <span class="legend-dot open"></span> Open
+            <span class="legend-dot shut"></span> Locked
           </p>
         </div>
 
         <!-- What a stage is before it is started. -->
         <div class="stage-card hidden" id="stage-card">
           <div class="stage-card-panel">
-            <button class="card-close" id="btn-card-close" aria-label="닫기">✕</button>
+            <button class="card-close" id="btn-card-close" aria-label="Close">✕</button>
             <h2 class="card-title" id="card-title">STAGE 1</h2>
-            <p class="card-body">모든 블록을 제거해<br />숨겨진 그림을 완성하세요!</p>
+            <p class="card-body">Clear every block<br />to reveal the hidden picture!</p>
             <div class="card-plate" id="card-plate"><span id="card-plate-lock">?</span></div>
             <p class="card-best">BEST TIME<b id="card-best">--:--</b></p>
-            <button class="wood-btn" id="btn-card-start">게임 시작</button>
+            <button class="wood-btn" id="btn-card-start">Play</button>
           </div>
         </div>
       </section>
@@ -188,7 +184,7 @@
       <!-- ── mode start (time attack, endless) ─────────────────── -->
       <section class="screen intro-screen hidden" id="screen-intro">
         <header class="hud">
-          <button class="icon-btn" id="btn-intro-back" aria-label="메인으로">
+          <button class="icon-btn" id="btn-intro-back" aria-label="Back to menu">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
             </svg>
@@ -208,20 +204,20 @@
       <!-- ── settings ──────────────────────────────────────────── -->
       <section class="screen picker-screen hidden" id="screen-settings">
         <header class="hud">
-          <button class="icon-btn" id="btn-settings-back" aria-label="메인으로">
+          <button class="icon-btn" id="btn-settings-back" aria-label="Back to menu">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
             </svg>
           </button>
-          <div class="score-block"><div class="picker-title">설정</div></div>
+          <div class="score-block"><div class="picker-title">SETTINGS</div></div>
           <span class="icon-spacer"></span>
         </header>
         <div class="picker-body">
           <ul class="switch-list">
             <li class="switch-row">
               <span class="switch-text">
-                <b>효과음</b>
-                <small>블록을 고르고 지울 때 나는 소리</small>
+                <b>Sound</b>
+                <small>Plays when you pick and clear blocks</small>
               </span>
               <button class="switch" id="switch-sound" role="switch" aria-checked="true">
                 <span class="switch-knob"></span>
@@ -229,8 +225,8 @@
             </li>
             <li class="switch-row">
               <span class="switch-text">
-                <b>진동</b>
-                <small>10이 되거나 틀렸을 때 짧게 울립니다</small>
+                <b>Vibration</b>
+                <small>A short buzz when you make ten, or miss</small>
               </span>
               <button class="switch" id="switch-haptics" role="switch" aria-checked="true">
                 <span class="switch-knob"></span>
@@ -240,8 +236,8 @@
           <p class="settings-note" id="settings-note"></p>
 
           <div class="settings-links">
-            <button class="text-btn" id="btn-settings-rules">규칙 보기</button>
-            <button class="text-btn" id="btn-settings-tutorial">튜토리얼 다시 보기</button>
+            <button class="text-btn" id="btn-settings-rules">Rules</button>
+            <button class="text-btn" id="btn-settings-tutorial">How to play</button>
           </div>
         </div>
       </section>
@@ -250,7 +246,7 @@
       <section class="screen tutorial-screen hidden" id="screen-tutorial">
         <header class="tutorial-head">
           <div class="tutorial-dots" id="tutorial-dots"></div>
-          <button class="text-btn" id="btn-tutorial-skip">건너뛰기</button>
+          <button class="text-btn" id="btn-tutorial-skip">Skip</button>
         </header>
 
         <p class="tutorial-instruction" id="tutorial-instruction"></p>
@@ -261,34 +257,34 @@
 
         <div class="tutorial-foot">
           <p class="tutorial-reward" id="tutorial-reward"></p>
-          <button class="wood-btn hidden" id="btn-tutorial-next">다음</button>
+          <button class="wood-btn hidden" id="btn-tutorial-next">Next</button>
         </div>
       </section>
 
       <!-- ── gallery ───────────────────────────────────────────── -->
       <section class="screen gallery-screen hidden" id="screen-gallery">
         <header class="hud">
-          <button class="icon-btn" id="btn-gallery-back" aria-label="모드 선택으로">
+          <button class="icon-btn" id="btn-gallery-back" aria-label="Back to menu">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
             </svg>
           </button>
-          <div class="score-block"><div class="gallery-title">갤러리</div></div>
+          <div class="score-block"><div class="gallery-title">RECORDS</div></div>
           <span class="icon-spacer"></span>
         </header>
 
         <div class="gallery-body">
           <div class="record-cards">
             <div class="record-card">
-              <span class="record-label">모은 그림</span>
+              <span class="record-label">Pictures</span>
               <b class="record-value" id="record-plates">0</b>
             </div>
             <div class="record-card">
-              <span class="record-label">타임어택 최고</span>
+              <span class="record-label">Best time attack</span>
               <b class="record-value" id="record-timeattack">0</b>
             </div>
             <div class="record-card">
-              <span class="record-label">무제한 최고</span>
+              <span class="record-label">Best endless</span>
               <b class="record-value" id="record-endless">0</b>
             </div>
           </div>
@@ -299,13 +295,13 @@
              the arrows walk the rest of the collection without going back. -->
         <div class="plate-view hidden" id="plate-view">
           <div class="plate-stage">
-            <button class="plate-arrow" id="btn-plate-prev" aria-label="이전 그림">
+            <button class="plate-arrow" id="btn-plate-prev" aria-label="Previous picture">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M15 5l-7 7 7 7" stroke-linejoin="round" />
               </svg>
             </button>
             <div class="plate-full" id="plate-full"></div>
-            <button class="plate-arrow" id="btn-plate-next" aria-label="다음 그림">
+            <button class="plate-arrow" id="btn-plate-next" aria-label="Next picture">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M9 5l7 7-7 7" stroke-linejoin="round" />
               </svg>
@@ -323,17 +319,25 @@
           <h2 class="story-title" id="story-title"></h2>
           <p class="story-name" id="story-name"></p>
           <p class="story-line" id="story-line"></p>
-          <button class="wood-btn" id="btn-story-next">다음</button>
+          <button class="wood-btn" id="btn-story-next">Next</button>
         </div>
       </section>
 
+      <!-- ── end-of-run flourish ───────────────────────────────
+           Shown for a beat when a run ends, before the results panel. The
+           artwork is optional: with no file the word carries it alone. -->
+      <div class="cheer hidden" id="cheer" aria-hidden="true">
+        <img class="cheer-art hidden" id="cheer-art" alt="" />
+        <div class="cheer-word" id="cheer-word">GREAT!</div>
+      </div>
+
       <div class="overlay hidden" id="overlay">
         <div class="panel">
-          <h1 class="panel-title" id="overlay-title">게임 종료</h1>
+          <h1 class="panel-title" id="overlay-title">Game over</h1>
           <p class="panel-body" id="overlay-body"></p>
           <div class="panel-actions">
-            <button class="wood-btn" id="btn-primary">다시 하기</button>
-            <button class="wood-btn ghost" id="btn-secondary">모드 선택</button>
+            <button class="wood-btn" id="btn-primary">Play again</button>
+            <button class="wood-btn ghost" id="btn-secondary">Menu</button>
           </div>
         </div>
       </div>

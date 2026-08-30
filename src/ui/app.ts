@@ -12,6 +12,7 @@ import { AppStateMachine } from "./appStateMachine";
 import { feedback } from "./feedback";
 import { el, formatClock } from "./dom";
 import { Hud } from "./screens/hud";
+import { Cheer } from "./screens/cheer";
 import { Overlay } from "./screens/overlay";
 import { StoryScreen } from "./screens/storyScreen";
 import { GalleryScreen } from "./screens/galleryScreen";
@@ -35,11 +36,11 @@ import {
 } from "./storage";
 import type { DailyStats, Progress, Settings } from "./storage";
 
-const RULES_TEXT = `숫자를 골라 합이 <b>정확히 10</b>이 되면 지워집니다.
-2개부터 5개까지 고를 수 있고, 많이 고를수록 점수가 큽니다.
-<span class="rule-num">2개 10점 · 3개 20점<br />4개 40점 · 5개 80점</span>
-<b>어느 칸이든 상관없습니다.</b> 멀리 떨어져 있어도, 사이에 무엇이 있어도 함께 고를 수 있습니다.
-같은 숫자끼리 지우는 규칙은 없습니다. 3+3은 6이라 지워지지 않아요.`;
+const RULES_TEXT = `Pick numbers that add up to <b>exactly 10</b> and they clear.
+Pick 2 to 5 blocks. The more you pick, the more you score.
+<span class="rule-num">2 blocks 10 · 3 blocks 20<br />4 blocks 40 · 5 blocks 80</span>
+<b>Any squares will do.</b> They can be far apart, with anything in between.
+Matching numbers do not clear. 3 + 3 is 6, so nothing happens.`;
 
 type Screen =
   | "splash"
@@ -56,6 +57,17 @@ type Screen =
 /** How long the finished picture is held before the results panel. */
 const PLATE_HOLD_MS = 2000;
 
+/**
+ * What the flourish says. A run that went well should not be congratulated in
+ * the same words as one that ended on the first minute.
+ */
+function cheerFor(score: number): string {
+  if (score >= 500) return "AMAZING!";
+  if (score >= 200) return "GREAT!";
+  if (score >= 50) return "NICE!";
+  return "GOOD TRY!";
+}
+
 /** Owns the run in progress and moves between screens. */
 export class App {
   private state: GameState;
@@ -69,6 +81,7 @@ export class App {
   private readonly view: BoardView;
   private readonly hud = new Hud();
   private readonly overlay = new Overlay(() => this.showTitle());
+  private readonly cheer = new Cheer();
   private readonly story = new StoryScreen();
   private readonly title: TitleScreen;
   private readonly tutorial = new TutorialScreen();
@@ -184,6 +197,7 @@ export class App {
   // ---- screens -----------------------------------------------------------
 
   private show(screen: Screen): void {
+    this.cheer.stop();
     const next = this.screens[screen];
     const previous = this.screens[this.activeScreen];
     if (previous === next) return;
@@ -240,7 +254,7 @@ export class App {
    * a picture behind each, which is worth choosing between; the timed modes
    * get a screen that says what is about to be measured. `startMode` and
    * `startStage` are what actually begin a run, and the results panel calls
-   * them directly so "다시 하기" replays instead of walking back out here.
+   * them directly so "Play again" replays instead of walking back out here.
    */
   private chooseMode(mode: GameMode): void {
     if (mode === "story") {
@@ -351,10 +365,10 @@ export class App {
     this.view.setInteractive(false);
     this.flow.enter("paused");
     this.overlay.open({
-      title: "일시정지",
-      body: "잠시 쉬어가도 괜찮아요.",
-      primary: { label: "계속하기", action: () => this.resume() },
-      secondary: { label: "메인 메뉴", action: () => this.showTitle() },
+      title: "Paused",
+      body: "Take a break. The clock is stopped.",
+      primary: { label: "Resume", action: () => this.resume() },
+      secondary: { label: "Main menu", action: () => this.showTitle() },
     });
   }
 
@@ -399,11 +413,11 @@ export class App {
     this.view.setBoard(after.board);
     if (payout === "extension") {
       feedback.complete();
-      this.flashNotice("+30초 · 새 판!");
+      this.flashNotice("+30 seconds · new board!");
       return;
     }
     feedback.item();
-    this.flashNotice("빈칸에 작은 블록이 채워졌어요!");
+    this.flashNotice("Small blocks filled the empty squares!");
   }
 
   private flashNotice(text: string): void {
@@ -448,7 +462,7 @@ export class App {
     this.splitArmed = !this.splitArmed;
     this.view.setSplitting(this.splitArmed);
     this.hud.splitBtn.classList.toggle("armed", this.splitArmed);
-    this.hud.setNotice(this.splitArmed ? "나눌 블록을 하나 고르세요" : null);
+    this.hud.setNotice(this.splitArmed ? "Pick a block to split" : null);
   }
 
   private onSplit(index: number): void {
@@ -460,7 +474,7 @@ export class App {
     if (next === this.state) {
       feedback.reject();
       this.view.reject([index]);
-      this.hud.setNotice("이 블록은 나눌 수 없어요");
+      this.hud.setNotice("This block cannot be split");
       window.setTimeout(() => {
         this.hud.setNotice(null);
         this.render();
@@ -532,10 +546,10 @@ export class App {
       // board could still be emptied, so offer the way back before grading it.
       if (this.state.status === "lost" && this.state.undosLeft > 0 && this.state.previous) {
         this.overlay.open({
-          title: "막혔어요",
-          body: `10을 만들 수 있는 숫자가 없어요.\n이 판은 전부 지울 수 있어요 — 한 수 물려서 다시 해보세요.\n남은 물리기 ${this.state.undosLeft}회`,
-          primary: { label: "한 수 물리기", action: () => this.onUndo() },
-          secondary: { label: "여기서 끝내기", action: () => this.giveUp() },
+          title: "Stuck",
+          body: `No numbers left that make ten.\nThis board can still be cleared — undo a move and try again.\nUndos left: ${this.state.undosLeft}`,
+          primary: { label: "Undo", action: () => this.onUndo() },
+          secondary: { label: "End here", action: () => this.giveUp() },
         });
         return;
       }
@@ -544,22 +558,26 @@ export class App {
     }
     feedback.fail();
     if (config.mode === "timeAttack") {
-      this.overlay.open({
-        title: "시간 종료",
-        body: `점수 ${score}점\n최고 ${this.progress.bestTimeAttack}점`,
-        primary: { label: "다시 하기", action: () => this.startMode("timeAttack") },
-      });
+      this.cheer.play(cheerFor(score), () =>
+        this.overlay.open({
+          title: "Time up",
+          body: `Score ${score}\nBest ${this.progress.bestTimeAttack}`,
+          primary: { label: "Play again", action: () => this.startMode("timeAttack") },
+        }),
+      );
       return;
     }
     // Endless has no score to beat but the one thing it does measure is how
     // long the board was kept alive, so that is kept too.
     this.progress = recordEndlessTime(this.progress, this.state.elapsedMs);
     saveProgress(this.progress);
-    this.overlay.open({
-      title: "보드가 가득 찼어요",
-      body: `점수 ${score}점\n오늘 최고 ${this.daily.best}점\n최고 기록 ${this.progress.bestEndless}점`,
-      primary: { label: "다시 하기", action: () => this.startMode("endless") },
-    });
+    this.cheer.play(cheerFor(score), () =>
+      this.overlay.open({
+        title: "The board is full",
+        body: `Score ${score}\nBest today ${this.daily.best}\nAll-time best ${this.progress.bestEndless}`,
+        primary: { label: "Play again", action: () => this.startMode("endless") },
+      }),
+    );
   }
 
   /** Settles a stuck board the player has decided not to take back. */
@@ -591,7 +609,7 @@ export class App {
     done.style.width = `${board.width}px`;
     done.style.height = `${board.height}px`;
     done.style.backgroundImage = artFor(stage);
-    el<HTMLSpanElement>("plate-done-label").textContent = `${plateFor(stage).title} 완성!`;
+    el<HTMLSpanElement>("plate-done-label").textContent = `${plateFor(stage).title} complete!`;
     // The score pops from the last clear are still drifting over the board;
     // let them go, or they float across the finished picture.
     for (const pop of el<HTMLDivElement>("board-wrap").querySelectorAll(".pop")) pop.remove();
@@ -613,11 +631,11 @@ export class App {
         title: "GAME OVER",
         body:
           `REVEAL ${reveal}% · TIME ${formatClock(this.state.elapsedMs)}\n` +
-          `${left}칸이 남았어요.\n이 판은 전부 지울 수 있어요 — 한 번 더 해볼까요?`,
-        primary: { label: "다시 도전", action: () => this.startStage(stage) },
+          `${left} blocks left.\nThis board can be cleared — want another go?`,
+        primary: { label: "Try again", action: () => this.startStage(stage) },
         // Back to the grid this stage was picked from, not all the way out.
         secondary: {
-          label: "스테이지 선택",
+          label: "Pick a stage",
           action: () => this.showStages(PickerScreen.chapterOf(stage)),
         },
       });
@@ -652,24 +670,24 @@ export class App {
     const held = totalCollected(this.progress);
     const time = formatClock(this.state.elapsedMs);
     const best = bestTimeFor(this.progress, stage);
-    const bestLine = best === this.state.elapsedMs ? "새 최고 기록!" : `최고 ${formatClock(best)}`;
+    const bestLine = best === this.state.elapsedMs ? "New best time!" : `Best ${formatClock(best)}`;
     const body =
       `${plate.title}\nREVEAL 100% · TIME ${time}\n${bestLine}\n` +
-      `모은 그림 ${held} / ${TOTAL_STAGES}`;
+      `Pictures ${held} / ${TOTAL_STAGES}`;
     if (stage >= TOTAL_STAGES) {
       this.overlay.open({
-        title: "그림을 모두 모았어요",
-        body: `${body}\n99장이 전부 갤러리에 있습니다.`,
-        primary: { label: "갤러리 보기", action: () => this.showGallery() },
-        secondary: { label: "모드 선택", action: () => this.showTitle() },
+        title: "You collected them all",
+        body: `${body}\nAll 99 are in your records.`,
+        primary: { label: "See records", action: () => this.showGallery() },
+        secondary: { label: "Menu", action: () => this.showTitle() },
       });
       return;
     }
     this.overlay.open({
-      title: "그림을 얻었어요",
+      title: "You won a picture",
       body,
-      primary: { label: "다음 스테이지", action: () => this.startStage(stage + 1) },
-      secondary: { label: "갤러리 보기", action: () => this.showGallery() },
+      primary: { label: "Next stage", action: () => this.startStage(stage + 1) },
+      secondary: { label: "See records", action: () => this.showGallery() },
     });
   }
 
@@ -715,16 +733,16 @@ export class App {
     // underneath to put back, and asking for it would be an illegal move.
     const overResult = this.flow.current === "result";
     this.overlay.open({
-      title: "규칙",
+      title: "Rules",
       body: RULES_TEXT,
       html: true,
       primary: {
-        label: "닫기",
+        label: "Close",
         action: () => {
           if (overResult) this.finishRun();
         },
       },
-      secondary: { label: "모드 선택", action: () => this.showTitle() },
+      secondary: { label: "Menu", action: () => this.showTitle() },
     });
   }
 }

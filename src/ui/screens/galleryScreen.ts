@@ -58,7 +58,7 @@ export class GalleryScreen {
       cell.className = held ? "plate" : "plate locked";
       if (held) {
         cell.style.backgroundImage = artFor(stage);
-        cell.setAttribute("aria-label", `${stage}번 그림 ${plateFor(stage).title}`);
+        cell.setAttribute("aria-label", `Picture ${stage}, ${plateFor(stage).title}`);
         cell.addEventListener("click", () => this.openView(stage));
       } else {
         cell.textContent = String(stage);

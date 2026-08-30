@@ -138,16 +138,16 @@ export class Hud {
    */
   private notice(state: GameState): string {
     if (state.config.spawn) {
-      if (state.status === "lost") return "보드가 가득 찼어요.";
-      return emptyIndices(state.board).length <= 6 ? "곧 가득 차요" : "";
+      if (state.status === "lost") return "The board is full.";
+      return emptyIndices(state.board).length <= 6 ? "Almost full!" : "";
     }
     if (state.status === "lost") {
       return state.undosLeft > 0 && state.previous
-        ? "막혔어요 — 한 수 물려서 다시 해보세요"
-        : "10을 만들 수 있는 숫자가 없어요.";
+        ? "Stuck — undo a move and try again"
+        : "No numbers left that make ten.";
     }
-    if (state.config.mode !== "story") return "10을 만들어 점수를 올리세요";
-    if (state.status === "won") return "그림이 전부 드러났어요";
-    return "한 칸도 남기지 않으면 그림을 얻어요";
+    if (state.config.mode !== "story") return "Make ten to score";
+    if (state.status === "won") return "The whole picture is showing!";
+    return "Clear every block to win the picture";
   }
 }

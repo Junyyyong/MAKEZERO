@@ -89,7 +89,7 @@ export class TutorialScreen {
     this.reward.textContent = this.state.solved ? step.reward : "";
     this.nextBtn.classList.toggle("hidden", !this.state.solved);
     this.nextBtn.textContent =
-      this.state.index >= TUTORIAL_STEPS.length - 1 ? "시작하기" : "다음";
+      this.state.index >= TUTORIAL_STEPS.length - 1 ? "Start" : "Next";
     if (this.state.solved) this.view.setInteractive(false);
 
     this.dots.replaceChildren(
