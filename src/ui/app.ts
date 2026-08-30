@@ -723,6 +723,7 @@ export class App {
   private applySettings(): void {
     document.documentElement.dataset.sound = this.settings.soundOn ? "on" : "off";
     feedback.setSound(this.settings.soundOn);
+    this.cheer.setSound(this.settings.soundOn);
     feedback.setHaptics(this.settings.hapticsOn);
   }
 

@@ -129,7 +129,9 @@ describe("star targets", () => {
 describe("mode presets", () => {
   it("gives time attack a clock and no hints to lean on", () => {
     expect(TIME_ATTACK_CONFIG.timeLimitMs).toBe(60_000);
-    expect(TIME_ATTACK_CONFIG.autoRefill).toBe(true);
+    // The board is a fixed frame — cleared squares stay as holes rather than
+    // collapsing the row and shrinking the board mid-run.
+    expect(TIME_ATTACK_CONFIG.keepBoard).toBe(true);
     expect(TIME_ATTACK_CONFIG.hints).toBe(0);
   });
 
