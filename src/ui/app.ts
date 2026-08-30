@@ -78,6 +78,8 @@ export class App {
   private readonly settingsScreen: SettingsScreen;
   /** How many blocks the selection held last time it changed. */
   private held = 0;
+  /** Clears the reward notice, so two in a row do not cut each other short. */
+  private noticeTimer: number | undefined;
 
   private frame: number | undefined;
   private lastFrameMs = 0;
@@ -367,7 +369,8 @@ export class App {
 
   private commit(selection: readonly number[]): void {
     const anchor = selection[selection.length - 1]!;
-    const { state, result } = commitSelection(this.state, selection);
+    const before = this.state;
+    const { state, result } = commitSelection(before, selection);
     if (!result.ok) return;
     this.held = 0;
     feedback.clear(selection.length);
@@ -375,7 +378,43 @@ export class App {
     this.view.popScore(anchor, result.score);
     this.state = state;
     this.recordScore();
+    this.announceReward(before, state);
     this.render();
+  }
+
+  /**
+   * Says what a time-attack threshold just paid out.
+   *
+   * The rules hand out tiles and seconds silently; a row appearing at the
+   * bottom of the board or a clock that stopped falling is not something a
+   * player racing a timer will notice on their own.
+   */
+  private announceReward(before: GameState, after: GameState): void {
+    if (after.config.mode !== "timeAttack") return;
+
+    if (after.remainingMs > before.remainingMs) {
+      // A whole new board arrived with the extra time, so the view is
+      // re-pointed rather than synced.
+      this.view.setBoard(after.board);
+      feedback.complete();
+      this.flashNotice("+30초 · 새 판!");
+      return;
+    }
+    const added = after.board.cells.length - before.board.cells.length;
+    if (added > 0) {
+      this.view.setBoard(after.board);
+      feedback.item();
+      this.flashNotice(`작은 블록 ${added}개 추가!`);
+    }
+  }
+
+  private flashNotice(text: string): void {
+    this.hud.setNotice(text);
+    window.clearTimeout(this.noticeTimer);
+    this.noticeTimer = window.setTimeout(() => {
+      this.hud.setNotice(null);
+      this.render();
+    }, 1600);
   }
 
   /**

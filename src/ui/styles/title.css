@@ -49,8 +49,8 @@
   gap: 10px;
   padding: max(3vh, 16px) 22px max(2.5vh, 14px);
   background:
-    radial-gradient(58% 28% at 50% 24%, rgba(255, 188, 59, 0.12), transparent 75%),
-    linear-gradient(180deg, transparent, rgba(52, 0, 27, 0.18));
+    radial-gradient(58% 28% at 50% 24%, rgba(255, 181, 0, 0.14), transparent 75%),
+    linear-gradient(180deg, transparent, var(--recess));
 }
 
 .brand-block {
@@ -74,7 +74,7 @@
   height: auto;
   /* A little of the night thrown back up at it, so it sits on the background
      rather than on top of it. */
-  filter: drop-shadow(0 10px 24px rgba(20, 8, 50, 0.7));
+  filter: drop-shadow(0 10px 24px var(--slab-hard));
 }
 
 .tagline {
@@ -101,21 +101,21 @@
   color: var(--ink);
   cursor: pointer;
   /* A block, like everything else: a face over a slab, not a black pill. */
-  background: linear-gradient(180deg, rgba(61, 91, 224, 0.22), rgba(42, 17, 99, 0.6));
-  border: 1px solid var(--cool-dim);
+  background: linear-gradient(180deg, var(--panel-lit), var(--panel-deep));
+  border: 1px solid var(--paper-edge);
   border-radius: 16px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    0 3px 0 rgba(20, 8, 50, 0.75);
+    inset 0 1px 0 var(--cool-dim),
+    0 3px 0 var(--slab-hard);
   transition: transform 120ms ease, background 160ms ease;
 }
 
 .mode-btn:active {
-  background: linear-gradient(180deg, rgba(94, 201, 245, 0.28), rgba(42, 17, 99, 0.66));
+  background: linear-gradient(180deg, var(--panel-lit), var(--panel-deep));
   transform: translateY(2px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    0 1px 0 rgba(20, 8, 50, 0.75);
+    inset 0 1px 0 var(--cool-dim),
+    0 1px 0 var(--slab-hard);
 }
 
 .mode-name {
@@ -135,7 +135,7 @@
   font-family: inherit;
   font-size: 15px;
   font-weight: 700;
-  color: var(--cool);
+  color: var(--hot-deep);
   text-decoration: underline;
   cursor: pointer;
   background: none;

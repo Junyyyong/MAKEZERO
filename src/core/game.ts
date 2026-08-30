@@ -63,6 +63,27 @@ export interface CommitOutcome {
   rowsRemoved: number;
 }
 
+/*
+ * What a good time-attack run buys.
+ *
+ * The mode used to give nothing back: one deck, one minute, and a player who
+ * was clearing well simply ran out of tiles faster. Both rewards are paid in
+ * the currency the mode is short of.
+ *
+ * Every hundred points adds nine low tiles — nine is exactly one row on a
+ * nine-wide board, and 1s, 2s and 3s are what long combinations are always
+ * starved of, so the reward is fuel rather than clutter.
+ *
+ * Five hundred points buys thirty seconds and a whole fresh board. It is the
+ * bigger prize and it is once per run: a second extension would turn a good
+ * run into an endless one, which is the other mode.
+ */
+const BONUS_EVERY = 100;
+const BONUS_TILES = 9;
+const BONUS_VALUES: readonly number[] = [1, 2, 3];
+const EXTENSION_AT = 500;
+const EXTENSION_MS = 30_000;
+
 const MAX_DEAL_ATTEMPTS = 20;
 /** Most pieces one block may be broken into. Four keeps the board readable. */
 const MAX_SPLIT_PARTS = 4;
@@ -194,13 +215,47 @@ export function commitSelection(state: GameState, indices: readonly number[]): C
     state.config.spawn || state.config.keepBoard
       ? { board: { width: state.board.width, cells }, removed: 0 }
       : collapseRows({ width: state.board.width, cells });
-  const next = settleStatus({
+  const scored: GameState = {
     ...state,
     board,
     score: state.score + result.score,
     previous: state.config.undos > 0 ? state : undefined,
-  });
+  };
+  const next = settleStatus(reward(scored, state.score));
   return { state: next, result, rowsRemoved: removed };
+}
+
+/**
+ * Pays out whatever the last clear just earned. Time attack only.
+ *
+ * Both thresholds are read off the score rather than remembered, which they
+ * can be because time attack has no take-backs: the score only ever climbs,
+ * so a threshold is crossed exactly once.
+ */
+function reward(state: GameState, before: number): GameState {
+  if (state.config.mode !== "timeAttack") return state;
+
+  // The extension wins when both land on the same clear — a fresh board makes
+  // the row of small tiles that would have been added moot.
+  if (before < EXTENSION_AT && state.score >= EXTENSION_AT) {
+    const dealt = dealBoard(state.config, state.nextSeed);
+    return {
+      ...state,
+      board: dealt.board,
+      nextSeed: dealt.nextSeed,
+      remainingMs: state.remainingMs + EXTENSION_MS,
+    };
+  }
+
+  const rows = Math.floor(state.score / BONUS_EVERY) - Math.floor(before / BONUS_EVERY);
+  if (rows <= 0) return state;
+
+  const rng = mulberry32(state.nextSeed);
+  const cells = [...state.board.cells];
+  for (let i = 0; i < rows * BONUS_TILES; i++) {
+    cells.push({ value: BONUS_VALUES[Math.floor(rng() * BONUS_VALUES.length)]!, cleared: false });
+  }
+  return { ...state, board: { width: state.board.width, cells }, nextSeed: state.nextSeed + 1 };
 }
 
 export interface HintOutcome {

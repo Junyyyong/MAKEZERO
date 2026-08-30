@@ -21,12 +21,12 @@
   padding: 0;
   font-size: 24px;
   font-weight: 800;
-  color: var(--cool);
+  color: var(--hot-deep);
   cursor: pointer;
-  background: rgba(94, 201, 245, 0.08);
-  border: 1px solid var(--cool-dim);
+  background: var(--panel-lit);
+  border: 1px solid var(--paper-edge);
   border-radius: 12px;
-  box-shadow: inset 0 0 12px rgba(255, 255, 255, 0.025);
+  box-shadow: inset 0 0 12px var(--recess);
 }
 
 .icon-btn svg {
@@ -61,7 +61,7 @@
   font-weight: 900;
   line-height: 1;
   color: var(--marquee);
-  text-shadow: 0 0 10px rgba(245, 189, 79, 0.26);
+  text-shadow: 0 0 10px rgba(255, 139, 0, 0.5);
   font-variant-numeric: tabular-nums;
 }
 
@@ -82,8 +82,8 @@
   color: var(--ink-soft);
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: rgba(94, 201, 245, 0.07);
-  border: 1px solid var(--cool-dim);
+  background: var(--panel-lit);
+  border: 1px solid var(--paper-edge);
   border-radius: 999px;
 }
 
@@ -186,9 +186,9 @@
   gap: var(--gap);
   padding: 5px;
   background: var(--stage-edge);
-  border: 1px solid var(--cool-dim);
+  border: 1px solid var(--paper-edge);
   border-radius: 12px;
-  box-shadow: 0 3px 16px rgba(10, 3, 28, 0.55);
+  box-shadow: 0 3px 16px var(--slab-hard);
   touch-action: none;
 }
 
@@ -207,34 +207,34 @@
   /* White numerals on a coloured face, ringed in the night colour so the
      block reads against the picture surfacing behind it. */
   color: #fff;
-  text-shadow: 0 2px 0 rgba(20, 8, 50, 0.45);
+  text-shadow: 0 2px 0 var(--slab);
   cursor: pointer;
   background: linear-gradient(180deg, var(--face-lit, #7a8bd8), var(--face, #3d5be0));
-  border: 1px solid rgba(20, 8, 50, 0.55);
+  border: 1px solid var(--slab);
   border-radius: 6px;
   box-shadow:
     inset 0 2px 0 rgba(255, 255, 255, 0.85),
-    inset 0 -2px 3px rgba(42, 17, 99, 0.14),
-    0 2px 0 rgba(42, 17, 99, 0.55);
+    inset 0 -2px 3px var(--slab),
+    0 2px 0 var(--slab);
   transition: transform 90ms ease, box-shadow 90ms ease, background 140ms ease;
 }
 
 .tile.cleared {
   color: transparent;
   cursor: default;
-  background: rgba(16, 4, 33, 0.72);
-  border-color: rgba(255, 255, 255, 0.03);
-  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.45);
+  background: var(--recess);
+  border-color: var(--recess);
+  box-shadow: inset 0 1px 4px var(--recess);
 }
 
 .tile.sel {
   z-index: 1;
   background: linear-gradient(160deg, #ffffff, var(--tile-sel));
   transform: scale(1.055);
-  box-shadow: 0 0 0 3px var(--ring-sel), 0 0 14px rgba(94, 201, 245, 0.75);
+  box-shadow: 0 0 0 3px var(--ring-sel), 0 0 14px rgba(255, 139, 0, 0.55);
 }
 
-.board.ok .tile.sel { box-shadow: 0 0 0 3px var(--ring-ok), 0 0 14px rgba(112, 216, 164, 0.7); }
+.board.ok .tile.sel { box-shadow: 0 0 0 3px var(--ring-ok), 0 0 14px rgba(22, 163, 74, 0.55); }
 .tile.hint { animation: hint-pulse 900ms ease-in-out 3; }
 .board.shake { animation: shake 260ms ease; }
 
@@ -243,7 +243,7 @@
   font-size: 22px;
   font-weight: 900;
   color: var(--marquee);
-  text-shadow: 0 0 10px rgba(245, 189, 79, 0.7);
+  text-shadow: 0 0 10px rgba(255, 139, 0, 0.5);
   pointer-events: none;
   animation: pop-up 700ms ease-out forwards;
 }
@@ -282,15 +282,15 @@
   margin: 8px 16px 0;
   padding: 6px 12px;
   color: var(--ink-soft);
-  background: rgba(94, 201, 245, 0.06);
-  border: 1px solid var(--cool-dim);
+  background: var(--panel-lit);
+  border: 1px solid var(--paper-edge);
   border-radius: 12px;
   transition: border-color 160ms ease, background 160ms ease;
 }
 
 .selection-sum.ready {
-  background: rgba(255, 198, 53, 0.12);
-  border-color: rgba(255, 198, 53, 0.5);
+  background: #fff3cf;
+  border-color: var(--warm);
 }
 
 .selection-sum span { font-size: 9px; font-weight: 900; letter-spacing: 1px; }
@@ -311,7 +311,7 @@
   background: linear-gradient(160deg, var(--warm), var(--warm-deep));
   border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 50%;
-  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4), 0 4px 0 rgba(42, 17, 99, 0.6);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4), 0 4px 0 var(--slab);
 }
 
 .round-btn:active:not(:disabled) { transform: translateY(2px); }
@@ -343,7 +343,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(10, 2, 23, 0.78);
+  background: var(--scrim);
   backdrop-filter: blur(5px);
   animation: overlay-in 160ms ease both;
 }
@@ -429,7 +429,7 @@
   background-image: var(--plate);
   background-repeat: no-repeat;
   border-color: transparent;
-  box-shadow: inset 0 0 0 1px rgba(8, 1, 18, 0.35);
+  box-shadow: inset 0 0 0 1px var(--slab-hard);
   /* Uncovering is the reward, so it arrives rather than snapping. */
   animation: uncover 420ms ease both;
 }
@@ -437,7 +437,7 @@
 /* The split item, waiting for a block to be picked. */
 .round-btn.armed {
   border-color: var(--marquee);
-  box-shadow: 0 0 0 2px rgba(255, 215, 116, 0.35);
+  box-shadow: 0 0 0 2px rgba(255, 181, 0, 0.55);
 }
 
 .board.splitting .tile:not(.cleared) {
@@ -478,9 +478,9 @@
   padding-bottom: 12px;
   background-position: center;
   background-size: cover;
-  border: 1px solid var(--cool-dim);
+  border: 1px solid var(--paper-edge);
   border-radius: 12px;
-  box-shadow: 0 10px 34px rgba(10, 3, 28, 0.6);
+  box-shadow: 0 10px 34px var(--slab-hard);
   pointer-events: none;
   animation: plate-settle 620ms ease both;
 }
@@ -495,7 +495,7 @@
   font-weight: 800;
   letter-spacing: 0.06em;
   color: #fff;
-  background: rgba(20, 8, 50, 0.72);
+  background: var(--slab);
   border-radius: 999px;
   animation: drift-up-settle 620ms ease 260ms both;
 }
@@ -533,7 +533,7 @@
   font-size: 17px;
   font-weight: 900;
   letter-spacing: 0.14em;
-  color: var(--cool);
+  color: var(--hot-deep);
 }
 
 .run-stats {
@@ -549,8 +549,8 @@
   gap: 2px;
   align-items: center;
   padding: 6px 4px;
-  background: rgba(94, 201, 245, 0.06);
-  border: 1px solid var(--cool-dim);
+  background: var(--panel-lit);
+  border: 1px solid var(--paper-edge);
   border-radius: 10px;
 }
 

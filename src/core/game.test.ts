@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { aliveCount, emptyIndices, valueCounts } from "./board";
 import { canEmpty } from "./solver";
 import { commitSelection, newGame, spawnIntervalMs, splitTile, stars, tick, undo, useHint } from "./game";
+import { findHint } from "./solver";
 import { evaluateSelection } from "./rules";
 import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
 
@@ -351,5 +352,60 @@ describe("endless survival", () => {
       expect(game.board.cells).toHaveLength(capacity);
     }
     expect(game.status).toBe("lost"); // nobody was clearing anything
+  });
+});
+
+describe("time attack rewards", () => {
+  /** Plays a time-attack run forward by handing it scores directly. */
+  const run = (score: number, board?: GameState["board"]): GameState => {
+    const base = newGame(TIME_ATTACK_CONFIG, 7);
+    return { ...base, score, ...(board ? { board } : {}) };
+  };
+
+  it("adds a row of small tiles every hundred points", () => {
+    const before = run(96);
+    const { state } = commitSelection(before, findHint(before.board)!);
+    // 96 -> at least 106, so one threshold is crossed and one row lands.
+    expect(state.score).toBeGreaterThanOrEqual(100);
+    expect(state.board.cells.length).toBe(before.board.cells.length + 9);
+    const added = state.board.cells.slice(-9);
+    expect(added.every((c) => !c.cleared && c.value >= 1 && c.value <= 3)).toBe(true);
+  });
+
+  it("adds nothing when no hundred is crossed", () => {
+    const before = run(10);
+    const { state } = commitSelection(before, findHint(before.board)!);
+    expect(state.score).toBeLessThan(100);
+    // Rows of fully cleared tiles collapse away, so the board may shrink —
+    // what must not happen is tiles being added.
+    expect(state.board.cells.length).toBeLessThanOrEqual(before.board.cells.length);
+  });
+
+  it("buys thirty seconds and a fresh board at five hundred", () => {
+    const before = run(495);
+    const { state } = commitSelection(before, findHint(before.board)!);
+    expect(state.score).toBeGreaterThanOrEqual(500);
+    expect(state.remainingMs).toBe(before.remainingMs + 30_000);
+    // A fresh deck, not the one that was being played.
+    expect(state.board.cells.length).toBe(before.startingCells);
+    expect(state.board.cells.every((c) => !c.cleared)).toBe(true);
+  });
+
+  it("extends only once, however long the run goes on", () => {
+    let state = run(495);
+    const clock = state.remainingMs;
+    ({ state } = commitSelection(state, findHint(state.board)!));
+    expect(state.remainingMs).toBe(clock + 30_000);
+    // Well past five hundred now; the threshold must not pay again.
+    const later = { ...state, score: 900 };
+    const { state: after } = commitSelection(later, findHint(later.board)!);
+    expect(after.remainingMs).toBe(clock + 30_000);
+  });
+
+  it("leaves the other modes alone", () => {
+    const story = { ...newGame(stageConfig(1), 3), score: 96 };
+    const { state } = commitSelection(story, findHint(story.board)!);
+    expect(state.board.cells.length).toBeLessThanOrEqual(story.board.cells.length);
+    expect(state.remainingMs).toBe(story.remainingMs);
   });
 });
