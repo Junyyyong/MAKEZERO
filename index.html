@@ -43,7 +43,6 @@
 
         <div class="title-links">
           <button class="text-btn" id="btn-title-tutorial">How to play</button>
-          <button class="text-btn" id="btn-title-gallery">Records</button>
           <button class="text-btn" id="btn-title-settings">Settings</button>
           <button class="text-btn" id="btn-title-rules">Rules</button>
         </div>
@@ -327,7 +326,14 @@
            Shown for a beat when a run ends, before the results panel. The
            artwork is optional: with no file the word carries it alone. -->
       <div class="cheer hidden" id="cheer" aria-hidden="true">
-        <img class="cheer-art hidden" id="cheer-art" alt="" />
+        <video
+          class="cheer-clip hidden"
+          id="cheer-clip"
+          muted
+          playsinline
+          disablepictureinpicture
+          preload="auto"
+        ></video>
         <div class="cheer-word" id="cheer-word">GREAT!</div>
       </div>
 

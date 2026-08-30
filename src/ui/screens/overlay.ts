@@ -11,7 +11,8 @@ export interface OverlaySpec {
   /** Set when the body carries markup rather than plain text. */
   html?: boolean;
   primary: OverlayAction;
-  secondary?: OverlayAction;
+  /** Omit for the default way out; `null` for a panel with one button. */
+  secondary?: OverlayAction | null;
 }
 
 /** The full-screen panel used for results, and for the rules. */
@@ -39,15 +40,21 @@ export class Overlay {
       spec.primary.action();
     };
 
-    const secondary = spec.secondary ?? {
-      label: "Menu",
-      action: this.onDefaultSecondary,
-    };
-    this.secondaryBtn.textContent = secondary.label;
-    this.secondaryBtn.onclick = () => {
-      this.close();
-      secondary.action();
-    };
+    // Omitting `secondary` gets the way out every panel needs; passing null
+    // says this panel genuinely has one button, which the rules do — they sit
+    // on top of whatever was happening, so closing them puts it back.
+    const secondary =
+      spec.secondary === null
+        ? null
+        : (spec.secondary ?? { label: "Menu", action: this.onDefaultSecondary });
+    this.secondaryBtn.classList.toggle("hidden", secondary === null);
+    if (secondary) {
+      this.secondaryBtn.textContent = secondary.label;
+      this.secondaryBtn.onclick = () => {
+        this.close();
+        secondary.action();
+      };
+    }
     this.root.classList.remove("hidden");
   }
 

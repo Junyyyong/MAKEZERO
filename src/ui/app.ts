@@ -160,7 +160,6 @@ export class App {
     el<HTMLButtonElement>("btn-back").addEventListener("click", () => this.leaveRun());
     el<HTMLButtonElement>("btn-pause").addEventListener("click", () => this.pause());
     el<HTMLButtonElement>("btn-title-tutorial").addEventListener("click", () => this.showTutorial());
-    el<HTMLButtonElement>("btn-title-gallery").addEventListener("click", () => this.showGallery());
     el<HTMLButtonElement>("btn-settings-rules").addEventListener("click", () => this.showRules());
     el<HTMLButtonElement>("btn-settings-tutorial").addEventListener("click", () => this.showTutorial());
 
@@ -736,13 +735,15 @@ export class App {
       title: "Rules",
       body: RULES_TEXT,
       html: true,
+      // One button. The rules sit on top of whatever the player was doing, so
+      // closing them puts that back — there is nowhere else to offer.
       primary: {
         label: "Close",
         action: () => {
           if (overResult) this.finishRun();
         },
       },
-      secondary: { label: "Menu", action: () => this.showTitle() },
+      secondary: null,
     });
   }
 }

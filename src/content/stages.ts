@@ -72,7 +72,12 @@ export const TIME_ATTACK_CONFIG: RunConfig = {
   splits: 0,
   starTargets: [0, 0, 0],
   timeLimitMs: 60_000,
-  autoRefill: true,
+  /*
+   * The board is a fixed nine-by-nine frame. Without this an emptied row
+   * collapses and the board shrinks under the player mid-run — and the reward
+   * that refills cleared squares needs those squares to still be there.
+   */
+  keepBoard: true,
 };
 
 /**

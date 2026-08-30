@@ -74,8 +74,8 @@
 }
 
 /* ── the end-of-run flourish ────────────────────────────────────────
-   One word over the board for a beat, before the results panel. It sits
-   above everything and takes no taps: it is a moment, not a screen. */
+   The board dims, one word lands over it, a character dances. It sits above
+   everything and takes no taps: it is a moment, not a screen. */
 .cheer {
   position: absolute;
   inset: 0;
@@ -83,66 +83,82 @@
   display: grid;
   place-items: center;
   pointer-events: none;
+  /* Half black. The board stays readable underneath — it is what was just
+     finished — but everything bright belongs to the word and the clip now. */
+  background: rgba(0, 0, 0, 0.5);
 }
 
 .cheer.hidden {
   display: none;
 }
 
-/* The artwork, if there is any, sits behind the word and is sized to the
-   screen's smaller side so it never crops. */
-.cheer-art {
-  grid-area: 1 / 1;
-  width: min(78vw, 340px);
-  height: auto;
+.cheer-run {
+  animation: cheer-dim 260ms ease both;
 }
 
-.cheer-art.hidden {
+@keyframes cheer-dim {
+  from { background: rgba(0, 0, 0, 0); }
+}
+
+/* The clip fills the screen's width and keeps its shape. It is layered under
+   the word, which is why both take the same grid cell. */
+.cheer-clip {
+  grid-area: 1 / 1;
+  width: min(92vw, 460px);
+  height: auto;
+  max-height: 62vh;
+  object-fit: contain;
+}
+
+.cheer-clip.hidden {
   display: none;
 }
 
 .cheer-word {
   grid-area: 1 / 1;
-  font-size: clamp(44px, 17vw, 96px);
+  align-self: center;
+  max-width: 100%;
+  padding: 0 14px;
+  /* Sized for the longest word it ever shows — "GOOD TRY!" — so none of them
+     run off the edges. An italic 900 face is about 0.6em a letter, and nine of
+     those have to fit inside the screen. */
+  font-size: clamp(30px, 11vw, 68px);
+  white-space: nowrap;
   font-weight: 900;
   font-style: italic;
   letter-spacing: 0.02em;
   color: var(--warm);
   text-shadow:
     0 3px 0 var(--hot-deep),
-    0 7px 14px var(--slab-hard);
-  -webkit-text-stroke: 3px var(--ink);
+    0 7px 22px rgba(0, 0, 0, 0.6);
+  -webkit-text-stroke: 3px #2a0a06;
   paint-order: stroke fill;
 }
 
-/* Lands hard, settles, lifts away. */
+/* Lands hard, settles, and stays — it has a clip to sit over now, so it holds
+   rather than lifting away on a timer of its own. */
 .cheer-run .cheer-word {
-  animation: cheer-pop 1400ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  animation: cheer-pop 620ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
-.cheer-run .cheer-art {
-  animation: cheer-fade 1400ms ease both;
+.cheer-run .cheer-clip {
+  animation: cheer-fade 400ms ease both;
 }
 
 @keyframes cheer-pop {
   0% { opacity: 0; transform: scale(0.3) rotate(-8deg); }
-  22% { opacity: 1; transform: scale(1.18) rotate(3deg); }
-  36% { transform: scale(0.96) rotate(-1deg); }
-  48% { transform: scale(1) rotate(0deg); }
-  78% { opacity: 1; transform: scale(1) translateY(0); }
-  100% { opacity: 0; transform: scale(1.06) translateY(-26px); }
+  50% { opacity: 1; transform: scale(1.18) rotate(3deg); }
+  76% { transform: scale(0.96) rotate(-1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
 }
 
 @keyframes cheer-fade {
-  0% { opacity: 0; transform: scale(0.8); }
-  20% { opacity: 1; transform: scale(1); }
-  80% { opacity: 1; }
-  100% { opacity: 0; }
+  from { opacity: 0; transform: scale(0.86); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cheer-run .cheer-word,
-  .cheer-run .cheer-art {
-    animation: cheer-fade 1400ms ease both;
+  .cheer-run .cheer-clip {
+    animation: cheer-fade 400ms ease both;
   }
 }
