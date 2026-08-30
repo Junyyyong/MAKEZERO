@@ -1,5 +1,5 @@
 import { aliveCount } from "../core/board";
-import { canSplit, commitSelection, newGame, splitTile, tick, undo, useHint } from "../core/game";
+import { canSplit, commitSelection, newGame, payoutFor, splitTile, tick, undo, useHint } from "../core/game";
 import type { GameState } from "../core/game";
 import { isSelectionValid } from "../core/rules";
 import type { GameMode, RunConfig } from "../core/types";
@@ -390,22 +390,20 @@ export class App {
    * player racing a timer will notice on their own.
    */
   private announceReward(before: GameState, after: GameState): void {
-    if (after.config.mode !== "timeAttack") return;
+    const payout = payoutFor(after, before.score);
+    if (payout === "none") return;
 
-    if (after.remainingMs > before.remainingMs) {
-      // A whole new board arrived with the extra time, so the view is
-      // re-pointed rather than synced.
-      this.view.setBoard(after.board);
+    // Either way the board is not the one the view is holding — a fresh deck,
+    // or old squares that have come back to life — so it is re-pointed rather
+    // than synced.
+    this.view.setBoard(after.board);
+    if (payout === "extension") {
       feedback.complete();
       this.flashNotice("+30초 · 새 판!");
       return;
     }
-    const added = after.board.cells.length - before.board.cells.length;
-    if (added > 0) {
-      this.view.setBoard(after.board);
-      feedback.item();
-      this.flashNotice(`작은 블록 ${added}개 추가!`);
-    }
+    feedback.item();
+    this.flashNotice("빈칸에 작은 블록이 채워졌어요!");
   }
 
   private flashNotice(text: string): void {

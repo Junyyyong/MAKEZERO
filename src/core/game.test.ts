@@ -362,23 +362,67 @@ describe("time attack rewards", () => {
     return { ...base, score, ...(board ? { board } : {}) };
   };
 
-  it("adds a row of small tiles every hundred points", () => {
-    const before = run(96);
-    const { state } = commitSelection(before, findHint(before.board)!);
-    // 96 -> at least 106, so one threshold is crossed and one row lands.
+  /**
+   * A board with cleared squares scattered through it.
+   *
+   * Scattered, not contiguous: time attack drops any row whose every tile is
+   * gone, so a solid block of holes would collapse away before the refill
+   * ever saw it.
+   */
+  const withHoles = (score: number, every: number): GameState => {
+    const base = run(score);
+    const cells = base.board.cells.map((c, i) => ({ ...c, cleared: i % every === 0 }));
+    return { ...base, board: { width: base.board.width, cells } };
+  };
+  const holesIn = (state: GameState): number =>
+    state.board.cells.filter((c) => c.cleared).length;
+
+  it("refills nine cleared squares every hundred points", () => {
+    const before = withHoles(96, 3);
+    const picked = findHint(before.board)!;
+    const { state } = commitSelection(before, picked);
     expect(state.score).toBeGreaterThanOrEqual(100);
-    expect(state.board.cells.length).toBe(before.board.cells.length + 9);
-    const added = state.board.cells.slice(-9);
-    expect(added.every((c) => !c.cleared && c.value >= 1 && c.value <= 3)).toBe(true);
+
+    // The board is a fixed frame: squares come back to life, none are added.
+    expect(state.board.cells.length).toBe(before.board.cells.length);
+    // The move opened as many holes as it cleared tiles; nine were then filled.
+    expect(holesIn(state)).toBe(holesIn(before) + picked.length - 9);
+  });
+
+  it("refills with ones, twos and threes only", () => {
+    const before = withHoles(96, 3);
+    const picked = findHint(before.board)!;
+    // Every square that is a hole by the time the reward runs: the ones that
+    // were already open, and the ones this very move just opened.
+    const open = new Set([
+      ...before.board.cells.flatMap((c, i) => (c.cleared ? [i] : [])),
+      ...picked,
+    ]);
+    const { state } = commitSelection(before, picked);
+    const revived = state.board.cells.filter((c, i) => open.has(i) && !c.cleared);
+    expect(revived.length).toBe(9);
+    expect(revived.every((c) => c.value >= 1 && c.value <= 3)).toBe(true);
+  });
+
+  it("gives back only what there is room for", () => {
+    // A nearly full board owes nine and has fewer than nine holes to put them
+    // in. It fills what it has and stops — it never grows to make room.
+    const base = run(96);
+    const cells = base.board.cells.map((c, i) => ({ ...c, cleared: i === 4 || i === 40 }));
+    const before: GameState = { ...base, board: { width: base.board.width, cells } };
+    const picked = findHint(before.board)!;
+    const { state } = commitSelection(before, picked);
+    expect(state.board.cells.length).toBe(before.board.cells.length);
+    expect(2 + picked.length).toBeLessThan(9);
+    expect(holesIn(state)).toBe(0);
   });
 
   it("adds nothing when no hundred is crossed", () => {
-    const before = run(10);
-    const { state } = commitSelection(before, findHint(before.board)!);
+    const before = withHoles(10, 3);
+    const picked = findHint(before.board)!;
+    const { state } = commitSelection(before, picked);
     expect(state.score).toBeLessThan(100);
-    // Rows of fully cleared tiles collapse away, so the board may shrink —
-    // what must not happen is tiles being added.
-    expect(state.board.cells.length).toBeLessThanOrEqual(before.board.cells.length);
+    expect(holesIn(state)).toBe(holesIn(before) + picked.length);
   });
 
   it("buys thirty seconds and a fresh board at five hundred", () => {
