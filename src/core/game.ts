@@ -70,9 +70,11 @@ export interface CommitOutcome {
  * was clearing well simply ran out of tiles faster. Both rewards are paid in
  * the currency the mode is short of.
  *
- * Every hundred points adds nine low tiles — nine is exactly one row on a
- * nine-wide board, and 1s, 2s and 3s are what long combinations are always
- * starved of, so the reward is fuel rather than clutter.
+ * Every hundred points refills nine squares that have already been cleared —
+ * 1s, 2s and 3s, which are what long combinations are always starved of, so
+ * the reward is fuel rather than clutter. It fills holes rather than adding
+ * cells: the board is a fixed frame the player has learned to read, and one
+ * that grew a row every hundred points would be a different board each time.
  *
  * Five hundred points buys thirty seconds and a whole fresh board. It is the
  * bigger prize and it is once per run: a second extension would turn a good
@@ -233,11 +235,12 @@ export function commitSelection(state: GameState, indices: readonly number[]): C
  * so a threshold is crossed exactly once.
  */
 function reward(state: GameState, before: number): GameState {
-  if (state.config.mode !== "timeAttack") return state;
+  const payout = payoutFor(state, before);
+  if (payout === "none") return state;
 
   // The extension wins when both land on the same clear — a fresh board makes
-  // the row of small tiles that would have been added moot.
-  if (before < EXTENSION_AT && state.score >= EXTENSION_AT) {
+  // the tiles that would have been refilled moot.
+  if (payout === "extension") {
     const dealt = dealBoard(state.config, state.nextSeed);
     return {
       ...state,
@@ -247,15 +250,52 @@ function reward(state: GameState, before: number): GameState {
     };
   }
 
-  const rows = Math.floor(state.score / BONUS_EVERY) - Math.floor(before / BONUS_EVERY);
-  if (rows <= 0) return state;
+  const rounds = Math.floor(state.score / BONUS_EVERY) - Math.floor(before / BONUS_EVERY);
+  if (rounds <= 0) return state;
+
+  // Only squares that have been cleared can be refilled, and there may be
+  // fewer of them than the reward would like — a board that is nearly full
+  // simply gets less back, which is the right way round.
+  const holes: number[] = [];
+  state.board.cells.forEach((cell, i) => {
+    if (cell.cleared) holes.push(i);
+  });
+  if (holes.length === 0) return state;
 
   const rng = mulberry32(state.nextSeed);
-  const cells = [...state.board.cells];
-  for (let i = 0; i < rows * BONUS_TILES; i++) {
-    cells.push({ value: BONUS_VALUES[Math.floor(rng() * BONUS_VALUES.length)]!, cleared: false });
+  // Fisher-Yates as far as we need: the holes must be picked evenly, or the
+  // refill always lands at the top of the board.
+  const wanted = Math.min(rounds * BONUS_TILES, holes.length);
+  for (let i = 0; i < wanted; i++) {
+    const j = i + Math.floor(rng() * (holes.length - i));
+    [holes[i], holes[j]] = [holes[j]!, holes[i]!];
+  }
+
+  const cells = state.board.cells.map((cell) => ({ ...cell }));
+  for (let i = 0; i < wanted; i++) {
+    cells[holes[i]!] = {
+      value: BONUS_VALUES[Math.floor(rng() * BONUS_VALUES.length)]!,
+      cleared: false,
+    };
   }
   return { ...state, board: { width: state.board.width, cells }, nextSeed: state.nextSeed + 1 };
+}
+
+/** What crossing from one score to another earns. Time attack only. */
+export type Payout = "none" | "tiles" | "extension";
+
+/**
+ * Reads a score change for the reward it just triggered.
+ *
+ * `reward` acts on this and the HUD announces it, so the rule lives in one
+ * place — a screen that decided for itself when a hundred had been crossed
+ * would drift the moment the thresholds moved.
+ */
+export function payoutFor(state: GameState, before: number): Payout {
+  if (state.config.mode !== "timeAttack") return "none";
+  if (before < EXTENSION_AT && state.score >= EXTENSION_AT) return "extension";
+  if (Math.floor(state.score / BONUS_EVERY) > Math.floor(before / BONUS_EVERY)) return "tiles";
+  return "none";
 }
 
 export interface HintOutcome {
