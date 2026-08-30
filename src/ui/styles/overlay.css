@@ -81,7 +81,7 @@
   inset: 0;
   z-index: 6;
   display: grid;
-  grid-template-rows: auto auto;
+  grid-template-rows: auto auto auto;
   align-content: center;
   justify-items: center;
   gap: 3vh;
@@ -93,6 +93,36 @@
 
 .cheer.hidden {
   display: none;
+}
+
+/*
+ * Once the clip has played out the screen starts taking taps — until then it
+ * lets them through, so a stray finger during the dance cannot skip it before
+ * the player has seen anything.
+ */
+.cheer-hold {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.cheer-tap {
+  grid-row: 3;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: rgba(255, 255, 255, 0.82);
+  text-transform: uppercase;
+  animation: cheer-blink 1.6s ease-in-out infinite;
+}
+
+.cheer-tap.hidden {
+  display: none;
+}
+
+@keyframes cheer-blink {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
 }
 
 .cheer-run {
@@ -112,6 +142,9 @@
  */
 .cheer-clip {
   grid-row: 2;
+  /* A video element paints its own ground where the picture is transparent.
+     Saying so explicitly costs nothing and rules it out as a suspect. */
+  background: transparent;
   width: min(86vw, 420px);
   height: auto;
   max-height: 48vh;
