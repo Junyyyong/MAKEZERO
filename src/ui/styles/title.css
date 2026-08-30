@@ -1,33 +1,24 @@
 /* Mode picker: wordmark, mode buttons, rules link. */
 /* title ─────────────────────────────────────────────────────── */
 
+/*
+ * The cover, edge to edge.
+ *
+ * It is a full-bleed illustration rather than a mark on a background, so it
+ * ignores the safe-area padding every other screen keeps and is cropped to
+ * whatever shape the phone is. Its own pale ground shows through any sliver
+ * the crop leaves.
+ */
 .splash-screen {
-  align-items: center;
-  justify-content: center;
-  gap: 28px;
+  padding: 0;
+  background: #fff;
 }
 
-/* The wordmark, on the way in. The same file the title screen uses, so the
-   splash resolves into the title rather than being replaced by it. */
-.splash-mark {
-  width: min(72vw, 300px);
-  height: auto;
-  filter: drop-shadow(0 12px 28px rgba(20, 8, 50, 0.7));
-  animation: splash-rise 700ms cubic-bezier(.2,.8,.2,1) both;
-}
-
-.splash-pulse {
-  display: grid;
-  width: 68px;
-  height: 68px;
-  place-items: center;
-  font-size: 25px;
-  font-weight: 900;
-  color: var(--tile-ink);
-  background: var(--tile-face);
-  border-radius: 16px;
-  box-shadow: 0 10px 24px rgba(8, 1, 18, 0.35);
-  animation: splash-breathe 1.3s ease-in-out infinite;
+.splash-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .title-screen {
@@ -58,10 +49,11 @@
 }
 
 /*
- * The wordmark is a picture, not type: it is built out of the same blocks the
- * game is, which no font could do. public/logo.webp is the artwork, trimmed
- * to its own edges so the layout can align to the letters and not to a
- * margin baked into the file.
+ * The wordmark is drawn artwork, not type — public/cover-logo.svg. It is
+ * vector, so it is sized freely and stays sharp at any density, and it is
+ * trimmed to its own edges so the layout aligns to the letters rather than to
+ * a margin baked into the file. It is taller than it is wide, which is why
+ * the widths below are far smaller than the ones the old landscape mark used.
  */
 .brand {
   margin: 0;
@@ -69,7 +61,7 @@
 }
 
 .brand-mark {
-  width: min(80vw, 320px);
+  width: min(52vw, 190px);
   height: auto;
   /* A little of the night thrown back up at it, so it sits on the background
      rather than on top of it. */
@@ -211,7 +203,7 @@
  */
 @media (max-height: 700px) {
   .brand-mark {
-    width: min(66vw, 260px);
+    width: min(42vw, 155px);
   }
 
   .collection-strip {
@@ -225,7 +217,7 @@
 
 @media (max-height: 580px) {
   .brand-mark {
-    width: min(52vw, 200px);
+    width: min(34vw, 120px);
   }
 
   .title-collection {

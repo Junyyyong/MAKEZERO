@@ -13,16 +13,17 @@
   <body>
     <div id="app">
       <!-- ── splash ────────────────────────────────────────────── -->
+      <!-- The cover art fills the screen edge to edge. It already carries the
+           wordmark and the cast, so nothing is drawn on top of it. -->
       <section class="screen splash-screen" id="screen-splash" aria-label="TAP to TEN 시작">
-        <img class="splash-mark" src="./logo.webp" alt="TAP to TEN" width="900" height="626" />
-        <div class="splash-pulse" aria-hidden="true">10</div>
+        <img class="splash-cover" src="./cover.webp" alt="TAP to TEN" width="1080" height="2418" />
       </section>
 
       <!-- ── title ─────────────────────────────────────────────── -->
       <section class="screen title-screen hidden" id="screen-title">
         <div class="brand-block">
           <h1 class="brand">
-            <img class="brand-mark" src="./logo.webp" alt="TAP to TEN" width="900" height="626" />
+            <img class="brand-mark" src="./cover-logo.svg" alt="TAP to TEN" width="618" height="726" />
           </h1>
         </div>
 
