@@ -175,7 +175,17 @@ export class App {
      * block on the same pointer down, and a bubbling listener would run
      * after it — leaving the very first block of a session silent.
      */
-    document.addEventListener("pointerdown", () => feedback.unlock(), { capture: true });
+    document.addEventListener(
+      "pointerdown",
+      () => {
+        feedback.unlock();
+        // The end-of-run clip's soundtrack rides on the same permission, and
+        // it starts from a timer rather than a touch, so it has to be woken
+        // here too. See Cheer.unlock.
+        this.cheer.unlock();
+      },
+      { capture: true },
+    );
     // Anything the player deliberately pressed clicks back — except the
     // buttons that already say something more specific than "pressed".
     document.addEventListener("click", (event) => {

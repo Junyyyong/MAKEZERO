@@ -82,31 +82,24 @@
   z-index: 6;
   display: grid;
   /*
-   * Three fixed slots, filled or not.
+   * Rows sized by what is in them, not by a number picked in advance.
    *
-   * The rows used to size themselves to whatever was in them, so the word
-   * landed, then the clip appeared and pushed it up, then the tap prompt
-   * appeared and pushed it up again — the whole thing drifted while the player
-   * watched. Every slot now reserves its room from the start and nothing in
-   * here ever moves.
-   */
-  /*
-   * Rows in percentages of this box, never in `vh`.
+   * The word's row was a flat `1.2em` — of this element's font size, about
+   * 19px — while the word itself is set at 11vw, around 43px. The text
+   * overflowed its own box and ran down into the clip, which is what put the
+   * dancer over the prompt. Nothing here is measured in `em`, `vh` or
+   * percentages any more: the word and the prompt take exactly the room they
+   * need, the clip takes everything left, and the three together are the box.
+   * Nothing can overflow because nothing is guessed.
    *
-   * On iOS `vh` measures the largest the viewport ever gets — the height with
-   * the browser bars retracted — not the height on screen right now. The
-   * middle row was therefore taller than the box holding it, the whole group
-   * overflowed, and the dancer sat low. This box is `inset: 0` on the app,
-   * so a percentage of it is always the room actually available.
+   * They still never move, which was the point of the fixed slots: all three
+   * are always present, hidden with `visibility` rather than `display`.
    */
-  /* One full-width column, stated. Left implicit it sized itself to its
-     contents, which put the score card in a narrow box against the left
-     edge with its headline wrapped. */
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 1.2em minmax(0, 52%) 1.6em;
-  align-content: center;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   justify-items: center;
-  gap: 18px;
+  gap: 16px;
+  padding: 24px 0;
   pointer-events: none;
   /* Half black. The board stays readable underneath — it is what was just
      finished — but everything bright belongs to the word and the clip now. */
@@ -233,12 +226,14 @@
 .cheer-clip {
   grid-column: 1;
   grid-row: 2;
+  align-self: center;
   /* A video element paints its own ground where the picture is transparent.
      Saying so explicitly costs nothing and rules it out as a suspect. */
   background: transparent;
   /* Fills its slot rather than sizing it: a clip of any shape lands in the
      same place, and swapping one for another moves nothing. */
   width: min(86vw, 420px);
+  max-width: 100%;
   height: 100%;
   object-fit: contain;
 }
