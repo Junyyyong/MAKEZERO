@@ -128,9 +128,29 @@ html {
   overscroll-behavior: none;
 }
 
+/*
+ * The app is exactly as tall as the screen actually is, right now.
+ *
+ * `inset: 0` on a fixed element measures the initial containing block, and on
+ * iOS Safari that is the viewport at its *tallest* — the height it would have
+ * with the address bar retracted. The app was therefore taller than what was
+ * on screen: the bottom of the board sat under the browser chrome, and
+ * anything centred in it (the end-of-run flourish, most visibly) was pushed
+ * down by half the difference.
+ *
+ * `dvh` is the height at this moment and shrinks and grows with the bars.
+ * The `100%` above it is the fallback for anything that does not know `dvh`,
+ * where the old behaviour was correct anyway.
+ */
 body {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  height: 100dvh;
+  /* Measured, when the browser will tell us — see ui/viewport.ts. */
+  height: var(--app-h, 100dvh);
   margin: 0;
   overflow: hidden;
 }
