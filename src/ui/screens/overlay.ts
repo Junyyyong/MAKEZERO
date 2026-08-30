@@ -40,7 +40,7 @@ export class Overlay {
     };
 
     const secondary = spec.secondary ?? {
-      label: "모드 선택",
+      label: "Menu",
       action: this.onDefaultSecondary,
     };
     this.secondaryBtn.textContent = secondary.label;

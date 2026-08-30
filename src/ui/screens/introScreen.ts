@@ -29,8 +29,8 @@ export class IntroScreen {
     this.mark.textContent = timed ? "60" : "∞";
     this.mark.classList.toggle("endless", !timed);
     this.note.textContent = timed
-      ? "60초 안에 최대한 많이 지우세요"
-      : "블록이 계속 쌓입니다. 가득 차면 끝";
+      ? "Clear as much as you can in 60 seconds"
+      : "Blocks keep coming. It ends when the board fills";
 
     const rows: [string, string][] = timed
       ? [["BEST SCORE", progress.bestTimeAttack.toLocaleString()]]

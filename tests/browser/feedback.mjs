@@ -73,13 +73,11 @@ async function open(settings) {
   );
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForTimeout(2400);
-  await page.click("#mode-story");
+  // Time attack: a full board, so a sweep across the first row always has
+  // something to pick up.
+  await page.click("#mode-timeAttack");
   await page.waitForTimeout(300);
-  await page.locator(".chapter-row:not(.shut)").last().click();
-  await page.waitForTimeout(280);
-  await page.locator(".stage-cell:not(.shut)").last().click();
-  await page.waitForTimeout(280);
-  await page.click("#btn-card-start");
+  await page.click("#btn-intro-start");
   await page.waitForTimeout(450);
 }
 
@@ -118,17 +116,17 @@ async function sweepRow() {
   const s = await spy();
 
   // One sound per block picked, plus the chord for the outcome.
-  if (s.notes < picked) fail(`효과음: 블록 ${picked}개를 골랐는데 소리는 ${s.notes}번`);
-  else ok(`효과음 — 블록 ${picked}개 + ${made ? "지움" : "거절"} = ${s.notes}개의 음`);
+  if (s.notes < picked) fail(`sound: ${picked} blocks picked but only ${s.notes} notes played`);
+  else ok(`sound — ${picked} picks + ${made ? "clear" : "refusal"} = ${s.notes} notes`);
 
-  if (s.buzz.length < picked) fail(`진동: 블록 ${picked}개를 골랐는데 진동은 ${s.buzz.length}번`);
-  else ok(`진동 — ${s.buzz.length}번 (마지막 ${JSON.stringify(s.buzz.at(-1))})`);
+  if (s.buzz.length < picked) fail(`vibration: ${picked} blocks picked but only ${s.buzz.length} buzzes`);
+  else ok(`vibration — ${s.buzz.length} buzzes (last ${JSON.stringify(s.buzz.at(-1))})`);
 
   // A refusal must not feel like a success. It is the one pattern that is a
   // sequence rather than a single short tick.
   const last = s.buzz.at(-1);
-  if (!made && !Array.isArray(last)) fail("거절인데 진동이 단발입니다 — 성공과 구분되지 않습니다");
-  else ok(made ? "지웠을 때의 진동은 성공 패턴" : "거절은 짧은 두 번 — 성공과 다릅니다");
+  if (!made && !Array.isArray(last)) fail("a refusal buzzed once — indistinguishable from success");
+  else ok(made ? "a clear buzzes with the success pattern" : "a refusal is two short knocks — not the success one");
 }
 
 // ── sound off, haptics on ──────────────────────────────────────────────
@@ -137,10 +135,10 @@ async function sweepRow() {
   await reset();
   await sweepRow();
   const s = await spy();
-  if (s.notes > 0) fail(`효과음을 껐는데 ${s.notes}번 울렸습니다`);
-  else ok("효과음 끄기 — 아무 소리도 나지 않습니다");
-  if (s.buzz.length === 0) fail("효과음만 껐는데 진동까지 멈췄습니다");
-  else ok("효과음만 꺼도 진동은 남습니다");
+  if (s.notes > 0) fail(`sound is off but ${s.notes} notes played`);
+  else ok("sound off — nothing plays");
+  if (s.buzz.length === 0) fail("only sound was turned off, but the vibration stopped too");
+  else ok("turning off sound leaves vibration alone");
 }
 
 // ── haptics off, sound on ──────────────────────────────────────────────
@@ -149,10 +147,10 @@ async function sweepRow() {
   await reset();
   await sweepRow();
   const s = await spy();
-  if (s.buzz.length > 0) fail(`진동을 껐는데 ${s.buzz.length}번 울렸습니다`);
-  else ok("진동 끄기 — 전혀 울리지 않습니다");
-  if (s.notes === 0) fail("진동만 껐는데 소리까지 멈췄습니다");
-  else ok("진동만 꺼도 소리는 남습니다");
+  if (s.buzz.length > 0) fail(`vibration is off but it buzzed ${s.buzz.length} times`);
+  else ok("vibration off — it never buzzes");
+  if (s.notes === 0) fail("only vibration was turned off, but the sound stopped too");
+  else ok("turning off vibration leaves sound alone");
 }
 
 // ── the switches themselves ────────────────────────────────────────────
@@ -168,12 +166,12 @@ async function sweepRow() {
   const off = await page.getAttribute("#switch-sound", "aria-checked");
   const stored = await page.evaluate(() => localStorage.getItem("makezero.settings.v1"));
   if (off !== "false" || !stored?.includes('"soundOn":false')) {
-    fail(`설정 스위치가 저장되지 않았습니다 (aria-checked=${off}, 저장 ${stored})`);
+    fail(`the settings switch did not save (aria-checked=${off}, stored ${stored})`);
   } else {
-    ok("설정 스위치는 화면과 저장소 양쪽을 바꿉니다");
+    ok("the settings switch changes both the screen and storage");
   }
 }
 
-if (errors.length) for (const e of errors) fail(`페이지 오류: ${e}`);
-else ok("소리·진동 중 페이지 오류 없음");
+if (errors.length) for (const e of errors) fail(`page error: ${e}`);
+else ok("no page errors during sound and vibration");
 await browser.close();

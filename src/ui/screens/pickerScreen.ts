@@ -74,7 +74,7 @@ export class PickerScreen {
 
       const count = document.createElement("span");
       count.className = "chapter-count";
-      count.textContent = open ? `${held} / ${STAGES_PER_CHAPTER}` : "잠김";
+      count.textContent = open ? `${held} / ${STAGES_PER_CHAPTER}` : "Locked";
 
       row.append(name, count);
       if (open) {

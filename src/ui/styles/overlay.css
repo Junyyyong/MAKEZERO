@@ -72,3 +72,77 @@
   --btn-face: var(--stop);
   --btn-deep: var(--stop-deep);
 }
+
+/* ── the end-of-run flourish ────────────────────────────────────────
+   One word over the board for a beat, before the results panel. It sits
+   above everything and takes no taps: it is a moment, not a screen. */
+.cheer {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.cheer.hidden {
+  display: none;
+}
+
+/* The artwork, if there is any, sits behind the word and is sized to the
+   screen's smaller side so it never crops. */
+.cheer-art {
+  grid-area: 1 / 1;
+  width: min(78vw, 340px);
+  height: auto;
+}
+
+.cheer-art.hidden {
+  display: none;
+}
+
+.cheer-word {
+  grid-area: 1 / 1;
+  font-size: clamp(44px, 17vw, 96px);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  color: var(--warm);
+  text-shadow:
+    0 3px 0 var(--hot-deep),
+    0 7px 14px var(--slab-hard);
+  -webkit-text-stroke: 3px var(--ink);
+  paint-order: stroke fill;
+}
+
+/* Lands hard, settles, lifts away. */
+.cheer-run .cheer-word {
+  animation: cheer-pop 1400ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.cheer-run .cheer-art {
+  animation: cheer-fade 1400ms ease both;
+}
+
+@keyframes cheer-pop {
+  0% { opacity: 0; transform: scale(0.3) rotate(-8deg); }
+  22% { opacity: 1; transform: scale(1.18) rotate(3deg); }
+  36% { transform: scale(0.96) rotate(-1deg); }
+  48% { transform: scale(1) rotate(0deg); }
+  78% { opacity: 1; transform: scale(1) translateY(0); }
+  100% { opacity: 0; transform: scale(1.06) translateY(-26px); }
+}
+
+@keyframes cheer-fade {
+  0% { opacity: 0; transform: scale(0.8); }
+  20% { opacity: 1; transform: scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cheer-run .cheer-word,
+  .cheer-run .cheer-art {
+    animation: cheer-fade 1400ms ease both;
+  }
+}

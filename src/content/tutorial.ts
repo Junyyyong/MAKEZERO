@@ -27,8 +27,8 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
       [0, 3, 0],
       [2, 0, 0],
     ],
-    instruction: "숫자를 눌러 합이 10을 만들면 지워집니다.\n4와 6을 눌러보세요.",
-    reward: "그거예요! 합이 10이면 사라집니다.",
+    instruction: "Tap numbers that add up to 10 and they clear.\nTry 4 and 6.",
+    reward: "That's it! Add up to 10 and they go.",
   },
   {
     id: "three-tiles",
@@ -37,8 +37,8 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
       [0, 1, 0],
       [3, 0, 0],
     ],
-    instruction: "두 개가 아니어도 됩니다.\n2 + 3 + 5 를 눌러보세요.",
-    reward: "2개부터 5개까지 이을 수 있어요.",
+    instruction: "It does not have to be two.\nTry 2 + 3 + 5.",
+    reward: "You can join 2 to 5 blocks.",
   },
   {
     id: "same-number",
@@ -47,8 +47,8 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
       [0, 0, 0],
       [0, 4, 0],
     ],
-    instruction: "3 + 3 은 6이라 지워지지 않아요.\n4까지 함께 눌러보세요.",
-    reward: "같은 숫자끼리는 안 되지만, 합이 10이면 됩니다.",
+    instruction: "3 + 3 is 6, so nothing happens.\nAdd the 4 as well.",
+    reward: "Matching numbers do nothing. Adding to 10 does.",
   },
   {
     id: "anywhere",
@@ -57,8 +57,8 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
       [0, 4, 0, 4, 0],
       [0, 0, 4, 0, 1],
     ],
-    instruction: "멀리 떨어져 있어도 괜찮아요.\n9와 1을 눌러보세요.",
-    reward: "어느 칸이든 함께 고를 수 있습니다.",
+    instruction: "They can be far apart.\nTry 9 and 1.",
+    reward: "Any squares can go together.",
   },
   {
     id: "long-chain",
@@ -66,7 +66,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
       [1, 0, 2, 0, 3],
       [0, 2, 0, 2, 0],
     ],
-    instruction: "많이 이을수록 점수가 큽니다.\n다섯 개를 모두 눌러보세요.",
-    reward: "2개 10점 · 3개 20점 · 4개 40점 · 5개 80점!",
+    instruction: "The more you join, the more you score.\nTap all five.",
+    reward: "2 blocks 10 · 3 blocks 20 · 4 blocks 40 · 5 blocks 80!",
   },
 ];

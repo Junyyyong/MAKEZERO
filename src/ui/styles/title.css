@@ -2,32 +2,34 @@
 /* title ─────────────────────────────────────────────────────── */
 
 /*
- * The cover, whole.
+ * The cover, matched to the width of the screen and centred.
  *
- * `contain`, not `cover`. Phones are not one shape — a 13 mini is 0.462 wide
- * for its height, a 15 is 0.461, an SE 0.562 — so any single image cropped to
- * fit loses a different slice on every one of them, and on a portrait cover
- * that slice comes off the top and bottom, which is exactly where the
- * wordmark and the studio mark are.
- *
- * Letterboxing normally trades that for visible bars. Here it does not: the
- * artwork's own ground is white and so is the screen behind it, so the bars
- * are the same colour as the picture's edges and cannot be seen. Nothing is
- * ever cut, on any device, and there is nothing to notice.
- *
- * It also ignores the safe-area padding every other screen keeps — a
- * full-bleed illustration has no business insetting itself.
+ * Not `contain`, which shrinks the picture to fit the shorter dimension and
+ * leaves it small on a tall phone. The artwork carries generous white margins
+ * above and below precisely so the width can always be filled: whatever the
+ * screen's height, the picture spans it edge to edge, sits centred, and any
+ * overflow is white margin being cropped rather than art.
  */
 .splash-screen {
+  position: relative;
   padding: 0;
+  overflow: hidden;
   background: #fff;
 }
 
+/*
+ * Pinned and translated rather than centred by the flex column: an auto
+ * margin gives up and snaps to the top the moment the item is taller than the
+ * box, which is exactly the case that matters — a short phone would crop the
+ * whole overflow off the bottom instead of half from each end.
+ */
 .splash-cover {
+  position: absolute;
+  top: 50%;
+  left: 0;
   width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: center;
+  height: auto;
+  transform: translateY(-50%);
 }
 
 .title-screen {

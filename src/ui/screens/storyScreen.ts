@@ -32,7 +32,7 @@ export class StoryScreen {
     this.titleEl.textContent = chapter.title;
     this.nameEl.textContent = chapter.characterName;
     this.lineEl.textContent = chapter.lines[this.line] ?? "";
-    this.nextBtn.textContent = this.line >= chapter.lines.length - 1 ? "계속하기" : "다음";
+    this.nextBtn.textContent = this.line >= chapter.lines.length - 1 ? "Continue" : "Next";
   }
 
   private advance(): void {
