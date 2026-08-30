@@ -90,10 +90,23 @@
    * watched. Every slot now reserves its room from the start and nothing in
    * here ever moves.
    */
-  grid-template-rows: 1.2em minmax(0, 46vh) 1.6em;
+  /*
+   * Rows in percentages of this box, never in `vh`.
+   *
+   * On iOS `vh` measures the largest the viewport ever gets — the height with
+   * the browser bars retracted — not the height on screen right now. The
+   * middle row was therefore taller than the box holding it, the whole group
+   * overflowed, and the dancer sat low. This box is `inset: 0` on the app,
+   * so a percentage of it is always the room actually available.
+   */
+  /* One full-width column, stated. Left implicit it sized itself to its
+     contents, which put the score card in a narrow box against the left
+     edge with its headline wrapped. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 1.2em minmax(0, 52%) 1.6em;
   align-content: center;
   justify-items: center;
-  gap: 3vh;
+  gap: 18px;
   pointer-events: none;
   /* Half black. The board stays readable underneath — it is what was just
      finished — but everything bright belongs to the word and the clip now. */
@@ -114,7 +127,72 @@
   cursor: pointer;
 }
 
+/*
+ * The first beat: what ended the run, in words, and what it was worth, in one
+ * big number. It fills the whole screen on its own — the word and the dance
+ * are the second beat and are not drawn yet.
+ */
+.cheer-card {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  align-self: center;
+  /* A plain centred block, not a nested grid: grid shrink-wrapped each line
+     to its own content and left them against one edge. Block children fill
+     the width and `text-align` does the rest. */
+  justify-self: stretch;
+  width: 100%;
+  padding: 0 18px;
+  text-align: center;
+  animation: cheer-card-in 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+
+.cheer-card.hidden {
+  display: none;
+}
+
+.cheer-headline {
+  margin: 0 0 10px;
+  font-size: clamp(26px, 9vw, 52px);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  color: #fff;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+}
+
+.cheer-score-label {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.28em;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.cheer-score {
+  margin: 0;
+  font-size: clamp(56px, 22vw, 132px);
+  font-weight: 900;
+  line-height: 1;
+  color: var(--warm);
+  text-shadow:
+    0 4px 0 var(--hot-deep),
+    0 10px 26px rgba(0, 0, 0, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes cheer-card-in {
+  from { opacity: 0; transform: scale(0.82); }
+}
+
+/* While the card is up the second beat stays out of the way entirely. */
+.cheer-card:not(.hidden) ~ .cheer-word,
+.cheer-card:not(.hidden) ~ .cheer-clip,
+.cheer-card:not(.hidden) ~ .cheer-tap {
+  visibility: hidden;
+}
+
 .cheer-tap {
+  grid-column: 1;
   grid-row: 3;
   /* Reserved from the first frame and revealed in place, so the prompt
      arriving does not shove the word and the clip upward. */
@@ -153,6 +231,7 @@
  * rest — and the pair is centred as a block.
  */
 .cheer-clip {
+  grid-column: 1;
   grid-row: 2;
   /* A video element paints its own ground where the picture is transparent.
      Saying so explicitly costs nothing and rules it out as a suspect. */
@@ -171,6 +250,7 @@
 }
 
 .cheer-word {
+  grid-column: 1;
   grid-row: 1;
   /* The row is a fixed 1.2em of this size, so the text sits in it rather than
      setting it — the pop animation is a transform and never touches layout. */

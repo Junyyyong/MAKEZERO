@@ -326,6 +326,12 @@
            Shown for a beat when a run ends, before the results panel. The
            artwork is optional: with no file the word carries it alone. -->
       <div class="cheer hidden" id="cheer" aria-hidden="true">
+        <!-- First beat: what ended the run, and what it was worth. -->
+        <div class="cheer-card" id="cheer-card">
+          <p class="cheer-headline" id="cheer-headline">TIME OUT</p>
+          <p class="cheer-score-label">SCORE</p>
+          <p class="cheer-score" id="cheer-score">0</p>
+        </div>
         <div class="cheer-word" id="cheer-word">GREAT!</div>
         <!-- The picture is muted and the sound is a separate track, because a
              video that carries its own audio is one a browser may refuse to

@@ -557,7 +557,7 @@ export class App {
     }
     feedback.fail();
     if (config.mode === "timeAttack") {
-      this.cheer.play(cheerFor(score), () =>
+      this.cheer.play("TIME OUT", score, cheerFor(score), () =>
         this.overlay.open({
           title: "Time up",
           body: `Score ${score}\nBest ${this.progress.bestTimeAttack}`,
@@ -570,7 +570,7 @@ export class App {
     // long the board was kept alive, so that is kept too.
     this.progress = recordEndlessTime(this.progress, this.state.elapsedMs);
     saveProgress(this.progress);
-    this.cheer.play(cheerFor(score), () =>
+    this.cheer.play("BOARD FULL", score, cheerFor(score), () =>
       this.overlay.open({
         title: "The board is full",
         body: `Score ${score}\nBest today ${this.daily.best}\nAll-time best ${this.progress.bestEndless}`,
