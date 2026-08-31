@@ -33,53 +33,46 @@ function clip(n: number): Clip {
 }
 
 /**
- * Which dance a run has earned.
+ * What a run has earned: what the flourish shouts, and which dance it plays.
  *
- * A dance that plays every time stops meaning anything, so the clips are
- * rationed by score: a first attempt and a best-ever run do not get the same
- * one, and the later ones only exist for people who get there. Highest band
- * first — the first one the score clears is the one that plays. A band may
- * hold several and then it draws one at random.
+ * A word and a dance that come every time stop meaning anything, so both are
+ * rationed by score — a first attempt and a best-ever run do not get the same
+ * ones, and the later ones only exist for people who get there. Highest band
+ * first: the first one the score clears is the one that plays. A band may hold
+ * several clips and then it draws one at random.
+ *
+ * One table, because the two ladders now change at the same scores. They were
+ * split while they did not, and can be split again the moment that is true —
+ * but while they agree, one table is the only way they cannot drift apart.
+ *
+ * The words can be any length: each is fitted to the screen when it is set, so
+ * a long one is drawn smaller rather than running off the edges.
  */
-const CLIP_TIERS: readonly { readonly at: number; readonly clips: readonly Clip[] }[] = [
-  { at: 1000, clips: [clip(2)] },
-  { at: 500, clips: [clip(4)] },
-  { at: 200, clips: [clip(3)] },
-  { at: 0, clips: [clip(1)] },
+const TIERS: readonly {
+  readonly at: number;
+  readonly word: string;
+  readonly clips: readonly Clip[];
+}[] = [
+  { at: 1400, word: "OH MY GOD~!", clips: [clip(5)] },
+  { at: 1000, word: "UNBELIEVABLE!!", clips: [clip(2)] },
+  { at: 600, word: "AMAZING!", clips: [clip(4)] },
+  { at: 300, word: "GREAT!", clips: [clip(3)] },
+  { at: 0, word: "GOOD TRY!", clips: [clip(1)] },
 ];
 
-/**
- * What the flourish says.
- *
- * A run that went well should not be congratulated in the same words as one
- * that ended on the first minute. These bands are not quite the clips' bands —
- * the words also change at 50, where the clip does not — and there is no reason
- * a new dance and a new word have to arrive together.
- *
- * They can be any length. The word is fitted to the screen when it is set, so
- * a long one is simply drawn smaller rather than running off the edges.
- */
-const WORD_TIERS: readonly { readonly at: number; readonly word: string }[] = [
-  { at: 1000, word: "UNBELIEVABLE!!" },
-  { at: 500, word: "AMAZING!" },
-  { at: 200, word: "GREAT!" },
-  { at: 50, word: "NICE!" },
-  { at: 0, word: "GOOD TRY!" },
-];
-
-/** The lowest score of the highest band, whichever ladder is asked. */
-function bandFor<T extends { at: number }>(tiers: readonly T[], score: number): T {
-  return tiers.find((tier) => score >= tier.at) ?? tiers[tiers.length - 1]!;
+/** The band a run worth this much falls in. */
+function bandFor(score: number): (typeof TIERS)[number] {
+  return TIERS.find((tier) => score >= tier.at) ?? TIERS[TIERS.length - 1]!;
 }
 
 /** Which clips a run worth this much may draw from. */
 export function poolFor(score: number): readonly Clip[] {
-  return bandFor(CLIP_TIERS, score).clips;
+  return bandFor(score).clips;
 }
 
 /** What to shout for a run worth this much. */
 export function cheerFor(score: number): string {
-  return bandFor(WORD_TIERS, score).word;
+  return bandFor(score).word;
 }
 
 /**
