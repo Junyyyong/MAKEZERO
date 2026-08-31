@@ -57,17 +57,6 @@ type Screen =
 /** How long the finished picture is held before the results panel. */
 const PLATE_HOLD_MS = 2000;
 
-/**
- * What the flourish says. A run that went well should not be congratulated in
- * the same words as one that ended on the first minute.
- */
-function cheerFor(score: number): string {
-  if (score >= 500) return "AMAZING!";
-  if (score >= 200) return "GREAT!";
-  if (score >= 50) return "NICE!";
-  return "GOOD TRY!";
-}
-
 /** Owns the run in progress and moves between screens. */
 export class App {
   private state: GameState;
@@ -567,7 +556,7 @@ export class App {
     }
     feedback.fail();
     if (config.mode === "timeAttack") {
-      this.cheer.play("TIME OUT", score, cheerFor(score), () =>
+      this.cheer.play("TIME OUT", score, () =>
         this.overlay.open({
           title: "Time up",
           body: `Score ${score}\nBest ${this.progress.bestTimeAttack}`,
@@ -580,7 +569,7 @@ export class App {
     // long the board was kept alive, so that is kept too.
     this.progress = recordEndlessTime(this.progress, this.state.elapsedMs);
     saveProgress(this.progress);
-    this.cheer.play("BOARD FULL", score, cheerFor(score), () =>
+    this.cheer.play("BOARD FULL", score, () =>
       this.overlay.open({
         title: "The board is full",
         body: `Score ${score}\nBest today ${this.daily.best}\nAll-time best ${this.progress.bestEndless}`,
