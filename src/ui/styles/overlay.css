@@ -107,11 +107,12 @@
    * The clip's row is the flexible one, so this comes out of its slack and
    * nothing else moves.
    */
-  padding: clamp(28px, calc(var(--app-h, 100dvh) * 0.08), 84px) 0 24px;
+  padding: clamp(56px, calc(var(--app-h, 100dvh) * 0.16), 150px) 0 24px;
   pointer-events: none;
-  /* Half black. The board stays readable underneath — it is what was just
-     finished — but everything bright belongs to the word and the clip now. */
-  background: rgba(0, 0, 0, 0.5);
+  /* Most of the way to black. The board is still there underneath — it is
+     what was just finished — but it has receded far enough that everything
+     bright on screen belongs to the word and the clip. */
+  background: rgba(0, 0, 0, 0.68);
 }
 
 .cheer.hidden {
