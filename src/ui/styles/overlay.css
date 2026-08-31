@@ -107,7 +107,7 @@
    * The clip's row is the flexible one, so this comes out of its slack and
    * nothing else moves.
    */
-  padding: clamp(56px, calc(var(--app-h, 100dvh) * 0.16), 150px) 0 24px;
+  padding: clamp(64px, calc(var(--app-h, 100dvh) * 0.22), 210px) 0 24px;
   pointer-events: none;
   /* Most of the way to black. The board is still there underneath — it is
      what was just finished — but it has receded far enough that everything
@@ -235,15 +235,26 @@
 .cheer-clip {
   grid-column: 1;
   grid-row: 2;
-  align-self: center;
+  /*
+   * Hung from the top of its slot rather than floated in the middle of it.
+   *
+   * The clip is nearly square — 960x944 — so fitting it into a tall slot left
+   * a band of nothing between the word and the dancer's head, and the two read
+   * as unrelated. The element takes the height its picture actually needs and
+   * starts right under the word, so the pair holds together; the slack all
+   * falls below, where there is nothing to look at anyway.
+   */
+  align-self: start;
   /* A video element paints its own ground where the picture is transparent.
      Saying so explicitly costs nothing and rules it out as a suspect. */
   background: transparent;
-  /* Fills its slot rather than sizing it: a clip of any shape lands in the
-     same place, and swapping one for another moves nothing. */
+  /* Wide as the screen allows, tall as that makes it — but never taller than
+     the slot, so a portrait clip is bounded by the same box every other one
+     lands in and the prompt below stays put. */
   width: min(86vw, 420px);
   max-width: 100%;
-  height: 100%;
+  height: auto;
+  max-height: 100%;
   object-fit: contain;
 }
 
