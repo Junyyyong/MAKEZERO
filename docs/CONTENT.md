@@ -196,28 +196,25 @@ localStorage.removeItem("makezero.progress.v1");
 줄을 더합니다.
 
 ```ts
-const CLIP_TIERS = [
-  { at: 1000, clips: [clip(2)] },
-  { at: 500, clips: [clip(4)] },
-  { at: 200, clips: [clip(3)] },
-  { at: 0, clips: [clip(1)] },
+const TIERS = [
+  { at: 1400, word: "OH MY GOD~!", clips: [clip(5)] },
+  { at: 1000, word: "UNBELIEVABLE!!", clips: [clip(2)] },
+  { at: 600, word: "AMAZING!", clips: [clip(4)] },
+  { at: 300, word: "GREAT!", clips: [clip(3)] },
+  { at: 0, word: "GOOD TRY!", clips: [clip(1)] },
 ];
 ```
 
-**점수에 따라 다른 춤이 나옵니다.** 위에서부터 내려가며 처음 넘긴 칸이 재생됩니다. 한 칸에
-여러 개를 넣으면 그 중에서 무작위로 하나를 고릅니다.
+**점수에 따라 글씨와 춤이 같이 바뀝니다.** 위에서부터 내려가며 처음 넘긴 칸이 나옵니다.
+한 칸에 영상을 여러 개 넣으면 그 중에서 무작위로 하나를 고릅니다.
 
-| 점수 | 영상 | 글씨 |
+| 점수 | 글씨 | 영상 |
 | --- | --- | --- |
-| 1000 이상 | 2번 | `UNBELIEVABLE!!` |
-| 500–999 | 4번 | `AMAZING!` |
-| 200–499 | 3번 | `GREAT!` |
-| 50–199 | 1번 | `NICE!` |
-| 0–49 | 1번 | `GOOD TRY!` |
-
-**글씨와 영상은 칸이 조금 다릅니다** — 글씨는 50 에서도 한 번 바뀝니다. 새 춤과 새 글씨가
-꼭 같이 나와야 할 이유는 없어서 따로 둡니다. 맞추고 싶으면 `cheer.ts` 의 `WORD_TIERS` 와
-`CLIP_TIERS` 를 같은 숫자로 두면 됩니다.
+| 1400 이상 | `OH MY GOD~!` | 5번 |
+| 1000–1399 | `UNBELIEVABLE!!` | 2번 |
+| 600–999 | `AMAZING!` | 4번 |
+| 300–599 | `GREAT!` | 3번 |
+| 0–299 | `GOOD TRY!` | 1번 |
 
 **글씨는 길어도 됩니다.** 화면에 걸 때 실제로 그려진 폭을 재서, 넘치는 만큼만 작게
 줄입니다(`Cheer.fitWord`). 짧은 글씨는 그대로 크게 나옵니다.
