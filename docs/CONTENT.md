@@ -196,30 +196,31 @@ localStorage.removeItem("makezero.progress.v1");
 줄을 더합니다.
 
 ```ts
-const CHEER_CLIPS: readonly Clip[] = [
-  { video: "./movie/3.webm", hevc: "./movie/3-hevc.mp4", sound: "./movie/3.mp3" },
-  { video: "./movie/4.webm", hevc: "./movie/4-hevc.mp4", sound: "./movie/4.mp3" },
-  // …
-];
-
-/** 500점 이상에서만 나오는 것들. */
-const TOP_CLIPS: readonly Clip[] = [
-  { video: "./movie/2.webm", hevc: "./movie/2-hevc.mp4", sound: "./movie/2.mp3" },
+const CLIP_TIERS = [
+  { at: 1000, clips: [clip(2)] },
+  { at: 500, clips: [clip(4)] },
+  { at: 200, clips: [clip(3)] },
+  { at: 0, clips: [clip(1)] },
 ];
 ```
 
-**목록이 두 개입니다.** 끝말은 점수에 따라 네 단계로 갈립니다.
+**점수에 따라 다른 춤이 나옵니다.** 위에서부터 내려가며 처음 넘긴 칸이 재생됩니다. 한 칸에
+여러 개를 넣으면 그 중에서 무작위로 하나를 고릅니다.
 
-| 점수 | 글씨 | 고르는 목록 |
+| 점수 | 영상 | 글씨 |
 | --- | --- | --- |
-| 500 이상 | `AMAZING!` | `TOP_CLIPS` |
-| 200–499 | `GREAT!` | `CHEER_CLIPS` |
-| 50–199 | `NICE!` | `CHEER_CLIPS` |
-| 0–49 | `GOOD TRY!` | `CHEER_CLIPS` |
+| 1000 이상 | 2번 | `AMAZING!` |
+| 500–999 | 4번 | `AMAZING!` |
+| 200–499 | 3번 | `GREAT!` |
+| 50–199 | 1번 | `NICE!` |
+| 0–49 | 1번 | `GOOD TRY!` |
 
-**`TOP_CLIPS` 는 최고 등급에서만 나옵니다** — 매번 나오는 춤은 금방 아무 의미가 없어지니까요.
-비워 두면 500점을 넘겨도 그냥 `CHEER_CLIPS` 에서 고릅니다. 단계 표는
-`src/ui/screens/cheer.ts` 의 `TIERS` 한 곳에만 있고, 글씨와 영상이 같은 숫자를 씁니다.
+**글씨와 영상은 칸이 다릅니다** — 글씨는 50/200/500, 영상은 200/500/1000. 새 춤과 새 글씨가
+꼭 같이 나와야 할 이유는 없어서 따로 둡니다. 맞추고 싶으면 `cheer.ts` 의 `WORD_TIERS` 와
+`CLIP_TIERS` 를 같은 숫자로 두면 됩니다.
+
+**파일 이름 규칙**: `n.webm`(안드로이드) · `n-hevc.mp4`(아이폰) · `n.mp3`(소리). `clip(n)`
+이 세 벌을 한꺼번에 만들어 줍니다.
 
 **매번 하나를 무작위로 골라 재생합니다.** 목록이 비면 글씨만 1.4초 나오고 넘어가므로,
 영상이 없어도 게임은 멀쩡합니다.
