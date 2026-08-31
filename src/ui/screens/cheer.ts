@@ -15,15 +15,39 @@ import { el } from "../dom";
  * to look right. See docs/CONTENT.md for what to hand over.
  */
 interface Clip {
-  /** The picture, muted. */
+  /** The picture, muted. VP9-with-alpha in a WebM. */
   video: string;
+  /** The same picture as HEVC-with-alpha, for Apple's engine. Optional. */
+  hevc?: string;
   /** Its soundtrack, the same length. Optional. */
   sound?: string;
 }
 
 const CHEER_CLIPS: readonly Clip[] = [
-  { video: "./movie/3.webm", sound: "./movie/3.mp3" },
+  { video: "./movie/3.webm", hevc: "./movie/3-hevc.mp4", sound: "./movie/3.mp3" },
 ];
+
+/**
+ * Whether to hand this browser the HEVC copy instead of the WebM.
+ *
+ * There is no one video format that is transparent everywhere. Chromium and
+ * Firefox read the alpha channel out of VP9-in-WebM and nothing else; Apple's
+ * engine reads it out of HEVC-in-MP4 and nothing else. Safari will happily
+ * *play* the WebM — iOS 17.4 added it — it just throws the transparency away
+ * and paints the picture on white, which is what put a white card behind the
+ * dancer on the iPhone.
+ *
+ * So this cannot be a feature test: both engines say yes to the file that
+ * looks wrong on them. It asks which engine it is instead. Chromium on some
+ * Android hardware plays HEVC too, and it is the one that wants the WebM, so
+ * it is named and excluded — iOS Chrome, which is Apple's engine wearing a
+ * different badge, says `CriOS` and is not caught by that.
+ */
+const WANTS_HEVC = ((): boolean => {
+  if (typeof document === "undefined") return false;
+  if (!document.createElement("video").canPlayType('video/mp4; codecs="hvc1"')) return false;
+  return !/Chrom(e|ium)|Android/i.test(navigator.userAgent);
+})();
 
 /**
  * Four milliseconds of nothing, as a file.
@@ -160,7 +184,9 @@ export class Cheer {
     this.clip.classList.remove("hidden");
     // Muted and inline, so this is allowed without a gesture; a refusal still
     // lands on `finish` rather than stalling the run.
-    void start(this.clip, pick.video).catch(() => this.finish());
+    void start(this.clip, WANTS_HEVC && pick.hevc ? pick.hevc : pick.video).catch(() =>
+      this.finish(),
+    );
 
     // The two tracks are the same length and both start here, which is as
     // close to in step as two elements get. Sound is a courtesy: if it will
