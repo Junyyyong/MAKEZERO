@@ -14,7 +14,7 @@ import { el } from "../dom";
  * on its own and holds for `WORD_ONLY_MS`, so the game never waits on an asset
  * to look right. See docs/CONTENT.md for what to hand over.
  */
-interface Clip {
+export interface Clip {
   /** The picture, muted. VP9-with-alpha in a WebM. */
   video: string;
   /** The same picture as HEVC-with-alpha, for Apple's engine. Optional. */
@@ -26,6 +26,45 @@ interface Clip {
 const CHEER_CLIPS: readonly Clip[] = [
   { video: "./movie/3.webm", hevc: "./movie/3-hevc.mp4", sound: "./movie/3.mp3" },
 ];
+
+/**
+ * Kept back for a run that reached the top band.
+ *
+ * A dance that plays every time stops meaning anything. These are the ones a
+ * player only sees for a real score, which is what makes them worth reaching.
+ * Empty is fine — then every run draws from the ordinary list.
+ */
+const TOP_CLIPS: readonly Clip[] = [
+  { video: "./movie/2.webm", hevc: "./movie/2-hevc.mp4", sound: "./movie/2.mp3" },
+];
+
+/**
+ * What the flourish says, and with it which clips it may draw from.
+ *
+ * A run that went well should not be congratulated in the same words as one
+ * that ended on the first minute. The top line is `AMAZING!` at 500, and that
+ * same line is the one that unlocks `TOP_CLIPS` — one number, one meaning,
+ * rather than a word and a video disagreeing about what counts as a good run.
+ */
+const TIERS: readonly { readonly at: number; readonly word: string }[] = [
+  { at: 500, word: "AMAZING!" },
+  { at: 200, word: "GREAT!" },
+  { at: 50, word: "NICE!" },
+  { at: 0, word: "GOOD TRY!" },
+];
+
+/** The score that counts as a best-of run. */
+export const TOP_SCORE = TIERS[0]!.at;
+
+/** Which clips a run worth this much may draw from. */
+export function poolFor(score: number): readonly Clip[] {
+  return score >= TOP_SCORE && TOP_CLIPS.length ? TOP_CLIPS : CHEER_CLIPS;
+}
+
+/** What to shout for a run worth this much. */
+export function cheerFor(score: number): string {
+  return (TIERS.find((tier) => score >= tier.at) ?? TIERS[TIERS.length - 1]!).word;
+}
 
 /**
  * Whether to hand this browser the HEVC copy instead of the WebM.
@@ -159,10 +198,11 @@ export class Cheer {
    * Plays the flourish, then calls `then` — once, whichever way it ends.
    *
    * `headline` is what ended the run and `score` what it was worth; they hold
-   * the screen on their own before the dance begins.
+   * the screen on their own before the dance begins. The score also decides
+   * both what the word says and which clips it can draw from.
    */
-  play(headline: string, score: number, text: string, then: () => void): void {
-    this.word.textContent = text;
+  play(headline: string, score: number, then: () => void): void {
+    this.word.textContent = cheerFor(score);
     this.headline.textContent = headline;
     this.scoreEl.textContent = score.toLocaleString();
     this.done = then;
@@ -180,9 +220,8 @@ export class Cheer {
      * the soundtrack — a tenth the size — was already running. Four seconds
      * of card is four seconds of head start, which is more than enough.
      */
-    this.pick = CHEER_CLIPS.length
-      ? CHEER_CLIPS[Math.floor(Math.random() * CHEER_CLIPS.length)]!
-      : null;
+    const pool = poolFor(score);
+    this.pick = pool.length ? pool[Math.floor(Math.random() * pool.length)]! : null;
     if (this.pick) {
       load(this.clip, sourceFor(this.pick));
       // The song gets the same head start, so it can be seeked into position

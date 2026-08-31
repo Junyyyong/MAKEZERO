@@ -201,7 +201,25 @@ const CHEER_CLIPS: readonly Clip[] = [
   { video: "./movie/4.webm", hevc: "./movie/4-hevc.mp4", sound: "./movie/4.mp3" },
   // …
 ];
+
+/** 500점 이상에서만 나오는 것들. */
+const TOP_CLIPS: readonly Clip[] = [
+  { video: "./movie/2.webm", hevc: "./movie/2-hevc.mp4", sound: "./movie/2.mp3" },
+];
 ```
+
+**목록이 두 개입니다.** 끝말은 점수에 따라 네 단계로 갈립니다.
+
+| 점수 | 글씨 | 고르는 목록 |
+| --- | --- | --- |
+| 500 이상 | `AMAZING!` | `TOP_CLIPS` |
+| 200–499 | `GREAT!` | `CHEER_CLIPS` |
+| 50–199 | `NICE!` | `CHEER_CLIPS` |
+| 0–49 | `GOOD TRY!` | `CHEER_CLIPS` |
+
+**`TOP_CLIPS` 는 최고 등급에서만 나옵니다** — 매번 나오는 춤은 금방 아무 의미가 없어지니까요.
+비워 두면 500점을 넘겨도 그냥 `CHEER_CLIPS` 에서 고릅니다. 단계 표는
+`src/ui/screens/cheer.ts` 의 `TIERS` 한 곳에만 있고, 글씨와 영상이 같은 숫자를 씁니다.
 
 **매번 하나를 무작위로 골라 재생합니다.** 목록이 비면 글씨만 1.4초 나오고 넘어가므로,
 영상이 없어도 게임은 멀쩡합니다.
