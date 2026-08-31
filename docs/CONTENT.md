@@ -197,8 +197,8 @@ localStorage.removeItem("makezero.progress.v1");
 
 ```ts
 const CHEER_CLIPS: readonly Clip[] = [
-  { video: "./movie/3.webm", sound: "./movie/3.mp3" },
-  { video: "./movie/4.webm", sound: "./movie/4.mp3" },
+  { video: "./movie/3.webm", hevc: "./movie/3-hevc.mp4", sound: "./movie/3.mp3" },
+  { video: "./movie/4.webm", hevc: "./movie/4-hevc.mp4", sound: "./movie/4.mp3" },
   // …
 ];
 ```
@@ -229,18 +229,34 @@ const CHEER_CLIPS: readonly Clip[] = [
 | MOV/MP4 (HEVC + alpha) | 완전 | ❌ | ✅ |
 | MP4 (H.264) | **없음** | ✅ | ✅ |
 
-**투명 영상은 양쪽에서 다 되는 형식이 없습니다.** 지금 목표가 구글 플레이(안드로이드)이므로
-WebM 하나면 충분합니다.
+**투명 영상은 양쪽에서 다 되는 형식이 없습니다.** 그래서 **한 영상을 두 벌** 둡니다 —
+안드로이드용 WebM 과 아이폰용 HEVC. `hevc` 는 없어도 되고, 없으면 아이폰도 WebM 을
+받습니다(배경이 하얗게 나옵니다).
 
-**아이폰에서 배경이 까맣게 보인다면 그게 원인입니다.** 파일이 잘못된 게 아니라 iOS 사파리가
-VP9 알파를 못 읽습니다. 아이폰에서도 투명하게 하려면 **같은 영상을 HEVC 알파로도** 뽑아
-`<source>` 두 줄로 넣어야 합니다.
+**`<source>` 두 줄로는 안 됩니다.** iOS 17.4 부터 사파리도 WebM 을 *재생* 할 줄 알아서,
+목록에서 WebM 을 먼저 집어 들고 알파만 버립니다. 그래서 코드가 엔진을 보고 직접
+고릅니다(`WANTS_HEVC`, `src/ui/screens/cheer.ts`). 안드로이드 크롬도 기기에 따라 HEVC 를
+재생할 줄 알지만 알파를 읽는 쪽은 WebM 이므로, 이름을 보고 빼 둡니다.
+
+| 엔진 | 고르는 파일 |
+| --- | --- |
+| 아이폰 사파리 · 아이폰 크롬 · 맥 사파리 | `hevc` |
+| 안드로이드 크롬 · 웹뷰 · 파이어폭스 · 데스크톱 크롬 | `video` |
+
+**HEVC 는 파일이 큽니다** — 같은 5초짜리가 WebM 1.2MB, HEVC 3.9MB 입니다. 여섯 개면
+아이폰용만 24MB 쯤 되니, 구글 플레이(안드로이드) 빌드에는 굳이 넣지 않아도 됩니다.
+
+**HEVC 알파는 애플 하드웨어에서만 뽑힙니다.** 맥에서:
 
 ```bash
-ffmpeg -i dance.mov -c:v hevc_videotoolbox -alpha_quality 0.9 -tag:v hvc1 -an movie/4.mov
+ffmpeg -i dance.mov -c:v hevc_videotoolbox -alpha_quality 0.9 \
+  -tag:v hvc1 -an movie/4-hevc.mp4
 ```
 
-내보낼 때 `ffmpeg` 예시입니다.
+`-tag:v hvc1` 이 사파리가 알아보는 표식입니다. 제대로 나왔는지는 파일 안에
+`alpha_channel_info` SEI(`4e 01 a5`) 가 들어 있는지로 확인할 수 있습니다.
+
+WebM 과 MP3 는 어디서든 뽑힙니다.
 
 ```bash
 ffmpeg -i dance.mov -c:v libvpx-vp9 -pix_fmt yuva420p -b:v 0 -crf 32 -an movie/4.webm

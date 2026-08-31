@@ -679,3 +679,37 @@ seek 한다고 던집니다. `start()` 하나로 갈랐습니다.
 보세요.
 
 유닛 107 · 레이아웃 · 드래그 · 피드백 전부 통과.
+
+## 아이폰 투명 영상: HEVC 를 따로 물립니다
+
+`movie/3-hevc.mp4` 를 `public/movie/` 로 옮기고, 클립마다 `hevc` 를 하나 더 갖게 했습니다.
+
+**진짜 HEVC 알파가 맞는지 먼저 확인했습니다.** 파일 안 `hvcC` 에
+`4e 01 a5 04 00 00 7f 90 80` — SEI NAL, payload type 165(`alpha_channel_info`) 가
+들어 있습니다. 애플이 내보내는 투명 HEVC 의 표식입니다. 길이 4.73초로 MP3 와 맞습니다.
+
+**`<source>` 두 줄로 갈라는 안 됩니다.** iOS 17.4 부터 사파리도 WebM/VP9 를 *재생* 할 줄
+알아서, 목록에서 WebM 을 먼저 집고 알파만 버립니다 — 지금 하얗게 나오는 게 딱 그겁니다.
+반대로 MP4 를 앞에 두면 안드로이드 크롬 일부가 HEVC 를 집어 알파 없이 재생합니다.
+**양쪽 다 "재생할 수 있다"고 답하니 기능 검사로는 못 가릅니다.**
+
+그래서 엔진을 보고 고릅니다:
+
+```
+ok   iOS Safari 17          hvc1=probably  -> hevc mp4
+ok   iOS Chrome             hvc1=probably  -> hevc mp4
+ok   macOS Safari           hvc1=probably  -> hevc mp4
+ok   Android Chrome (HEVC)  hvc1=probably  -> webm
+ok   Android WebView        hvc1=probably  -> webm
+ok   Android Firefox        hvc1=-         -> webm
+ok   desktop Chrome         hvc1=-         -> webm
+chromium picked: {"src":"3.webm","paused":false,"w":960}
+```
+
+아이폰 크롬은 껍데기만 크롬이고 알맹이는 WKWebView 라 HEVC 를 받아야 맞습니다 —
+UA 가 `CriOS` 라 `Chrom(e|ium)` 에 안 걸립니다.
+
+**용량**: WebM 1.2MB 대 HEVC 3.9MB. 여섯 개면 아이폰용만 24MB 라, 구글 플레이 빌드에는
+안 넣어도 됩니다.
+
+유닛 107 · 레이아웃 · 드래그 · 피드백 전부 통과.
