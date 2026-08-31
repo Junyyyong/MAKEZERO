@@ -23,47 +23,59 @@ export interface Clip {
   sound?: string;
 }
 
-const CHEER_CLIPS: readonly Clip[] = [
-  { video: "./movie/3.webm", hevc: "./movie/3-hevc.mp4", sound: "./movie/3.mp3" },
-];
+/** One numbered set of files: WebM, HEVC and soundtrack, all the same length. */
+function clip(n: number): Clip {
+  return {
+    video: `./movie/${n}.webm`,
+    hevc: `./movie/${n}-hevc.mp4`,
+    sound: `./movie/${n}.mp3`,
+  };
+}
 
 /**
- * Kept back for a run that reached the top band.
+ * Which dance a run has earned.
  *
- * A dance that plays every time stops meaning anything. These are the ones a
- * player only sees for a real score, which is what makes them worth reaching.
- * Empty is fine — then every run draws from the ordinary list.
+ * A dance that plays every time stops meaning anything, so the clips are
+ * rationed by score: a first attempt and a best-ever run do not get the same
+ * one, and the later ones only exist for people who get there. Highest band
+ * first — the first one the score clears is the one that plays. A band may
+ * hold several and then it draws one at random.
  */
-const TOP_CLIPS: readonly Clip[] = [
-  { video: "./movie/2.webm", hevc: "./movie/2-hevc.mp4", sound: "./movie/2.mp3" },
+const CLIP_TIERS: readonly { readonly at: number; readonly clips: readonly Clip[] }[] = [
+  { at: 1000, clips: [clip(2)] },
+  { at: 500, clips: [clip(4)] },
+  { at: 200, clips: [clip(3)] },
+  { at: 0, clips: [clip(1)] },
 ];
 
 /**
- * What the flourish says, and with it which clips it may draw from.
+ * What the flourish says.
  *
  * A run that went well should not be congratulated in the same words as one
- * that ended on the first minute. The top line is `AMAZING!` at 500, and that
- * same line is the one that unlocks `TOP_CLIPS` — one number, one meaning,
- * rather than a word and a video disagreeing about what counts as a good run.
+ * that ended on the first minute. These bands are deliberately not the clips'
+ * bands: the words have always changed at 50/200/500 and there is no reason a
+ * new dance and a new word have to arrive together.
  */
-const TIERS: readonly { readonly at: number; readonly word: string }[] = [
+const WORD_TIERS: readonly { readonly at: number; readonly word: string }[] = [
   { at: 500, word: "AMAZING!" },
   { at: 200, word: "GREAT!" },
   { at: 50, word: "NICE!" },
   { at: 0, word: "GOOD TRY!" },
 ];
 
-/** The score that counts as a best-of run. */
-export const TOP_SCORE = TIERS[0]!.at;
+/** The lowest score of the highest band, whichever ladder is asked. */
+function bandFor<T extends { at: number }>(tiers: readonly T[], score: number): T {
+  return tiers.find((tier) => score >= tier.at) ?? tiers[tiers.length - 1]!;
+}
 
 /** Which clips a run worth this much may draw from. */
 export function poolFor(score: number): readonly Clip[] {
-  return score >= TOP_SCORE && TOP_CLIPS.length ? TOP_CLIPS : CHEER_CLIPS;
+  return bandFor(CLIP_TIERS, score).clips;
 }
 
 /** What to shout for a run worth this much. */
 export function cheerFor(score: number): string {
-  return (TIERS.find((tier) => score >= tier.at) ?? TIERS[TIERS.length - 1]!).word;
+  return bandFor(WORD_TIERS, score).word;
 }
 
 /**
