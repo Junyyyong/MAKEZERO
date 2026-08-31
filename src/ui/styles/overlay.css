@@ -99,7 +99,15 @@
   grid-template-rows: auto minmax(0, 1fr) auto;
   justify-items: center;
   gap: 16px;
-  padding: 24px 0;
+  /*
+   * The word sat right against the top edge, which read as having slipped off
+   * rather than as being placed. It starts a good way down now — a share of
+   * the real visible height, so it lands in the same spot on a tall phone and
+   * a short one, with a floor and a ceiling so neither extreme goes silly.
+   * The clip's row is the flexible one, so this comes out of its slack and
+   * nothing else moves.
+   */
+  padding: clamp(28px, calc(var(--app-h, 100dvh) * 0.08), 84px) 0 24px;
   pointer-events: none;
   /* Half black. The board stays readable underneath — it is what was just
      finished — but everything bright belongs to the word and the clip now. */
