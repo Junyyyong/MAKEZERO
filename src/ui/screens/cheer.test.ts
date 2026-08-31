@@ -24,7 +24,9 @@ describe("the end-of-run flourish", () => {
     expect(cheerFor(200)).toBe("GREAT!");
     expect(cheerFor(499)).toBe("GREAT!");
     expect(cheerFor(500)).toBe("AMAZING!");
-    expect(cheerFor(12_000)).toBe("AMAZING!");
+    expect(cheerFor(999)).toBe("AMAZING!");
+    expect(cheerFor(1000)).toBe("UNBELIEVABLE!!");
+    expect(cheerFor(12_000)).toBe("UNBELIEVABLE!!");
   });
 
   it("never leaves a run without a dance, however odd the score", () => {
