@@ -279,9 +279,9 @@
   line-height: 1.2;
   max-width: 100%;
   padding: 0 14px;
-  /* Sized for the longest word it ever shows — "GOOD TRY!" — so none of them
-     run off the edges. An italic 900 face is about 0.6em a letter, and nine of
-     those have to fit inside the screen. */
+  /* The comfortable size for a short word. A long one is measured and scaled
+     down to fit when it is set — see `Cheer.fitWord` — so this does not have
+     to be the size that suits the longest word anyone ever writes. */
   font-size: clamp(30px, 11vw, 68px);
   white-space: nowrap;
   font-weight: 900;

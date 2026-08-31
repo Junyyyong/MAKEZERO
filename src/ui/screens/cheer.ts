@@ -52,11 +52,15 @@ const CLIP_TIERS: readonly { readonly at: number; readonly clips: readonly Clip[
  * What the flourish says.
  *
  * A run that went well should not be congratulated in the same words as one
- * that ended on the first minute. These bands are deliberately not the clips'
- * bands: the words have always changed at 50/200/500 and there is no reason a
- * new dance and a new word have to arrive together.
+ * that ended on the first minute. These bands are not quite the clips' bands —
+ * the words also change at 50, where the clip does not — and there is no reason
+ * a new dance and a new word have to arrive together.
+ *
+ * They can be any length. The word is fitted to the screen when it is set, so
+ * a long one is simply drawn smaller rather than running off the edges.
  */
 const WORD_TIERS: readonly { readonly at: number; readonly word: string }[] = [
+  { at: 1000, word: "UNBELIEVABLE!!" },
   { at: 500, word: "AMAZING!" },
   { at: 200, word: "GREAT!" },
   { at: 50, word: "NICE!" },
@@ -113,6 +117,9 @@ const WANTS_HEVC = ((): boolean => {
  */
 const SILENCE =
   "data:audio/wav;base64,UklGRkQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSAAAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==";
+
+/** The word's own side padding, in px — it may not be drawn into that. */
+const WORD_MARGIN = 14;
 
 /** How long the score card holds before the dance. */
 const CARD_MS = 4000;
@@ -222,6 +229,9 @@ export class Cheer {
 
     this.root.classList.remove("hidden", "cheer-hold", "cheer-run");
     this.card.classList.remove("hidden");
+    // Once it is on screen and can be measured, and before it is ever shown:
+    // the card holds for four seconds with the word hidden behind it.
+    this.fitWord();
 
     /*
      * Choose the clip now, four seconds before it plays, and put its file on
@@ -321,6 +331,28 @@ export class Cheer {
     this.root.classList.add("hidden");
     this.root.classList.remove("cheer-hold");
     this.card.classList.remove("hidden");
+  }
+
+  /**
+   * Shrinks the word until it fits across the screen.
+   *
+   * The size is set for a short word and a long one would run off both edges —
+   * `UNBELIEVABLE!!` is half again as wide as `GOOD TRY!`. Rather than pick a
+   * size that suits the longest word and leaves the short ones looking timid,
+   * this measures what was actually drawn and scales only what needs it. It
+   * works for whatever the words become, in whatever font, without anyone
+   * having to know how wide a letter is.
+   */
+  private fitWord(): void {
+    this.word.style.fontSize = "";
+    const room = this.root.clientWidth - WORD_MARGIN * 2;
+    if (room <= 0) return;
+    const range = document.createRange();
+    range.selectNodeContents(this.word);
+    const drawn = range.getBoundingClientRect().width;
+    if (drawn <= room) return;
+    const size = parseFloat(getComputedStyle(this.word).fontSize);
+    this.word.style.fontSize = `${Math.floor((size * room) / drawn)}px`;
   }
 
   /** Follows the sound switch in settings; the picture always plays. */
