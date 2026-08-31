@@ -89,10 +89,20 @@ const CLIP_CAP_MS = 15000;
  * the whole flourish down with it.
  */
 function start(media: HTMLMediaElement, src: string): Promise<void> {
+  load(media, src);
+  return media.play();
+}
+
+/** Points an element at a file, rewinding it if it is already the one loaded. */
+function load(media: HTMLMediaElement, src: string): void {
   const url = new URL(src, location.href).href;
   if (media.src === url) media.currentTime = 0;
   else media.src = url;
-  return media.play();
+}
+
+/** Which of a clip's two copies this browser should be given. */
+function sourceFor(clip: Clip): string {
+  return WANTS_HEVC && clip.hevc ? clip.hevc : clip.video;
 }
 
 export class Cheer {
@@ -109,6 +119,10 @@ export class Cheer {
   private primed = false;
   /** Guards against the clip ending and the cap firing for the same play. */
   private done: (() => void) | undefined;
+  /** The clip chosen for this run, picked early so it can start loading. */
+  private pick: Clip | null = null;
+  /** Which run this is, so a late event from the last one is ignored. */
+  private run = 0;
 
   constructor() {
     // The clip stops on its own last frame; the player decides when to leave it.
@@ -152,9 +166,29 @@ export class Cheer {
     this.headline.textContent = headline;
     this.scoreEl.textContent = score.toLocaleString();
     this.done = then;
+    this.run += 1;
 
     this.root.classList.remove("hidden", "cheer-hold", "cheer-run");
     this.card.classList.remove("hidden");
+
+    /*
+     * Choose the clip now, four seconds before it plays, and put its file on
+     * the wire while the card holds the screen.
+     *
+     * The HEVC copy is 3.9MB against the WebM's 1.2MB, and asking for it at
+     * the moment it is meant to start meant the picture came up late while
+     * the soundtrack — a tenth the size — was already running. Four seconds
+     * of card is four seconds of head start, which is more than enough.
+     */
+    this.pick = CHEER_CLIPS.length
+      ? CHEER_CLIPS[Math.floor(Math.random() * CHEER_CLIPS.length)]!
+      : null;
+    if (this.pick) {
+      load(this.clip, sourceFor(this.pick));
+      // The song gets the same head start, so it can be seeked into position
+      // the instant the picture starts rather than read from scratch then.
+      if (this.pick.sound) load(this.sound, this.pick.sound);
+    }
 
     window.clearTimeout(this.timer);
     this.timer = window.setTimeout(() => this.dance(), CARD_MS);
@@ -170,9 +204,7 @@ export class Cheer {
     void this.root.offsetWidth;
     this.root.classList.add("cheer-run");
 
-    const pick = CHEER_CLIPS.length
-      ? CHEER_CLIPS[Math.floor(Math.random() * CHEER_CLIPS.length)]!
-      : null;
+    const pick = this.pick;
 
     window.clearTimeout(this.timer);
     if (!pick) {
@@ -182,18 +214,39 @@ export class Cheer {
     }
 
     this.clip.classList.remove("hidden");
+
+    /*
+     * The soundtrack starts when the picture does, not when the picture is
+     * asked to.
+     *
+     * Starting both in the same breath only looks synchronised if both begin
+     * at once, and a 3.9MB video does not begin as promptly as an 84KB song.
+     * `playing` fires on the video's first painted frame, whether that is
+     * immediately or after a wait, so hanging the sound off it keeps the two
+     * in step however slow the file is. Sound is a courtesy either way: if it
+     * will not play, the picture carries on regardless.
+     */
+    const run = this.run;
+    const song = pick.sound;
+    if (song && this.soundOn) {
+      this.clip.addEventListener(
+        "playing",
+        () => {
+          if (this.run !== run || !this.soundOn) return;
+          load(this.sound, song);
+          // Dropped in where the picture already is, not started from the top.
+          // Handling the event costs a tenth of a second, which is enough to
+          // hear as the song trailing the dance.
+          this.sound.currentTime = this.clip.currentTime;
+          void this.sound.play().catch(() => undefined);
+        },
+        { once: true },
+      );
+    }
+
     // Muted and inline, so this is allowed without a gesture; a refusal still
     // lands on `finish` rather than stalling the run.
-    void start(this.clip, WANTS_HEVC && pick.hevc ? pick.hevc : pick.video).catch(() =>
-      this.finish(),
-    );
-
-    // The two tracks are the same length and both start here, which is as
-    // close to in step as two elements get. Sound is a courtesy: if it will
-    // not play, the picture carries on regardless.
-    if (pick.sound && this.soundOn) {
-      void start(this.sound, pick.sound).catch(() => undefined);
-    }
+    void start(this.clip, sourceFor(pick)).catch(() => this.finish());
 
     this.timer = window.setTimeout(() => this.hold(), CLIP_CAP_MS);
   }

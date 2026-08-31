@@ -135,17 +135,24 @@
  * are the second beat and are not drawn yet.
  */
 .cheer-card {
-  grid-column: 1;
-  grid-row: 1 / -1;
-  align-self: center;
-  /* A plain centred block, not a nested grid: grid shrink-wrapped each line
-     to its own content and left them against one edge. Block children fill
-     the width and `text-align` does the rest. */
-  justify-self: stretch;
-  width: 100%;
+  /*
+   * Taken out of the grid and laid over the whole screen instead.
+   *
+   * As a grid item it centred inside the padding, and the padding is what
+   * holds the word down away from the top edge — so the card sat a good way
+   * below the middle. It is its own beat with nothing else on screen, so it
+   * has no reason to share the word's margins. Absolute positioning inside
+   * this element measures the padding box, which is the whole overlay.
+   */
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   padding: 0 18px;
   text-align: center;
-  animation: cheer-card-in 420ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  /* Rises into the middle rather than swelling in place. */
+  animation: cheer-card-in 480ms cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
 .cheer-card.hidden {
@@ -183,7 +190,7 @@
 }
 
 @keyframes cheer-card-in {
-  from { opacity: 0; transform: scale(0.82); }
+  from { opacity: 0; transform: translateY(56px); }
 }
 
 /* While the card is up the second beat stays out of the way entirely. */
