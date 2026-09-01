@@ -345,7 +345,7 @@
   place-items: center;
   font-size: 58px;
   font-weight: 900;
-  color: var(--night);
+  color: #fff;
   background: linear-gradient(180deg, var(--cool), var(--cool-deep));
   border-radius: 28px;
   box-shadow:
@@ -354,9 +354,59 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Both children share one cell, so the number sits inside the dial. */
+.intro-mark > * {
+  grid-area: 1 / 1;
+}
+
+/*
+ * The stopwatch, in white.
+ *
+ * Its viewBox starts at -8 rather than 0 so the crown above the dial does not
+ * push the dial off centre: eighty tall from -8 puts the middle of the box at
+ * y = 32, which is exactly where the dial is drawn. That is what lets the
+ * label be centred on the plate and land in the dial without a nudge.
+ */
+.intro-watch {
+  width: auto;
+  height: 104px;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/*
+ * Sized to sit inside the dial rather than against it.
+ *
+ * A round frame is narrower than it looks: text that fills 87% of the
+ * diameter has its corners outside the circle, which is where "60" was at 34px
+ * — the digits touched the ring either side. Around 70% of the diameter is the
+ * width that clears it.
+ */
+.intro-mark-label {
+  font-size: 28px;
+  line-height: 1;
+}
+
+/* Endless has no clock to draw — the sign for it is the whole mark. */
+.intro-mark.endless .intro-watch {
+  display: none;
+}
+
 .intro-mark.endless {
-  font-size: 66px;
   background: linear-gradient(180deg, var(--hot), var(--hot-deep));
+}
+
+.intro-mark.endless .intro-mark-label {
+  font-size: 66px;
+}
+
+/* Forever, inside a stopwatch: the sign needs the room a two-digit number
+   does not, and the face draws it small. */
+.intro-mark-label.forever {
+  font-size: 46px;
 }
 
 .intro-note {
@@ -402,6 +452,11 @@
     height: 100px;
     font-size: 42px;
   }
+
+  .intro-watch { height: 76px; }
+  .intro-mark-label { font-size: 21px; }
+  .intro-mark-label.forever { font-size: 34px; }
+  .intro-mark.endless .intro-mark-label { font-size: 48px; }
 
   .card-plate {
     width: 110px;
