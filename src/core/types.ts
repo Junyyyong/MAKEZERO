@@ -22,7 +22,7 @@ export interface MatchResult {
   failure?: MatchFailure;
 }
 
-export type GameMode = "story" | "timeAttack" | "endless" | "clearAll";
+export type GameMode = "story" | "timeAttack" | "endless" | "timeless";
 
 export interface SpawnConfig {
   /** Share of the board dealt at the start, leaving the rest as landing room. */

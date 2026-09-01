@@ -72,7 +72,7 @@ function without(counts: readonly number[], group: readonly number[]): number[] 
  * The best clear that still leaves the board finishable.
  *
  * A hint that only looks at what is legal right now is a trap. Simulated on
- * MAKE 10 · 20 · 30, a player who always took the biggest legal clear — which
+ * TIMELESS, a player who always took the biggest legal clear — which
  * is what the hint used to offer — emptied one board in sixty, because the
  * thirties eat the big digits first and strand the rest. The same line that
  * checks each move against `canEmpty` empties every board.

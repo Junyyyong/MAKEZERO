@@ -331,10 +331,9 @@ export class BoardView {
     this.gestureSettled = false;
     this.lastPoint = null;
     this.options.grid.releasePointerCapture?.(event.pointerId);
-    // A drag that was held past ten settles here. Incomplete ones deliberately
-    // keep their selection: a later tap can toggle any chosen block off, and
-    // only a target sum or an overcharge settles it.
-    this.settle();
+    // Taps and incomplete drags deliberately keep their selection. A later tap
+    // can toggle any chosen block off; only a target sum or an overcharge
+    // settles it.
   };
 
   private readonly onPointerCancel = (): void => {
@@ -356,9 +355,9 @@ export class BoardView {
     this.selection.push(i);
     const sum = this.selectionSum();
     const targets = this.targets();
-    // Past the biggest sum on offer is dead, and so is a full selection that
-    // has not landed on one: five blocks with no sixth to come can never add
-    // up, so say so now rather than leaving the player to undo it by hand.
+    // Past the biggest sum on offer is dead. Short of it is not: eleven is a
+    // selection on its way to twenty, and twenty-one one on its way to thirty.
+    // Five blocks with no sixth to come can never add up to anything else.
     const full = this.selection.length >= MAX_SELECTION;
     if (
       sum > Math.max(...targets) ||
@@ -376,17 +375,14 @@ export class BoardView {
     this.emitSelection();
     this.render();
     /*
-     * Ten settles a selection the moment it is reached — except in the one
-     * mode where a bigger sum is worth reaching for, and only while the finger
-     * is still down.
+     * A sum that lands exactly on a target settles there and then — ten is ten,
+     * and it goes.
      *
-     * There, clearing at the first target would make twenty and thirty almost
-     * unreachable: a player building 4 + 6 + 9 + 1 would have it taken away at
-     * the six. So a drag holds on past ten and settles when the finger lifts,
-     * which is what `onPointerUp` is for. A tap still clears at once, so
-     * tapping is how you take tens and dragging is how you build past them.
+     * Which is also how a bigger sum is asked for: stepping over ten rather
+     * than onto it means the selection is now heading for twenty, and over
+     * twenty means thirty. The player chooses by what they pick, not by how
+     * they hold their finger, so a tap and a drag behave the same.
      */
-    if (this.dragging && targets.length > 1) return;
     this.settle();
   }
 

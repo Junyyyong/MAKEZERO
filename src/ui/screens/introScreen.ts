@@ -13,13 +13,13 @@ import type { GameMode } from "../../core/types";
 const TITLES: Partial<Record<GameMode, string>> = {
   timeAttack: "TIME ATTACK",
   endless: "ENDLESS",
-  clearAll: "MAKE 10 · 20 · 30",
+  timeless: "TIMELESS",
 };
 
 const NOTES: Partial<Record<GameMode, string>> = {
   timeAttack: "Clear as much as you can in 60 seconds",
   endless: "Blocks keep coming. It ends when the board fills",
-  clearAll: "Take 2 to 5 blocks that make 10, 20 or 30. Clear them all",
+  timeless: "Take 2 to 5 blocks that make 10, 20 or 30. Clear them all",
 };
 
 export class IntroScreen {
@@ -46,9 +46,9 @@ export class IntroScreen {
     const rows: [string, string][] =
       mode === "timeAttack"
         ? [["BEST SCORE", progress.bestTimeAttack.toLocaleString()]]
-        : mode === "clearAll"
+        : mode === "timeless"
           ? [
-              ["BEST SCORE", progress.bestClearAll.toLocaleString()],
+              ["BEST SCORE", progress.bestTimeless.toLocaleString()],
               ["FEWEST LEFT", progress.fewestLeft < 0 ? "--" : String(progress.fewestLeft)],
             ]
           : [

@@ -16,7 +16,7 @@ import type { GameMode, RunConfig } from "../core/types";
 import { TOTAL_STAGES, chapterFor, isChapterFinale } from "../content/chapters";
 import { artFor, plateFor } from "../content/gallery";
 import type { Chapter } from "../content/chapters";
-import { CLEAR_ALL_CONFIG, ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
+import { TIMELESS_CONFIG, ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
 import { BoardView } from "./boardView";
 import { AppStateMachine } from "./appStateMachine";
 import { feedback } from "./feedback";
@@ -68,7 +68,7 @@ type Screen =
 const CONFIGS: Partial<Record<GameMode, RunConfig>> = {
   timeAttack: TIME_ATTACK_CONFIG,
   endless: ENDLESS_CONFIG,
-  clearAll: CLEAR_ALL_CONFIG,
+  timeless: TIMELESS_CONFIG,
 };
 
 /** How long the finished picture is held before the results panel. */
@@ -530,17 +530,17 @@ export class App {
     } else if (mode === "timeAttack" && this.state.score > this.progress.bestTimeAttack) {
       this.progress = { ...this.progress, bestTimeAttack: this.state.score };
       saveProgress(this.progress);
-    } else if (mode === "clearAll") {
+    } else if (mode === "timeless") {
       // Two records, and the one that counts is the second: the mode asks for
       // an empty board, so fewest left is the achievement and score is trivia.
       const left = aliveCount(this.state.board);
       const fewest = this.progress.fewestLeft;
-      const best = Math.max(this.progress.bestClearAll, this.state.score);
+      const best = Math.max(this.progress.bestTimeless, this.state.score);
       const lowest = fewest < 0 ? left : Math.min(fewest, left);
       // This runs on every clear, so it only touches storage when something
       // actually improved — otherwise it is a disk write per move.
-      if (best !== this.progress.bestClearAll || lowest !== fewest) {
-        this.progress = { ...this.progress, bestClearAll: best, fewestLeft: lowest };
+      if (best !== this.progress.bestTimeless || lowest !== fewest) {
+        this.progress = { ...this.progress, bestTimeless: best, fewestLeft: lowest };
         saveProgress(this.progress);
       }
     }
@@ -557,8 +557,8 @@ export class App {
         ? this.progress.bestStory
         : this.state.config.mode === "timeAttack"
           ? this.progress.bestTimeAttack
-          : this.state.config.mode === "clearAll"
-            ? this.progress.bestClearAll
+          : this.state.config.mode === "timeless"
+            ? this.progress.bestTimeless
             : this.progress.bestEndless;
     this.hud.render(this.state);
     // The board is a new object whenever anything changes it, tiles arriving
@@ -588,7 +588,7 @@ export class App {
       this.finishStage(config.stage ?? 1);
       return;
     }
-    if (config.mode === "clearAll") {
+    if (config.mode === "timeless") {
       this.finishClearAll();
       return;
     }
@@ -617,7 +617,7 @@ export class App {
   }
 
   /**
-   * Settles MAKE 10 · 20 · 30, which is the one mode that can be *won*.
+   * Settles TIMELESS, which is the one mode that can be *won*.
    *
    * A dead board with a take-back left is not the end. The board was dealt so
    * that it can be emptied, so being stuck means a move went wrong rather than
@@ -652,7 +652,7 @@ export class App {
         body: won
           ? `Nothing left standing.\nScore ${score}\nTime ${formatClock(this.state.elapsedMs)}`
           : `${left} block${left === 1 ? "" : "s"} left with no way to make 10, 20 or 30.\nScore ${score}\nFewest ever left ${this.progress.fewestLeft}`,
-        primary: { label: "Play again", action: () => this.startMode("clearAll") },
+        primary: { label: "Play again", action: () => this.startMode("timeless") },
       }),
     );
   }

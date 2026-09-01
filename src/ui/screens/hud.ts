@@ -106,8 +106,8 @@ export class Hud {
       this.stat(0, "TIME", formatClock(remainingMs));
       this.stat(1, "SCORE", state.score.toLocaleString());
       this.stat(2, "COMBO", String(this.combo));
-    } else if (config.mode === "clearAll") {
-      this.runTitle.textContent = "MAKE 10 · 20 · 30";
+    } else if (config.mode === "timeless") {
+      this.runTitle.textContent = "TIMELESS";
       // LEFT, not TIME: nothing is being raced, and how many blocks are still
       // standing is the only number that decides whether the board is done.
       this.stat(0, "LEFT", String(aliveCount(state.board)));
@@ -158,7 +158,7 @@ export class Hud {
     const targets = targetsOf(state.config);
     const wanted = targets.length > 1 ? targets.slice(0, -1).join(", ") + " or " + targets[targets.length - 1] : "ten";
     if (state.status === "won") {
-      return state.config.mode === "clearAll" ? "Board cleared!" : "The whole picture is showing!";
+      return state.config.mode === "timeless" ? "Board cleared!" : "The whole picture is showing!";
     }
     if (state.status === "lost") {
       return state.undosLeft > 0 && state.previous
@@ -166,8 +166,8 @@ export class Hud {
         : `Nothing left that makes ${wanted}.`;
     }
     // The one rule this mode has that the others do not, said where it is
-    // needed: a tap settles at ten, so a bigger sum has to be dragged out.
-    if (state.config.mode === "clearAll") return "Tap for 10 · drag on for 20 or 30";
+    // needed: landing on ten clears, so a bigger sum means stepping over it.
+    if (state.config.mode === "timeless") return "Past 10 aims for 20 · past 20 for 30";
     if (state.config.mode !== "story") return "Make ten to score";
     return "Clear every block to win the picture";
   }

@@ -108,8 +108,8 @@ export const ENDLESS_CONFIG: RunConfig = {
 };
 
 /**
- * MAKE 10 · 20 · 30: one full board, no clock, and the goal is to leave
- * nothing standing.
+ * TIMELESS: one full board, no clock, and the goal is to leave nothing
+ * standing.
  *
  * The rule change is one line — a selection clears on twenty and thirty as
  * well as ten — and it changes the whole shape of the game. Ten alone strands
@@ -125,8 +125,8 @@ export const ENDLESS_CONFIG: RunConfig = {
  * story's early stages are: eighty-one blocks is a lot to keep clearable, and
  * with no clock running there is nothing to lose by thinking again.
  */
-export const CLEAR_ALL_CONFIG: RunConfig = {
-  mode: "clearAll",
+export const TIMELESS_CONFIG: RunConfig = {
+  mode: "timeless",
   width: BOARD_WIDTH,
   rows: BOARD_ROWS,
   targets: [10, 20, 30],

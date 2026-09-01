@@ -39,9 +39,9 @@
               <span class="mode-name">ENDLESS</span>
               <span class="mode-desc" id="desc-endless">Play until the board fills</span>
             </button>
-            <button class="mode-btn" id="mode-clearAll" data-mode="clearAll">
-              <span class="mode-name">MAKE 10 &middot; 20 &middot; 30</span>
-              <span class="mode-desc" id="desc-clearAll">Clear the whole board. No clock</span>
+            <button class="mode-btn" id="mode-timeless" data-mode="timeless">
+              <span class="mode-name">TIMELESS</span>
+              <span class="mode-desc" id="desc-timeless">Clear the whole board. No clock</span>
             </button>
         </nav>
 
@@ -124,9 +124,11 @@
             <span class="badge" id="badge-split">3</span>
           </button>
           <button class="round-btn hidden" id="btn-undo" aria-label="Undo">
+            <!-- A circle turned back on itself: the arrow goes round the way a
+                 move is being taken back. -->
             <svg class="glyph" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 9h9a5 5 0 0 1 0 10h-3" stroke-linejoin="round" />
-              <path d="M7 5 3.5 9 7 13" stroke-linejoin="round" />
+              <path d="M3.5 12a8.5 8.5 0 1 0 8.5-8.5 9.2 9.2 0 0 0-6.4 2.6L3.5 8.4" />
+              <path d="M3.5 3.4v5h5" />
             </svg>
             <span class="badge" id="badge-undo">3</span>
           </button>

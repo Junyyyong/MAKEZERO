@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { aliveCount, allGroups, valueCounts } from "../core/board";
 import { commitSelection, newGame, targetsOf, useHint } from "../core/game";
 import { canEmpty, locate } from "../core/solver";
-import { CLEAR_ALL_CONFIG } from "./stages";
+import { TIMELESS_CONFIG } from "./stages";
 
 /**
- * The promise MAKE 10 · 20 · 30 makes: **every board can be emptied.**
+ * The promise TIMELESS makes: **every board can be emptied.**
  *
  * It rests on one fact. The board is dealt as a union of groups that each add
  * to ten, so there is always a solution using nothing but tens; allowing
@@ -13,7 +13,7 @@ import { CLEAR_ALL_CONFIG } from "./stages";
  * is fair in the same sense story is: being stuck is a move that went wrong,
  * not a deal that was impossible — which is what the take-backs are for.
  */
-const TARGETS = targetsOf(CLEAR_ALL_CONFIG);
+const TARGETS = targetsOf(TIMELESS_CONFIG);
 const SEEDS = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89].map((n) => n * 7919);
 
 const fits = (counts: readonly number[], combo: readonly number[]) => {
@@ -29,7 +29,7 @@ const without = (counts: readonly number[], combo: readonly number[]) => {
 
 /** Plays to the end, taking only moves that leave the board still emptiable. */
 function playCarefully(seed: number) {
-  let state = newGame(CLEAR_ALL_CONFIG, seed);
+  let state = newGame(TIMELESS_CONFIG, seed);
   for (let move = 0; move < 400; move++) {
     const counts = valueCounts(state.board) as number[];
     const options = allGroups(TARGETS).filter((combo) => fits(counts, combo));
@@ -46,7 +46,7 @@ function playCarefully(seed: number) {
 
 /** Plays by pressing hint and taking whatever it points at, every move. */
 function playGreedily(seed: number) {
-  let state = newGame(CLEAR_ALL_CONFIG, seed);
+  let state = newGame(TIMELESS_CONFIG, seed);
   for (let move = 0; move < 400; move++) {
     const { indices } = useHint({ ...state, hintsLeft: 1 });
     if (!indices) break;
@@ -57,7 +57,7 @@ function playGreedily(seed: number) {
   return state;
 }
 
-describe("MAKE 10 · 20 · 30", () => {
+describe("TIMELESS", () => {
   it("clears on ten, twenty and thirty and nothing else", () => {
     expect([...TARGETS]).toEqual([10, 20, 30]);
     // Every target a whole number of tens is what keeps a board dealt from
@@ -67,7 +67,7 @@ describe("MAKE 10 · 20 · 30", () => {
 
   it("deals a full board that comes apart into clears with nothing over", () => {
     for (const seed of SEEDS) {
-      const state = newGame(CLEAR_ALL_CONFIG, seed);
+      const state = newGame(TIMELESS_CONFIG, seed);
       expect(aliveCount(state.board), `seed ${seed}`).toBe(81);
       expect(canEmpty(valueCounts(state.board)), `seed ${seed}`).toBe(true);
     }
@@ -96,13 +96,13 @@ describe("MAKE 10 · 20 · 30", () => {
   });
 
   it("carries enough help to make being stuck recoverable", () => {
-    expect(CLEAR_ALL_CONFIG.undos).toBeGreaterThan(0);
-    expect(CLEAR_ALL_CONFIG.hints).toBeGreaterThan(0);
+    expect(TIMELESS_CONFIG.undos).toBeGreaterThan(0);
+    expect(TIMELESS_CONFIG.hints).toBeGreaterThan(0);
   });
 
   it("is not a race — no clock, and no tiles arriving on one", () => {
-    expect(CLEAR_ALL_CONFIG.timeLimitMs).toBeUndefined();
-    expect(CLEAR_ALL_CONFIG.spawn).toBeUndefined();
-    expect(CLEAR_ALL_CONFIG.keepBoard).toBe(true);
+    expect(TIMELESS_CONFIG.timeLimitMs).toBeUndefined();
+    expect(TIMELESS_CONFIG.spawn).toBeUndefined();
+    expect(TIMELESS_CONFIG.keepBoard).toBe(true);
   });
 });
