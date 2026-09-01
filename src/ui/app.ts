@@ -22,7 +22,7 @@ import { AppStateMachine } from "./appStateMachine";
 import { feedback } from "./feedback";
 import { el, formatClock } from "./dom";
 import { Hud } from "./screens/hud";
-import { Cheer } from "./screens/cheer";
+import { Cheer, timelessBand } from "./screens/cheer";
 import { Overlay } from "./screens/overlay";
 import { StoryScreen } from "./screens/storyScreen";
 import { GalleryScreen } from "./screens/galleryScreen";
@@ -589,7 +589,7 @@ export class App {
       return;
     }
     if (config.mode === "timeless") {
-      this.finishClearAll();
+      this.finishTimeless();
       return;
     }
     feedback.fail();
@@ -624,37 +624,39 @@ export class App {
    * the deal being unfair, and offering the way back is the difference between
    * a puzzle and a lottery. Only once there is no way back is it a Fail.
    */
-  private finishClearAll(): void {
+  private finishTimeless(): void {
     if (this.state.status === "lost" && this.state.undosLeft > 0 && this.state.previous) {
       feedback.fail();
       this.overlay.open({
         title: "Stuck",
         body: `Nothing left that makes 10, 20 or 30.\nThis board can still be cleared — undo a move and try again.\nUndos left: ${this.state.undosLeft}`,
         primary: { label: "Undo", action: () => this.onUndo() },
-        secondary: { label: "End here", action: () => this.settleClearAll() },
+        secondary: { label: "End here", action: () => this.settleTimeless() },
       });
       return;
     }
     if (this.state.status !== "won") feedback.fail();
-    this.settleClearAll();
+    this.settleTimeless();
   }
 
   /** Grades the board, whether it was emptied or given up on. */
-  private settleClearAll(): void {
+  private settleTimeless(): void {
     this.overlay.close();
     this.recordScore();
     const left = aliveCount(this.state.board);
     const won = left === 0;
     const score = this.state.score;
-    this.cheer.play(won ? "CLEARED" : "FAIL", score, () =>
+    const time = formatClock(this.state.elapsedMs);
+    const open = () =>
       this.overlay.open({
         title: won ? "Board cleared" : "Fail",
         body: won
-          ? `Nothing left standing.\nScore ${score}\nTime ${formatClock(this.state.elapsedMs)}`
+          ? `Nothing left standing.\nTime ${time}\nScore ${score}`
           : `${left} block${left === 1 ? "" : "s"} left with no way to make 10, 20 or 30.\nScore ${score}\nFewest ever left ${this.progress.fewestLeft}`,
         primary: { label: "Play again", action: () => this.startMode("timeless") },
-      }),
-    );
+      });
+    // The clock decides the word and the dance here, not the score.
+    this.cheer.play(won ? "CLEARED" : "FAIL", score, open, timelessBand(won, this.state.elapsedMs));
   }
 
   /** Settles a stuck board the player has decided not to take back. */

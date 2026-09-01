@@ -45,6 +45,10 @@ function clip(n: number): Clip {
  * split while they did not, and can be split again the moment that is true —
  * but while they agree, one table is the only way they cannot drift apart.
  *
+ * `at` is what the *scored* modes grade on. A mode measured by something else
+ * picks a band by its position instead — see `play`'s `band` — so the words
+ * and the clips stay one list however a mode decides who has earned them.
+ *
  * The words can be any length: each is fitted to the screen when it is set, so
  * a long one is drawn smaller rather than running off the edges.
  */
@@ -60,9 +64,52 @@ const TIERS: readonly {
   { at: 0, word: "GOOD TRY!", clips: [clip(1)] },
 ];
 
-/** The band a run worth this much falls in. */
+/**
+ * How fast a TIMELESS board has to be emptied for each rung of the ladder.
+ *
+ * That mode is graded on the clock rather than on points, because its scores
+ * are not on the same scale as a timed run's: a line that takes twenties and
+ * thirties finishes near 2,800 where a tidy one made of tens finishes near
+ * 520. Graded on score the flourish read the mode backwards — a board emptied
+ * carefully got GREAT!, while a run that stranded six blocks but ate the big
+ * sums got the top word. Emptying the board is the point; how long it took is
+ * the achievement.
+ *
+ * Three minutes, five and eight: a guess at what fast, decent and unhurried
+ * look like on eighty-one blocks, meant to be moved once real runs say
+ * otherwise. There is one fewer of them than there are bands, so the slowest
+ * clear still lands above a board left standing.
+ */
+export const TIMELESS_PACE_MS: readonly number[] = [3 * 60_000, 5 * 60_000, 8 * 60_000];
+
+/**
+ * Which rung a TIMELESS run earned, 0 being the best.
+ *
+ * A board left standing is the bottom rung whatever the score and whatever the
+ * clock said — the mode asked for an empty board and did not get one.
+ */
+export function timelessBand(cleared: boolean, elapsedMs: number): number {
+  if (!cleared) return TIERS.length - 1;
+  const rung = TIMELESS_PACE_MS.findIndex((limit) => elapsedMs < limit);
+  return rung === -1 ? TIMELESS_PACE_MS.length : rung;
+}
+
+/** How many bands there are, best first, for a mode that grades its own way. */
+export const CHEER_BANDS = TIERS.length;
+
+/** The word and the clips of one band, by position. 0 is the best. */
+export function bandAt(band: number): { word: string; clips: readonly Clip[] } {
+  return TIERS[Math.min(Math.max(band, 0), TIERS.length - 1)]!;
+}
+
+/** Where a run worth this much sits, 0 being the best. */
+export function bandForScore(score: number): number {
+  const at = TIERS.findIndex((tier) => score >= tier.at);
+  return at === -1 ? TIERS.length - 1 : at;
+}
+
 function bandFor(score: number): (typeof TIERS)[number] {
-  return TIERS.find((tier) => score >= tier.at) ?? TIERS[TIERS.length - 1]!;
+  return TIERS[bandForScore(score)]!;
 }
 
 /** Which clips a run worth this much may draw from. */
@@ -211,10 +258,14 @@ export class Cheer {
    *
    * `headline` is what ended the run and `score` what it was worth; they hold
    * the screen on their own before the dance begins. The score also decides
-   * both what the word says and which clips it can draw from.
+   * what the word says and which clip plays — unless the mode grades on
+   * something else and names the `band` itself, which TIMELESS does: it is a
+   * puzzle against the clock, and its scores are not on the same scale as a
+   * timed run's.
    */
-  play(headline: string, score: number, then: () => void): void {
-    this.word.textContent = cheerFor(score);
+  play(headline: string, score: number, then: () => void, band?: number): void {
+    const tier = bandAt(band ?? bandForScore(score));
+    this.word.textContent = tier.word;
     this.headline.textContent = headline;
     this.scoreEl.textContent = score.toLocaleString();
     this.done = then;
@@ -235,7 +286,7 @@ export class Cheer {
      * the soundtrack — a tenth the size — was already running. Four seconds
      * of card is four seconds of head start, which is more than enough.
      */
-    const pool = poolFor(score);
+    const pool = tier.clips;
     this.pick = pool.length ? pool[Math.floor(Math.random() * pool.length)]! : null;
     if (this.pick) {
       load(this.clip, sourceFor(this.pick));
