@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { aliveCount, allGroups, valueCounts } from "../core/board";
 import { commitSelection, newGame, targetsOf, useHint } from "../core/game";
 import { canEmpty, locate } from "../core/solver";
+import { MAX_SELECTION, MIN_SELECTION, scoreFor } from "../core/rules";
 import { TIMELESS_CONFIG } from "./stages";
 
 /**
@@ -93,6 +94,36 @@ describe("TIMELESS", () => {
       expect(aliveCount(done.board), `seed ${seed}`).toBe(0);
       expect(done.status).toBe("won");
     }
+  });
+
+  it("pays a clear by its length, times the tens it took off the board", () => {
+    /*
+     * The whole table, and which cells of it can even happen: twenty needs at
+     * least three blocks because two nines are eighteen, and thirty needs at
+     * least four because three nines are twenty-seven.
+     */
+    const reachable = (count: number, target: number) =>
+      count >= MIN_SELECTION && count <= MAX_SELECTION && count * 9 >= target && count <= target;
+    const table: Record<number, Record<number, number>> = {
+      10: { 2: 10, 3: 20, 4: 40, 5: 80 },
+      20: { 3: 40, 4: 80, 5: 160 },
+      30: { 4: 120, 5: 240 },
+    };
+    for (const target of TARGETS) {
+      for (let count = MIN_SELECTION; count <= MAX_SELECTION; count++) {
+        if (!reachable(count, target)) {
+          expect(table[target]![count], `${count} blocks cannot make ${target}`).toBeUndefined();
+          continue;
+        }
+        expect(scoreFor(count, target), `${count} blocks making ${target}`).toBe(
+          table[target]![count],
+        );
+      }
+    }
+    // A twenty is worth exactly what the same blocks would be worth as tens,
+    // so reaching for one is never a worse deal than not.
+    expect(scoreFor(4, 20)).toBe(scoreFor(4, 10) * 2);
+    expect(scoreFor(5, 30)).toBe(scoreFor(5, 10) * 3);
   });
 
   it("carries enough help to make being stuck recoverable", () => {

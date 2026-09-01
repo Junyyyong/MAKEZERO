@@ -121,9 +121,8 @@ export const ENDLESS_CONFIG: RunConfig = {
  * The board is still dealt as a union of tens, so it can always be emptied —
  * every deal has a solution using nothing but tens, and the bigger sums only
  * add ways through. What can still go wrong is the player's own line, which is
- * what the take-backs are for. They are generous here for the same reason
- * story's early stages are: eighty-one blocks is a lot to keep clearable, and
- * with no clock running there is nothing to lose by thinking again.
+ * what the take-backs are for: five of them, enough that a mistake is
+ * recoverable and few enough that they are worth spending carefully.
  */
 export const TIMELESS_CONFIG: RunConfig = {
   mode: "timeless",
@@ -136,7 +135,7 @@ export const TIMELESS_CONFIG: RunConfig = {
   // that closes up and slides the rest of the board out from under the player.
   keepBoard: true,
   hints: 5,
-  undos: 10,
+  undos: 5,
   splits: 0,
   starTargets: [0, 0, 0],
 };
