@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cheerFor, poolFor } from "./cheer";
+import { CHEER_BANDS, TIMELESS_PACE_MS, bandAt, cheerFor, poolFor, timelessBand } from "./cheer";
 
 /** The clip a run of this score gets, by its number in `public/movie`. */
 function clipNumber(score: number): string {
@@ -51,5 +51,46 @@ describe("the end-of-run flourish", () => {
         expect(clip.sound).toMatch(/^\.\/movie\/\d+\.mp3$/);
       }
     }
+  });
+
+  /*
+   * TIMELESS does not grade on points. A careful line made of tens finishes
+   * near 520 and a greedy one made of twenties and thirties near 2,800, so on
+   * the scored ladder the tidy clear came out below a run that stranded six
+   * blocks. It is graded on the clock, and an unfinished board is the bottom
+   * whatever else happened.
+   */
+  describe("grading TIMELESS on the clock", () => {
+    const m = (minutes: number) => minutes * 60_000;
+
+    it("puts a faster clear above a slower one", () => {
+      const bands = [0.5, 2.9, 3.1, 4.9, 5.1, 7.9, 8.1, 30].map((t) => timelessBand(true, m(t)));
+      // Never improves as the clock runs on.
+      for (let i = 1; i < bands.length; i++) expect(bands[i]).toBeGreaterThanOrEqual(bands[i - 1]!);
+      expect(timelessBand(true, m(2.9))).toBeLessThan(timelessBand(true, m(3.1)));
+      expect(timelessBand(true, m(4.9))).toBeLessThan(timelessBand(true, m(5.1)));
+      expect(timelessBand(true, m(7.9))).toBeLessThan(timelessBand(true, m(8.1)));
+    });
+
+    it("hands the very best word to a fast clear", () => {
+      expect(bandAt(timelessBand(true, m(1))).word).toBe("OH MY GOD~!");
+      expect(bandAt(timelessBand(true, m(4))).word).toBe("UNBELIEVABLE!!");
+      expect(bandAt(timelessBand(true, m(6))).word).toBe("AMAZING!");
+      expect(bandAt(timelessBand(true, m(20))).word).toBe("GREAT!");
+    });
+
+    it("puts every unfinished board at the bottom, however long or short", () => {
+      for (const minutes of [0.1, 3, 10, 60]) {
+        expect(timelessBand(false, m(minutes))).toBe(CHEER_BANDS - 1);
+        expect(bandAt(timelessBand(false, m(minutes))).word).toBe("GOOD TRY!");
+      }
+      // Even the slowest clear beats it, which is the whole point.
+      expect(timelessBand(true, m(60))).toBeLessThan(timelessBand(false, m(0.1)));
+    });
+
+    it("leaves a rung spare for the unfinished board", () => {
+      expect(TIMELESS_PACE_MS.length).toBe(CHEER_BANDS - 2);
+      expect([...TIMELESS_PACE_MS]).toEqual([...TIMELESS_PACE_MS].sort((a, b) => a - b));
+    });
   });
 });
