@@ -18,6 +18,10 @@ export interface Progress {
   bestEndless: number;
   /** Longest an endless run has survived, in milliseconds. */
   bestEndlessMs: number;
+  /** Best score in MAKE 10 · 20 · 30. */
+  bestClearAll: number;
+  /** Fewest blocks ever left standing there. -1 until a run has finished. */
+  fewestLeft: number;
   /** Chapters whose story beat has already played. */
   seenChapters: string[];
   /** Best star grade per stage, indexed from zero. */
@@ -99,6 +103,8 @@ function blankProgress(): Progress {
     bestTimeAttack: 0,
     bestEndless: 0,
     bestEndlessMs: 0,
+    bestClearAll: 0,
+    fewestLeft: -1,
     seenChapters: [],
     collected: [],
     bestTimes: [],
@@ -116,6 +122,10 @@ export function loadProgress(): Progress {
       bestTimeAttack: Number(parsed.bestTimeAttack) || 0,
       bestEndless: Number(parsed.bestEndless) || 0,
       bestEndlessMs: Math.max(0, Number(parsed.bestEndlessMs) || 0),
+      bestClearAll: Number(parsed.bestClearAll) || 0,
+      // -1, not 0, because zero left is the perfect result and a fresh save
+      // must not read as having already achieved it.
+      fewestLeft: Number.isFinite(Number(parsed.fewestLeft)) ? Number(parsed.fewestLeft) : -1,
       seenChapters: Array.isArray(parsed.seenChapters)
         ? parsed.seenChapters.filter((id): id is string => typeof id === "string")
         : [],

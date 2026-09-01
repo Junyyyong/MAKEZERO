@@ -106,3 +106,37 @@ export const ENDLESS_CONFIG: RunConfig = {
     rampMs: 55,
   },
 };
+
+/**
+ * MAKE 10 · 20 · 30: one full board, no clock, and the goal is to leave
+ * nothing standing.
+ *
+ * The rule change is one line — a selection clears on twenty and thirty as
+ * well as ten — and it changes the whole shape of the game. Ten alone strands
+ * a board on its big digits, because a 9 can only ever pair with a 1; at
+ * twenty a 9 goes with 9+2, or 8+3, or 5+4+2. So the board is dealt with an
+ * even spread of digits rather than the gentle one, which would be too easy
+ * once the bigger sums are allowed.
+ *
+ * The board is still dealt as a union of tens, so it can always be emptied —
+ * every deal has a solution using nothing but tens, and the bigger sums only
+ * add ways through. What can still go wrong is the player's own line, which is
+ * what the take-backs are for. They are generous here for the same reason
+ * story's early stages are: eighty-one blocks is a lot to keep clearable, and
+ * with no clock running there is nothing to lose by thinking again.
+ */
+export const CLEAR_ALL_CONFIG: RunConfig = {
+  mode: "clearAll",
+  width: BOARD_WIDTH,
+  rows: BOARD_ROWS,
+  targets: [10, 20, 30],
+  groupWeights: EASY_GROUPS,
+  digitWeights: LEVEL_DIGITS,
+  // The nine-by-nine frame stays put: a cleared square is a hole, not a row
+  // that closes up and slides the rest of the board out from under the player.
+  keepBoard: true,
+  hints: 5,
+  undos: 10,
+  splits: 0,
+  starTargets: [0, 0, 0],
+};

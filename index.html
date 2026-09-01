@@ -39,6 +39,10 @@
               <span class="mode-name">ENDLESS</span>
               <span class="mode-desc" id="desc-endless">Play until the board fills</span>
             </button>
+            <button class="mode-btn" id="mode-clearAll" data-mode="clearAll">
+              <span class="mode-name">MAKE 10 &middot; 20 &middot; 30</span>
+              <span class="mode-desc" id="desc-clearAll">Clear the whole board. No clock</span>
+            </button>
         </nav>
 
         <div class="title-links">
@@ -95,6 +99,10 @@
         </div>
 
         <p class="notice" id="notice" role="status" aria-live="polite"></p>
+
+        <!-- Only the mode that clears on more than one sum says so; every
+             other mode's SUM box means ten and has always meant ten. -->
+        <p class="goal-line hidden" id="goal-line">MAKE 10 &middot; 20 &middot; 30</p>
 
         <div class="selection-sum" id="selection-sum" aria-live="polite">
           <span class="sum-label">SUM</span>

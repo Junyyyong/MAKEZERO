@@ -1,12 +1,22 @@
 import { aliveCount } from "../core/board";
-import { canSplit, commitSelection, newGame, payoutFor, splitTile, tick, undo, useHint } from "../core/game";
+import {
+  canSplit,
+  commitSelection,
+  newGame,
+  payoutFor,
+  splitTile,
+  targetsOf,
+  tick,
+  undo,
+  useHint,
+} from "../core/game";
 import type { GameState } from "../core/game";
 import { isSelectionValid } from "../core/rules";
 import type { GameMode, RunConfig } from "../core/types";
 import { TOTAL_STAGES, chapterFor, isChapterFinale } from "../content/chapters";
 import { artFor, plateFor } from "../content/gallery";
 import type { Chapter } from "../content/chapters";
-import { ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
+import { CLEAR_ALL_CONFIG, ENDLESS_CONFIG, TIME_ATTACK_CONFIG, stageConfig } from "../content/stages";
 import { BoardView } from "./boardView";
 import { AppStateMachine } from "./appStateMachine";
 import { feedback } from "./feedback";
@@ -53,6 +63,13 @@ type Screen =
   | "stages"
   | "intro"
   | "settings";
+
+/** Which board each mode outside story is played on. */
+const CONFIGS: Partial<Record<GameMode, RunConfig>> = {
+  timeAttack: TIME_ATTACK_CONFIG,
+  endless: ENDLESS_CONFIG,
+  clearAll: CLEAR_ALL_CONFIG,
+};
 
 /** How long the finished picture is held before the results panel. */
 const PLATE_HOLD_MS = 2000;
@@ -109,7 +126,9 @@ export class App {
     this.view = new BoardView({
       wrap: el("board-wrap"),
       grid: el("board"),
-      isValid: (selection) => isSelectionValid(this.state.board, selection),
+      isValid: (selection) =>
+        isSelectionValid(this.state.board, selection, targetsOf(this.state.config)),
+      targets: () => targetsOf(this.state.config),
       onCommit: (selection) => this.commit(selection),
       onSplit: (index) => this.onSplit(index),
       onReject: () => {
@@ -310,7 +329,7 @@ export class App {
       this.daily = { ...this.daily, games: this.daily.games + 1 };
       saveDaily(this.daily);
     }
-    this.beginRun(mode === "timeAttack" ? TIME_ATTACK_CONFIG : ENDLESS_CONFIG);
+    this.beginRun(CONFIGS[mode] ?? ENDLESS_CONFIG);
   }
 
   private startStage(stage: number): void {
@@ -511,6 +530,19 @@ export class App {
     } else if (mode === "timeAttack" && this.state.score > this.progress.bestTimeAttack) {
       this.progress = { ...this.progress, bestTimeAttack: this.state.score };
       saveProgress(this.progress);
+    } else if (mode === "clearAll") {
+      // Two records, and the one that counts is the second: the mode asks for
+      // an empty board, so fewest left is the achievement and score is trivia.
+      const left = aliveCount(this.state.board);
+      const fewest = this.progress.fewestLeft;
+      const best = Math.max(this.progress.bestClearAll, this.state.score);
+      const lowest = fewest < 0 ? left : Math.min(fewest, left);
+      // This runs on every clear, so it only touches storage when something
+      // actually improved — otherwise it is a disk write per move.
+      if (best !== this.progress.bestClearAll || lowest !== fewest) {
+        this.progress = { ...this.progress, bestClearAll: best, fewestLeft: lowest };
+        saveProgress(this.progress);
+      }
     }
   }
 
@@ -525,7 +557,9 @@ export class App {
         ? this.progress.bestStory
         : this.state.config.mode === "timeAttack"
           ? this.progress.bestTimeAttack
-          : this.progress.bestEndless;
+          : this.state.config.mode === "clearAll"
+            ? this.progress.bestClearAll
+            : this.progress.bestEndless;
     this.hud.render(this.state);
     // The board is a new object whenever anything changes it, tiles arriving
     // on their own timer included, so the view is re-pointed every render.
@@ -554,6 +588,10 @@ export class App {
       this.finishStage(config.stage ?? 1);
       return;
     }
+    if (config.mode === "clearAll") {
+      this.finishClearAll();
+      return;
+    }
     feedback.fail();
     if (config.mode === "timeAttack") {
       this.cheer.play("TIME OUT", score, () =>
@@ -574,6 +612,47 @@ export class App {
         title: "The board is full",
         body: `Score ${score}\nBest today ${this.daily.best}\nAll-time best ${this.progress.bestEndless}`,
         primary: { label: "Play again", action: () => this.startMode("endless") },
+      }),
+    );
+  }
+
+  /**
+   * Settles MAKE 10 · 20 · 30, which is the one mode that can be *won*.
+   *
+   * A dead board with a take-back left is not the end. The board was dealt so
+   * that it can be emptied, so being stuck means a move went wrong rather than
+   * the deal being unfair, and offering the way back is the difference between
+   * a puzzle and a lottery. Only once there is no way back is it a Fail.
+   */
+  private finishClearAll(): void {
+    if (this.state.status === "lost" && this.state.undosLeft > 0 && this.state.previous) {
+      feedback.fail();
+      this.overlay.open({
+        title: "Stuck",
+        body: `Nothing left that makes 10, 20 or 30.\nThis board can still be cleared — undo a move and try again.\nUndos left: ${this.state.undosLeft}`,
+        primary: { label: "Undo", action: () => this.onUndo() },
+        secondary: { label: "End here", action: () => this.settleClearAll() },
+      });
+      return;
+    }
+    if (this.state.status !== "won") feedback.fail();
+    this.settleClearAll();
+  }
+
+  /** Grades the board, whether it was emptied or given up on. */
+  private settleClearAll(): void {
+    this.overlay.close();
+    this.recordScore();
+    const left = aliveCount(this.state.board);
+    const won = left === 0;
+    const score = this.state.score;
+    this.cheer.play(won ? "CLEARED" : "FAIL", score, () =>
+      this.overlay.open({
+        title: won ? "Board cleared" : "Fail",
+        body: won
+          ? `Nothing left standing.\nScore ${score}\nTime ${formatClock(this.state.elapsedMs)}`
+          : `${left} block${left === 1 ? "" : "s"} left with no way to make 10, 20 or 30.\nScore ${score}\nFewest ever left ${this.progress.fewestLeft}`,
+        primary: { label: "Play again", action: () => this.startMode("clearAll") },
       }),
     );
   }

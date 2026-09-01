@@ -271,6 +271,21 @@
   padding: 4px 0 12px;
 }
 
+/*
+ * What the mode is asking for, right above the box that answers it.
+ *
+ * Only one mode clears on more than one sum, and without this line its SUM box
+ * would look like every other mode's — where the only answer is ten.
+ */
+.goal-line {
+  margin: 6px 16px 0;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-align: center;
+  color: var(--hot-deep);
+}
+
 .selection-sum {
   /* Its own row under the board, the width of the board: the equation grows
      as blocks are added, and there is nothing beside it to push. */
@@ -470,12 +485,17 @@
 }
 
 /*
- * A tool a mode does not have keeps its slot rather than closing it up, so the
- * action row is the same row in all three modes — the hint sits where the hint
- * sits, whether or not there is a take-back beside it.
+ * A tool a mode does not have takes no room at all, so whatever a mode does
+ * carry sits in the middle of the row.
+ *
+ * These slots used to be held open with `visibility` so the hint stayed put
+ * across modes. That made a mode with one tool look like a mode with three,
+ * two of them missing — the single button sat left of centre with a gap beside
+ * it, which reads as broken rather than as consistent. A mode's tools do not
+ * change mid-run, so nothing shifts under the player either way.
  */
 .round-btn.hidden {
-  visibility: hidden;
+  display: none;
 }
 
 /* One family per item, the same three the wordmark uses: orange finds

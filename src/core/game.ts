@@ -14,7 +14,7 @@ import {
 } from "./board";
 import { canEmpty, findHint, hasAnyMove } from "./solver";
 import { mulberry32, randomSeed } from "./rng";
-import { evaluateSelection } from "./rules";
+import { DEFAULT_TARGETS, evaluateSelection } from "./rules";
 import { MIN_SELECTION } from "./rules";
 import type { Board, MatchResult, RunConfig } from "./types";
 
@@ -103,10 +103,19 @@ function deal(config: RunConfig, rngSeed: number): Board {
     : createBoard(rng, config.width, config.rows, config.groupWeights);
 }
 
+/**
+ * The sums this run clears on. The board is always dealt as a union of tens
+ * whatever they are, so a mode that also allows twenty and thirty is still
+ * dealt something it can empty.
+ */
+export function targetsOf(config: RunConfig): readonly number[] {
+  return config.targets ?? DEFAULT_TARGETS;
+}
+
 function dealBoard(config: RunConfig, seed: number): { board: Board; nextSeed: number } {
   for (let attempt = 0; attempt < MAX_DEAL_ATTEMPTS; attempt++) {
     const board = deal(config, seed + attempt);
-    if (hasAnyMove(board)) return { board, nextSeed: seed + attempt + 1 };
+    if (hasAnyMove(board, targetsOf(config))) return { board, nextSeed: seed + attempt + 1 };
   }
   return { board: deal(config, seed), nextSeed: seed + MAX_DEAL_ATTEMPTS };
 }
@@ -121,7 +130,7 @@ export function spawnIntervalMs(config: RunConfig, spawnCount: number): number {
 function settleStatus(state: GameState): GameState {
   if (state.config.mode === "timeAttack") {
     if (state.remainingMs <= 0) return { ...state, status: "timeUp" };
-    if (aliveCount(state.board) === 0 || !hasAnyMove(state.board)) {
+    if (aliveCount(state.board) === 0 || !hasAnyMove(state.board, targetsOf(state.config))) {
       const dealt = dealBoard(state.config, state.nextSeed);
       return { ...state, board: dealt.board, nextSeed: dealt.nextSeed, status: "playing" };
     }
@@ -135,7 +144,10 @@ function settleStatus(state: GameState): GameState {
   if (aliveCount(state.board) === 0) return { ...state, status: "won" };
   // Position does not matter, so a run ends exactly when no values left on the
   // board can make ten. There is nothing a rearrangement could rescue.
-  return { ...state, status: hasAnyMove(state.board) ? "playing" : "lost" };
+  return {
+    ...state,
+    status: hasAnyMove(state.board, targetsOf(state.config)) ? "playing" : "lost",
+  };
 }
 
 export function newGame(config: RunConfig, seed: number = randomSeed()): GameState {
@@ -205,7 +217,7 @@ function spawnBatch(state: GameState): GameState {
 }
 
 export function commitSelection(state: GameState, indices: readonly number[]): CommitOutcome {
-  const result = evaluateSelection(state.board, indices);
+  const result = evaluateSelection(state.board, indices, targetsOf(state.config));
   if (!result.ok || state.status !== "playing") {
     return { state, result, rowsRemoved: 0 };
   }
@@ -305,7 +317,7 @@ export interface HintOutcome {
 
 export function useHint(state: GameState): HintOutcome {
   if (state.status !== "playing" || state.hintsLeft === 0) return { state, indices: null };
-  const indices = findHint(state.board);
+  const indices = findHint(state.board, targetsOf(state.config));
   if (!indices) return { state, indices: null };
   return { state: { ...state, hintsLeft: state.hintsLeft - 1 }, indices };
 }
