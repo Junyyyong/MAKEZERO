@@ -1,5 +1,5 @@
 import { aliveCount, emptyIndices } from "../../core/board";
-import { canSplit } from "../../core/game";
+import { canSplit, targetsOf } from "../../core/game";
 import type { GameState } from "../../core/game";
 import { el, formatClock } from "../dom";
 
@@ -18,6 +18,7 @@ export class Hud {
     { box: el<HTMLDivElement>("stat-c"), value: el<HTMLElement>("stat-c-value") },
   ];
   private readonly sumBox = el<HTMLElement>("selection-sum");
+  private readonly goalLine = el<HTMLParagraphElement>("goal-line");
   private readonly sumTerms = el<HTMLElement>("sum-terms");
   private readonly sumTotal = el<HTMLElement>("sum-total");
   private readonly timerBar = el<HTMLDivElement>("timer-bar");
@@ -33,6 +34,8 @@ export class Hud {
   /** Clears in a row without a refused selection between them. */
   combo = 0;
   bestForMode = 0;
+  /** The sums that clear, so the equation knows when it is finished. */
+  private targets: readonly number[] = [10];
 
   /** Shows the equation as it is built: 2 + 3 + 2 = ?, then = 10. */
   setSelection(values: readonly number[]): void {
@@ -52,7 +55,7 @@ export class Hud {
     );
     this.sumTotal.textContent = values.length === 0 ? "?" : String(sum);
     this.sumBox.classList.toggle("active", values.length > 0);
-    this.sumBox.classList.toggle("ready", sum === 10);
+    this.sumBox.classList.toggle("ready", values.length > 0 && this.targets.includes(sum));
   }
 
   /** An override for the line under the board, or null to let it speak again. */
@@ -65,6 +68,10 @@ export class Hud {
 
   render(state: GameState): void {
     const { config, status, remainingMs, elapsedMs } = state;
+    this.targets = targetsOf(config);
+    // Only worth saying when there is more than one right answer.
+    this.goalLine.classList.toggle("hidden", this.targets.length < 2);
+    this.goalLine.textContent = `MAKE ${this.targets.join(" \u00b7 ")}`;
 
     this.hintBadge.textContent = String(state.hintsLeft);
     this.hintBtn.disabled = state.hintsLeft === 0 || status !== "playing";
@@ -99,6 +106,13 @@ export class Hud {
       this.stat(0, "TIME", formatClock(remainingMs));
       this.stat(1, "SCORE", state.score.toLocaleString());
       this.stat(2, "COMBO", String(this.combo));
+    } else if (config.mode === "clearAll") {
+      this.runTitle.textContent = "MAKE 10 · 20 · 30";
+      // LEFT, not TIME: nothing is being raced, and how many blocks are still
+      // standing is the only number that decides whether the board is done.
+      this.stat(0, "LEFT", String(aliveCount(state.board)));
+      this.stat(1, "SCORE", state.score.toLocaleString());
+      this.stat(2, "TIME", formatClock(elapsedMs));
     } else {
       this.runTitle.textContent = "ENDLESS";
       this.stat(0, "TIME", formatClock(elapsedMs));
@@ -141,13 +155,20 @@ export class Hud {
       if (state.status === "lost") return "The board is full.";
       return emptyIndices(state.board).length <= 6 ? "Almost full!" : "";
     }
+    const targets = targetsOf(state.config);
+    const wanted = targets.length > 1 ? targets.slice(0, -1).join(", ") + " or " + targets[targets.length - 1] : "ten";
+    if (state.status === "won") {
+      return state.config.mode === "clearAll" ? "Board cleared!" : "The whole picture is showing!";
+    }
     if (state.status === "lost") {
       return state.undosLeft > 0 && state.previous
         ? "Stuck — undo a move and try again"
-        : "No numbers left that make ten.";
+        : `Nothing left that makes ${wanted}.`;
     }
+    // The one rule this mode has that the others do not, said where it is
+    // needed: a tap settles at ten, so a bigger sum has to be dragged out.
+    if (state.config.mode === "clearAll") return "Tap for 10 · drag on for 20 or 30";
     if (state.config.mode !== "story") return "Make ten to score";
-    if (state.status === "won") return "The whole picture is showing!";
     return "Clear every block to win the picture";
   }
 }

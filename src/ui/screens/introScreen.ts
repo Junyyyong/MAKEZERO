@@ -10,6 +10,18 @@ import type { GameMode } from "../../core/types";
  * One screen each: the name, the number that defines it, and the records to
  * beat.
  */
+const TITLES: Partial<Record<GameMode, string>> = {
+  timeAttack: "TIME ATTACK",
+  endless: "ENDLESS",
+  clearAll: "MAKE 10 · 20 · 30",
+};
+
+const NOTES: Partial<Record<GameMode, string>> = {
+  timeAttack: "Clear as much as you can in 60 seconds",
+  endless: "Blocks keep coming. It ends when the board fills",
+  clearAll: "Take 2 to 5 blocks that make 10, 20 or 30. Clear them all",
+};
+
 export class IntroScreen {
   private readonly title = el<HTMLHeadingElement>("intro-title");
   private readonly mark = el<HTMLDivElement>("intro-mark");
@@ -24,20 +36,25 @@ export class IntroScreen {
 
   render(mode: GameMode, progress: Progress, bestEndlessTime: number): void {
     this.mode = mode;
-    const timed = mode === "timeAttack";
-    this.title.textContent = timed ? "TIME ATTACK" : "ENDLESS";
-    this.mark.textContent = timed ? "60" : "∞";
-    this.mark.classList.toggle("endless", !timed);
-    this.note.textContent = timed
-      ? "Clear as much as you can in 60 seconds"
-      : "Blocks keep coming. It ends when the board fills";
+    this.title.textContent = TITLES[mode] ?? "ENDLESS";
+    // The one number that says what the mode is: a minute, no end, or the
+    // three sums that clear.
+    this.mark.textContent = mode === "timeAttack" ? "60" : mode === "endless" ? "∞" : "30";
+    this.mark.classList.toggle("endless", mode === "endless");
+    this.note.textContent = NOTES[mode] ?? "";
 
-    const rows: [string, string][] = timed
-      ? [["BEST SCORE", progress.bestTimeAttack.toLocaleString()]]
-      : [
-          ["BEST SCORE", progress.bestEndless.toLocaleString()],
-          ["BEST TIME", bestEndlessTime === 0 ? "--:--" : formatClock(bestEndlessTime)],
-        ];
+    const rows: [string, string][] =
+      mode === "timeAttack"
+        ? [["BEST SCORE", progress.bestTimeAttack.toLocaleString()]]
+        : mode === "clearAll"
+          ? [
+              ["BEST SCORE", progress.bestClearAll.toLocaleString()],
+              ["FEWEST LEFT", progress.fewestLeft < 0 ? "--" : String(progress.fewestLeft)],
+            ]
+          : [
+              ["BEST SCORE", progress.bestEndless.toLocaleString()],
+              ["BEST TIME", bestEndlessTime === 0 ? "--:--" : formatClock(bestEndlessTime)],
+            ];
 
     this.stats.replaceChildren(
       ...rows.flatMap(([label, value]) => {

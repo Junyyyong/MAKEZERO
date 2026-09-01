@@ -1,15 +1,19 @@
 import { MAX_VALUE, MIN_VALUE, aliveIndices, allGroups, valueAt, valueCounts } from "./board";
-import { MAX_SELECTION, MIN_SELECTION, TARGET_SUM } from "./rules";
+import { DEFAULT_TARGETS, MAX_SELECTION, MIN_SELECTION } from "./rules";
 import type { Board } from "./types";
 
 /**
  * The best combination of values still on the board, longest first.
  *
  * Since position does not matter, this is pure arithmetic: pick 2..5 values
- * from what is left that add to ten. Searching the nine value counts rather
- * than the tiles keeps it cheap however big the board is.
+ * from what is left that add to one of the sums this mode clears on. Searching
+ * the nine value counts rather than the tiles keeps it cheap however big the
+ * board is.
  */
-export function findValueCombo(counts: readonly number[]): number[] | null {
+export function findValueCombo(
+  counts: readonly number[],
+  targets: readonly number[] = DEFAULT_TARGETS,
+): number[] | null {
   const pool = [...counts];
   let best: number[] | null = null;
   const chain: number[] = [];
@@ -30,7 +34,12 @@ export function findValueCombo(counts: readonly number[]): number[] | null {
     }
   };
 
-  walk(MIN_VALUE, TARGET_SUM);
+  // Biggest target first: a thirty is worth more than a ten and takes three
+  // times as much off the board, so it is the one to offer when both exist.
+  for (const target of [...targets].sort((a, b) => b - a)) {
+    walk(MIN_VALUE, target);
+    if (best) return best;
+  }
   return best;
 }
 
@@ -47,14 +56,66 @@ export function locate(board: Board, combo: readonly number[]): number[] | null 
   return picked;
 }
 
-/** One clearable selection, or null when nothing on the board can make ten. */
-export function findHint(board: Board): number[] | null {
-  const combo = findValueCombo(valueCounts(board));
+function fits(counts: readonly number[], group: readonly number[]): boolean {
+  const need = new Array(MAX_VALUE + 1).fill(0);
+  for (const value of group) need[value]++;
+  return need.every((n, value) => (counts[value] ?? 0) >= n);
+}
+
+function without(counts: readonly number[], group: readonly number[]): number[] {
+  const out = [...counts];
+  for (const value of group) out[value] = (out[value] ?? 0) - 1;
+  return out;
+}
+
+/**
+ * The best clear that still leaves the board finishable.
+ *
+ * A hint that only looks at what is legal right now is a trap. Simulated on
+ * MAKE 10 · 20 · 30, a player who always took the biggest legal clear — which
+ * is what the hint used to offer — emptied one board in sixty, because the
+ * thirties eat the big digits first and strand the rest. The same line that
+ * checks each move against `canEmpty` empties every board.
+ *
+ * `canEmpty` only knows how to take a board apart into tens, so it says no to
+ * some positions that twenty and thirty could still rescue. That is the right
+ * way to be wrong: it never approves a move that strands the board, only
+ * declines one that might have been fine. When it can approve nothing — the
+ * board is already past saving — this returns null and the caller falls back
+ * to whatever is legal.
+ */
+export function findSafeCombo(
+  counts: readonly number[],
+  targets: readonly number[] = DEFAULT_TARGETS,
+): number[] | null {
+  if (!canEmpty(counts)) return null;
+  let best: number[] | null = null;
+  let bestSum = 0;
+  for (const group of allGroups(targets)) {
+    if (!fits(counts, group)) continue;
+    const sum = group.reduce((total, value) => total + value, 0);
+    // Worth more first — a bigger target pays more and takes more off the
+    // board — and, at the same value, the one that takes the most tiles.
+    if (best && (sum < bestSum || (sum === bestSum && group.length <= best.length))) continue;
+    if (!canEmpty(without(counts, group))) continue;
+    best = [...group];
+    bestSum = sum;
+  }
+  return best;
+}
+
+/** One clearable selection, or null when nothing left can make a target. */
+export function findHint(
+  board: Board,
+  targets: readonly number[] = DEFAULT_TARGETS,
+): number[] | null {
+  const counts = valueCounts(board);
+  const combo = findSafeCombo(counts, targets) ?? findValueCombo(counts, targets);
   return combo ? locate(board, combo) : null;
 }
 
-export function hasAnyMove(board: Board): boolean {
-  return findValueCombo(valueCounts(board)) !== null;
+export function hasAnyMove(board: Board, targets: readonly number[] = DEFAULT_TARGETS): boolean {
+  return findValueCombo(valueCounts(board), targets) !== null;
 }
 
 /**

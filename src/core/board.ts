@@ -1,6 +1,6 @@
 import type { Board, Cell } from "./types";
 import type { Rng } from "./rng";
-import { MAX_SELECTION, MIN_SELECTION, TARGET_SUM } from "./rules";
+import { DEFAULT_TARGETS, MAX_SELECTION, MIN_SELECTION, TARGET_SUM } from "./rules";
 
 export const MIN_VALUE = 1;
 export const MAX_VALUE = 9;
@@ -19,11 +19,13 @@ export const EASY_GROUPS: readonly number[] = [2, 3, 3, 2];
 export const HARD_GROUPS: readonly number[] = [6, 3, 1, 0];
 
 /**
- * Every way 2 to 5 digits add to ten, smallest first. About thirty of them.
+ * Every way 2 to 5 digits add to one of `targets`, smallest first. Thirty-odd
+ * of them for ten alone; a few hundred once twenty and thirty are allowed too.
  *
  * Built on first use, not at import: rules.ts and board.ts refer to each other,
  * so anything that reads TARGET_SUM while the modules are still loading blows
- * the stack.
+ * the stack. Cached per set of targets — a mode asks for the same one every
+ * time, and there are only ever two or three sets in a build.
  *
  * The dealer works from this list rather than rolling digits one at a time.
  * Rolling was the old way and it skewed the board badly: a group of five that
@@ -32,25 +34,28 @@ export const HARD_GROUPS: readonly number[] = [6, 3, 1, 0];
  * the small numbers on long combinations and was left with 7s, 8s and 9s that
  * had nothing to pair with.
  */
-let groupCache: readonly (readonly number[])[] | undefined;
-export function allGroups(): readonly (readonly number[])[] {
-  if (groupCache) return groupCache;
+const groupCache = new Map<string, readonly (readonly number[])[]>();
+export function allGroups(
+  targets: readonly number[] = DEFAULT_TARGETS,
+): readonly (readonly number[])[] {
+  const key = targets.join(",");
+  const known = groupCache.get(key);
+  if (known) return known;
+
+  const biggest = Math.max(...targets);
   const out: number[][] = [];
   const build = (start: number, sum: number, picked: number[]) => {
-    if (sum === TARGET_SUM && picked.length >= MIN_SELECTION) {
-      out.push([...picked]);
-      return;
-    }
-    if (sum >= TARGET_SUM || picked.length === MAX_SELECTION) return;
+    if (targets.includes(sum) && picked.length >= MIN_SELECTION) out.push([...picked]);
+    if (sum >= biggest || picked.length === MAX_SELECTION) return;
     for (let value = start; value <= MAX_VALUE; value++) {
-      if (sum + value > TARGET_SUM) break;
+      if (sum + value > biggest) break;
       picked.push(value);
       build(value, sum + value, picked);
       picked.pop();
     }
   };
   build(MIN_VALUE, 0, []);
-  groupCache = out;
+  groupCache.set(key, out);
   return out;
 }
 

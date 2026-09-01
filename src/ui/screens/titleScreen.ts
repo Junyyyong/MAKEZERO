@@ -5,13 +5,13 @@ import type { Progress } from "../storage";
 /**
  * Mode picker, with whatever progress the player has made so far.
  *
- * The wordmark and the two modes are the whole screen. A strip of collected
+ * The wordmark and the modes are the whole screen. A strip of collected
  * pictures used to sit between them; it competed with the wordmark for the
  * same space, so the room it took went to the wordmark instead.
  */
 export class TitleScreen {
   constructor(onPick: (mode: GameMode) => void, onRules: () => void, onSettings: () => void) {
-    for (const mode of ["timeAttack", "endless"] as const) {
+    for (const mode of ["timeAttack", "endless", "clearAll"] as const) {
       el<HTMLButtonElement>(`mode-${mode}`).addEventListener("click", () => onPick(mode));
     }
     el<HTMLButtonElement>("btn-title-rules").addEventListener("click", onRules);
@@ -25,5 +25,13 @@ export class TitleScreen {
     el("desc-endless").textContent = progress.bestEndless
       ? `Best ${progress.bestEndless}`
       : "Play until the board fills";
+    // Fewest blocks left is the record that matters here, not the score: the
+    // mode is asking for an empty board, and zero is the answer.
+    el("desc-clearAll").textContent =
+      progress.fewestLeft < 0
+        ? "Clear the whole board. No clock"
+        : progress.fewestLeft === 0
+          ? "Cleared! Do it again"
+          : `Best: ${progress.fewestLeft} left`;
   }
 }

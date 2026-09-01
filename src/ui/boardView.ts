@@ -1,5 +1,5 @@
 import { isAlive, valueAt } from "../core/board";
-import { MAX_SELECTION, TARGET_SUM } from "../core/rules";
+import { DEFAULT_TARGETS, MAX_SELECTION } from "../core/rules";
 import type { Board } from "../core/types";
 
 const HINT_MS = 2700;
@@ -17,6 +17,8 @@ export interface BoardViewOptions {
   grid: HTMLElement;
   /** Whether the current selection would clear. */
   isValid(selection: readonly number[]): boolean;
+  /** The sums this run clears on. Ten unless the mode says otherwise. */
+  targets?(): readonly number[];
   /** Fired when a selection should actually be played. */
   onCommit(selection: readonly number[]): void;
   /** Fired when a block is chosen to be broken up, while splitting is armed. */
@@ -329,8 +331,10 @@ export class BoardView {
     this.gestureSettled = false;
     this.lastPoint = null;
     this.options.grid.releasePointerCapture?.(event.pointerId);
-    // Taps and incomplete drags deliberately keep their selection. A later
-    // tap can toggle any chosen block off; only ten or overcharge settles it.
+    // A drag that was held past ten settles here. Incomplete ones deliberately
+    // keep their selection: a later tap can toggle any chosen block off, and
+    // only a target sum or an overcharge settles it.
+    this.settle();
   };
 
   private readonly onPointerCancel = (): void => {
@@ -351,11 +355,16 @@ export class BoardView {
     if (this.selection.includes(i)) return;
     this.selection.push(i);
     const sum = this.selectionSum();
-    // Over ten is dead, and so is a full selection that has not reached it:
-    // five blocks with no sixth to come can never add up, so say so now
-    // rather than leaving the player to work it out and undo it by hand.
+    const targets = this.targets();
+    // Past the biggest sum on offer is dead, and so is a full selection that
+    // has not landed on one: five blocks with no sixth to come can never add
+    // up, so say so now rather than leaving the player to undo it by hand.
     const full = this.selection.length >= MAX_SELECTION;
-    if (sum > TARGET_SUM || this.selection.length > MAX_SELECTION || (full && sum !== TARGET_SUM)) {
+    if (
+      sum > Math.max(...targets) ||
+      this.selection.length > MAX_SELECTION ||
+      (full && !targets.includes(sum))
+    ) {
       this.reject(this.selection);
       this.selection = [];
       this.gestureSettled = true;
@@ -366,13 +375,33 @@ export class BoardView {
 
     this.emitSelection();
     this.render();
-    if (this.options.isValid(this.selection)) {
-      const completed = [...this.selection];
-      this.selection = [];
-      this.gestureSettled = true;
-      this.emitSelection();
-      this.options.onCommit(completed);
-    }
+    /*
+     * Ten settles a selection the moment it is reached — except in the one
+     * mode where a bigger sum is worth reaching for, and only while the finger
+     * is still down.
+     *
+     * There, clearing at the first target would make twenty and thirty almost
+     * unreachable: a player building 4 + 6 + 9 + 1 would have it taken away at
+     * the six. So a drag holds on past ten and settles when the finger lifts,
+     * which is what `onPointerUp` is for. A tap still clears at once, so
+     * tapping is how you take tens and dragging is how you build past them.
+     */
+    if (this.dragging && targets.length > 1) return;
+    this.settle();
+  }
+
+  /** Plays the selection if it stands, and leaves it alone if it does not. */
+  private settle(): void {
+    if (!this.options.isValid(this.selection)) return;
+    const completed = [...this.selection];
+    this.selection = [];
+    this.gestureSettled = true;
+    this.emitSelection();
+    this.options.onCommit(completed);
+  }
+
+  private targets(): readonly number[] {
+    return this.options.targets?.() ?? DEFAULT_TARGETS;
   }
 
   private selectionSum(): number {

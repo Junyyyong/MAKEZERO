@@ -22,7 +22,7 @@ export interface MatchResult {
   failure?: MatchFailure;
 }
 
-export type GameMode = "story" | "timeAttack" | "endless";
+export type GameMode = "story" | "timeAttack" | "endless" | "clearAll";
 
 export interface SpawnConfig {
   /** Share of the board dealt at the start, leaving the rest as landing room. */
@@ -44,6 +44,14 @@ export interface RunConfig {
   /** Board columns and rows. The board never grows, so this is its final size. */
   width: number;
   rows: number;
+  /**
+   * The sums that clear a selection. Ten in every mode; one adds 20 and 30.
+   *
+   * Left out means ten alone. Every target has to be a multiple of ten, or a
+   * board dealt as a union of tens stops being exactly emptiable — see
+   * `DEFAULT_TARGETS`.
+   */
+  targets?: readonly number[];
   /** Relative chance of dealing a group of 2, 3, 4 or 5 tiles. */
   groupWeights: readonly number[];
   /**
