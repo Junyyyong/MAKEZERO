@@ -25,6 +25,7 @@ const NOTES: Partial<Record<GameMode, string>> = {
 export class IntroScreen {
   private readonly title = el<HTMLHeadingElement>("intro-title");
   private readonly mark = el<HTMLDivElement>("intro-mark");
+  private readonly markLabel = el<HTMLSpanElement>("intro-mark-label");
   private readonly note = el<HTMLParagraphElement>("intro-note");
   private readonly stats = el<HTMLElement>("intro-stats");
   private mode: GameMode = "timeAttack";
@@ -37,9 +38,16 @@ export class IntroScreen {
   render(mode: GameMode, progress: Progress, bestEndlessTime: number): void {
     this.mode = mode;
     this.title.textContent = TITLES[mode] ?? "ENDLESS";
-    // The one number that says what the mode is: a minute, no end, or the
-    // three sums that clear.
-    this.mark.textContent = mode === "timeAttack" ? "60" : mode === "endless" ? "∞" : "30";
+    /*
+     * The one thing that says what the mode is.
+     *
+     * Both of the timed ones show it on a stopwatch face: sixty for the run
+     * that is over in a minute, and the sign for forever on the one with no
+     * clock at all. Endless is the sign on its own — its clock counts up
+     * rather than down, and nothing is being measured against it.
+     */
+    this.markLabel.textContent = mode === "timeAttack" ? "60" : "∞";
+    this.markLabel.classList.toggle("forever", mode === "timeless");
     this.mark.classList.toggle("endless", mode === "endless");
     this.note.textContent = NOTES[mode] ?? "";
 
