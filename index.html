@@ -203,19 +203,18 @@
         </header>
         <div class="intro-body">
           <h2 class="intro-title" id="intro-title">TIME ATTACK</h2>
-          <!-- The stopwatch and the thing it is counting are stacked, not
-               nested: the label is HTML, so it is set in the game's own face
-               rather than in whatever SVG text would give us. The dial is
-               drawn at the centre of the viewBox — see the box's own comment
-               in picker.css — so the two line up by sitting in one grid cell. -->
+          <!-- The drawn stopwatches, number and all — one for a minute and one
+               for forever. Endless has no watch and shows the label instead. -->
           <div class="intro-mark" id="intro-mark">
-            <svg class="intro-watch" viewBox="0 -8 64 80" aria-hidden="true">
-              <path d="M26 -5h12" />
-              <path d="M32 -5v16" />
-              <path d="M47.8 16.6 52 12.4" />
-              <circle cx="32" cy="32" r="21" />
-            </svg>
-            <span class="intro-mark-label" id="intro-mark-label">60</span>
+            <img
+              class="intro-watch"
+              id="intro-watch"
+              src="./stopwatch-60.svg"
+              alt=""
+              width="308"
+              height="345"
+            />
+            <span class="intro-mark-label" id="intro-mark-label">∞</span>
           </div>
           <p class="intro-note" id="intro-note"></p>
           <dl class="intro-stats" id="intro-stats"></dl>

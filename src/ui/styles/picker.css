@@ -360,33 +360,21 @@
 }
 
 /*
- * The stopwatch, in white.
+ * The drawn stopwatch, number and all.
  *
- * Its viewBox starts at -8 rather than 0 so the crown above the dial does not
- * push the dial off centre: eighty tall from -8 puts the middle of the box at
- * y = 32, which is exactly where the dial is drawn. That is what lets the
- * label be centred on the plate and land in the dial without a nudge.
+ * Nudged up because the crown sits above the dial: the dial's centre is 55.4%
+ * of the way down the artwork, not half, so centring the picture in the plate
+ * would leave the face low. The offset is a percentage of the icon's own
+ * height, so it holds at whatever size the plate is drawn.
  */
 .intro-watch {
   width: auto;
-  height: 104px;
-  fill: none;
-  stroke: currentcolor;
-  stroke-width: 4.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  height: 108px;
+  transform: translateY(-5.4%);
 }
 
-/*
- * Sized to sit inside the dial rather than against it.
- *
- * A round frame is narrower than it looks: text that fills 87% of the
- * diameter has its corners outside the circle, which is where "60" was at 34px
- * — the digits touched the ring either side. Around 70% of the diameter is the
- * width that clears it.
- */
 .intro-mark-label {
-  font-size: 28px;
+  display: none;
   line-height: 1;
 }
 
@@ -400,13 +388,8 @@
 }
 
 .intro-mark.endless .intro-mark-label {
+  display: block;
   font-size: 66px;
-}
-
-/* Forever, inside a stopwatch: the sign needs the room a two-digit number
-   does not, and the face draws it small. */
-.intro-mark-label.forever {
-  font-size: 46px;
 }
 
 .intro-note {
@@ -453,9 +436,7 @@
     font-size: 42px;
   }
 
-  .intro-watch { height: 76px; }
-  .intro-mark-label { font-size: 21px; }
-  .intro-mark-label.forever { font-size: 34px; }
+  .intro-watch { height: 78px; }
   .intro-mark.endless .intro-mark-label { font-size: 48px; }
 
   .card-plate {
