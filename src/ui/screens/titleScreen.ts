@@ -11,7 +11,7 @@ import type { Progress } from "../storage";
  */
 export class TitleScreen {
   constructor(onPick: (mode: GameMode) => void, onRules: () => void, onSettings: () => void) {
-    for (const mode of ["timeAttack", "endless", "clearAll"] as const) {
+    for (const mode of ["timeAttack", "endless", "timeless"] as const) {
       el<HTMLButtonElement>(`mode-${mode}`).addEventListener("click", () => onPick(mode));
     }
     el<HTMLButtonElement>("btn-title-rules").addEventListener("click", onRules);
@@ -27,7 +27,7 @@ export class TitleScreen {
       : "Play until the board fills";
     // Fewest blocks left is the record that matters here, not the score: the
     // mode is asking for an empty board, and zero is the answer.
-    el("desc-clearAll").textContent =
+    el("desc-timeless").textContent =
       progress.fewestLeft < 0
         ? "Clear the whole board. No clock"
         : progress.fewestLeft === 0

@@ -333,6 +333,28 @@
 .round-btn:disabled { cursor: default; filter: grayscale(0.65); opacity: 0.5; }
 .round-btn .glyph { z-index: 1; line-height: 1; }
 
+/*
+ * The drawn icons are outlines, not shapes.
+ *
+ * Nothing was saying so, and an SVG with no styling fills its paths in black:
+ * the take-back arrow rendered as a dark blob on an orange circle rather than
+ * as a line drawing. Stroked in the button's own colour, it reads as the same
+ * family as the emoji on the hint.
+ */
+.round-btn svg.glyph {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-height: 660px) {
+  .round-btn svg.glyph { width: 25px; height: 25px; }
+}
+
 .badge {
   position: absolute;
   z-index: 2;

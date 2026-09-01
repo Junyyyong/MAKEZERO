@@ -939,3 +939,33 @@ greedy   ...   left 6  Stuck → [Undo | End here] → FAIL "6 blocks left … F
 세로로 짧은 화면(320x568 포함)에서도 모드 버튼 세 개와 아래 링크가 다 들어갑니다.
 
 유닛 118 · 레이아웃 · 드래그 · 피드백 전부 통과.
+
+## TIMELESS: 이름, 아이콘, 그리고 합이 커지는 규칙
+
+**이름을 TIMELESS 로 바꿨습니다.** 표시 문구만이 아니라 코드 쪽 이름까지 다 바꿨습니다 —
+`clearAll` → `timeless`, `CLEAR_ALL_CONFIG` → `TIMELESS_CONFIG`, `bestClearAll` →
+`bestTimeless`. SUM 박스 위 `MAKE 10 · 20 · 30` 은 이름이 아니라 규칙 설명이라 그대로
+둡니다.
+
+**규칙을 바꿨습니다.** 10 에 딱 맞으면 그 자리에서 터지고, 11 이 되면 20 을 향해 가고,
+21 이 되면 30 을 향해 갑니다. 30 을 넘으면 그때 터집니다(취소).
+
+이걸로 **탭/드래그 구분이 없어졌습니다.** 직전에는 "손가락을 떼기 전엔 안 터진다"로 20 을
+만들게 해 뒀는데, 이제 무엇을 고르느냐가 정하지 손가락을 어떻게 두느냐가 정하지 않습니다.
+드래그 특례 코드를 걷어냈고, 다른 모드는 원래대로입니다.
+
+실제 화면에서 확인:
+
+```
+ok   exactly 10 clears on the spot — 81 -> 79
+ok   11 does not clear and does not bust — sum 11, left 79
+ok   landing on 20 clears — 79 -> 76
+ok   36 busts the selection — sum ?
+```
+
+**되돌리기 아이콘이 검은 덩어리로 나오고 있었습니다.** 아이콘은 선으로 그린 SVG 인데
+`fill: none; stroke: currentColor` 를 아무도 안 걸어 줘서, 브라우저 기본값대로 **검게 칠해져**
+있었습니다. 선 스타일을 주고, 모양도 **빙글 도는 화살표**로 바꿨습니다. 같이 쓰는 split
+아이콘도 덩달아 제대로 나옵니다.
+
+유닛 118 · 레이아웃 · 드래그 · 피드백 전부 통과.
