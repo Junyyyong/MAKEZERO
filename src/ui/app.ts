@@ -74,7 +74,7 @@ const CONFIGS: Partial<Record<GameMode, RunConfig>> = {
 
 /** How long the studio's card holds, and then the game's cover. */
 const STUDIO_MS = 3_000;
-const COVER_MS = 2_000;
+const COVER_MS = 4_000;
 
 /** How long the finished picture is held before the results panel. */
 const PLATE_HOLD_MS = 2000;

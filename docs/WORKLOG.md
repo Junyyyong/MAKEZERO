@@ -1228,3 +1228,24 @@ timeless    stopwatch-forever.svg  drop=0.029  tall=0.62
 설명이 이미 하는 말이라 뺐습니다.
 
 유닛 123 · 레이아웃 · 드래그 · 피드백 전부 통과.
+
+## 브랜드 주황, 표지 4초, TIMELESS 설명 한 줄
+
+- 주황 `#e9502e`(눈대중) → **`#e95532`**(주신 값)
+- 스튜디오 3초 → **표지 4초** → 메뉴
+- TIMELESS 설명: "Take 2 to 5 blocks that make 10, 20 or 30. Clear them all" →
+  **"Empty the board with 10, 20, 30"**
+
+설명 문구는 320px 에서 후보를 여러 개 재 보고 골랐습니다 — 한 줄에 들어가면서 이 모드를
+다른 모드와 구별해 주는 숫자(10·20·30)를 남긴 게 이것뿐이었습니다:
+
+```
+2 line(s)  "Empty the board with 10, 20 and 30"   ← and 하나 때문에 넘침
+1 line(s)  "Empty the board with 10, 20, 30"      ← 채택
+2 line(s)  "Clear the board with 10, 20 or 30"
+1 line(s)  "Clear every block on the board"        ← 한 줄이지만 숫자가 빠짐
+```
+
+엔들리스·타임리스 둘 다 화면 5종에서 한 줄입니다.
+
+유닛 123 · 레이아웃 · 드래그 · 피드백 전부 통과.
