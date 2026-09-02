@@ -372,9 +372,22 @@
  * A share of its own height rather than a pixel count, so the same nudge
  * survives the smaller plate on a short screen.
  */
+/*
+ * The picture on the plate, sized so the three modes agree.
+ *
+ * The two watches are 307.54 x 344.55 with the dial filling the width, and
+ * endless's sign is a 307.54 square. Sizing them both from one number keeps
+ * the ring the same ring in all three: the square takes the watch's height
+ * scaled by the ratio of the two boxes, which lands its frame on exactly the
+ * width the dial has.
+ */
+.intro-mark {
+  --mark-h: 86px;
+}
+
 .intro-mark-art {
   width: auto;
-  height: 86px;
+  height: var(--mark-h);
   transform: translateY(-0.7%);
 }
 
@@ -383,15 +396,17 @@
 }
 
 /*
- * Endless's sign is a wide picture rather than a tall one, and it has no dial
- * around it to fill the plate, so it is sized across rather than down and set
- * to carry the square on its own. Nothing above the middle of it either, so it
- * takes none of the stopwatch's nudge.
+ * Endless's frame sits exactly where the watches' dials sit.
+ *
+ * 307.54 / 344.55 = 0.8926 makes the square as wide as the watch, and the
+ * offset puts its middle where the dial's middle is — the dial is 55.4% of the
+ * way down its own artwork, so aligning the two boxes would have left the
+ * frame high by that difference. Both are shares rather than pixel counts, so
+ * the three plates stay in agreement at any size.
  */
 .intro-mark.endless .intro-mark-art {
-  width: 98px;
-  height: auto;
-  transform: none;
+  height: calc(var(--mark-h) * 0.8926);
+  transform: translateY(5.24%);
 }
 
 .intro-note {
@@ -438,8 +453,7 @@
     font-size: 42px;
   }
 
-  .intro-mark-art { height: 62px; }
-  .intro-mark.endless .intro-mark-art { width: 70px; }
+  .intro-mark { --mark-h: 62px; }
 
   .card-plate {
     width: 110px;
