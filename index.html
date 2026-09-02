@@ -15,7 +15,14 @@
       <!-- ── splash ────────────────────────────────────────────── -->
       <!-- The cover art fills the screen edge to edge. It already carries the
            wordmark and the cast, so nothing is drawn on top of it. -->
-      <section class="screen splash-screen" id="screen-splash" aria-label="TAP to TEN">
+      <!-- The studio's card, three seconds, before anything of the game's own.
+           The orange is painted rather than photographed so it reaches every
+           edge of every phone; only the logo is a picture. -->
+      <section class="screen studio-screen" id="screen-studio" aria-label="TapeeTepee tap dance studio">
+        <img class="studio-logo" id="studio-logo" src="./studio-logo.png" alt="TapeeTepee" />
+      </section>
+
+      <section class="screen splash-screen hidden" id="screen-splash" aria-label="TAP to TEN">
         <img class="splash-cover" src="./cover.webp" alt="TAP to TEN" width="1080" height="2130" />
       </section>
 

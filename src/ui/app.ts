@@ -53,6 +53,7 @@ Pick 2 to 5 blocks. The more you pick, the more you score.
 Matching numbers do not clear. 3 + 3 is 6, so nothing happens.`;
 
 type Screen =
+  | "studio"
   | "splash"
   | "title"
   | "game"
@@ -70,6 +71,10 @@ const CONFIGS: Partial<Record<GameMode, RunConfig>> = {
   endless: ENDLESS_CONFIG,
   timeless: TIMELESS_CONFIG,
 };
+
+/** How long the studio's card holds, and then the game's cover. */
+const STUDIO_MS = 3_000;
+const COVER_MS = 2_000;
 
 /** How long the finished picture is held before the results panel. */
 const PLATE_HOLD_MS = 2000;
@@ -102,9 +107,10 @@ export class App {
 
   private frame: number | undefined;
   private lastFrameMs = 0;
-  private activeScreen: Screen = "splash";
+  private activeScreen: Screen = "studio";
 
   private readonly screens: Record<Screen, HTMLElement> = {
+    studio: el("screen-studio"),
     splash: el("screen-splash"),
     title: el("screen-title"),
     game: el("screen-game"),
@@ -208,7 +214,25 @@ export class App {
     });
 
     this.applySettings();
-    window.setTimeout(() => this.showTitle(), 2_000);
+    /*
+     * Two cards before the menu: the studio's, then the game's.
+     *
+     * If the studio logo cannot be found the card still holds its three
+     * seconds — it is the colour that carries it — rather than showing the
+     * browser's broken-image mark on the way in.
+     */
+    const logo = el<HTMLImageElement>("studio-logo");
+    const hideLogo = () => {
+      logo.hidden = true;
+    };
+    logo.addEventListener("error", hideLogo);
+    // And once now: the picture is in the markup, so it may already have tried
+    // and failed by the time this runs, and a listener added afterwards never
+    // hears about it. `complete` with no width is what a failed image looks
+    // like after the fact.
+    if (logo.complete && logo.naturalWidth === 0) hideLogo();
+    window.setTimeout(() => this.show("splash"), STUDIO_MS);
+    window.setTimeout(() => this.showTitle(), STUDIO_MS + COVER_MS);
   }
 
   // ---- screens -----------------------------------------------------------
