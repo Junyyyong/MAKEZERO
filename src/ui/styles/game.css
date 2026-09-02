@@ -507,17 +507,27 @@
 }
 
 /*
- * A tool a mode does not have takes no room at all, so whatever a mode does
- * carry sits in the middle of the row.
+ * A tool a mode does not have gives up its width but keeps its height.
  *
- * These slots used to be held open with `visibility` so the hint stayed put
- * across modes. That made a mode with one tool look like a mode with three,
- * two of them missing — the single button sat left of centre with a gap beside
- * it, which reads as broken rather than as consistent. A mode's tools do not
- * change mid-run, so nothing shifts under the player either way.
+ * Both halves of that matter and they pull opposite ways. No width, because a
+ * mode with one tool used to draw it left of centre with a gap beside it,
+ * which reads as broken rather than as consistent. Full height, because time
+ * attack carries no tools at all: take the height away too and the row
+ * collapses to its padding there, the board grows into the space, and the
+ * board sits sixty-four pixels off where every other mode draws it.
+ *
+ * `display: none` cannot do both. This can: zero width, and a negative margin
+ * of half the row's gap on each side so the flex gap it would still be given
+ * comes back out. What is left is a full-height item of no width at all.
  */
 .round-btn.hidden {
-  display: none;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  margin: 0 -10px;
+  border: 0;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* One family per item, the same three the wordmark uses: orange finds

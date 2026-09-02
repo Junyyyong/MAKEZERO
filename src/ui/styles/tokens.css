@@ -23,6 +23,8 @@
 :root {
   /* Paper: the ground everything sits on, warm rather than white */
   --paper: #fff6e9;
+  /* The studio's brand orange. Only their card is painted in it. */
+  --studio-orange: #e95532;
   --paper-lit: #fffdf8;
   --paper-deep: #f6e6d2;
   --paper-edge: #e8d3ba;
@@ -123,9 +125,25 @@
  * the viewport units, so the chrome sliding in and out cannot leave the app
  * taller than the room it is being shown in.
  */
+/*
+ * The page's colour lives on the root, and it never changes.
+ *
+ * iOS Safari tints its status bar and its address bar from the page, and it
+ * takes that colour once, at load. Changing it later — by script, by
+ * `theme-color`, by anything — does not reach the bars, so a page that opens
+ * on one colour and moves to another keeps the first one in the browser's
+ * furniture for the rest of the session. The studio's orange card did exactly
+ * that: three seconds of orange, then a lifetime of orange bars above and
+ * below the game.
+ *
+ * So the page is paper from the first frame and stays paper. The studio's
+ * orange is painted on that card and nowhere else — it never reaches the root,
+ * so it is never what Safari reads.
+ */
 html {
   height: 100%;
   overscroll-behavior: none;
+  background: var(--paper);
 }
 
 /*
@@ -158,7 +176,9 @@ body {
 body {
   font-family: "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
   color: var(--ink);
-  background: var(--paper);
+  /* The root owns it — see above. Painting it here as well would cover the
+     root's colour over the app's own box, which is the whole screen. */
+  background: transparent;
   overscroll-behavior: none;
   /* A double tap on a tile is two taps, never a zoom. */
   touch-action: manipulation;
