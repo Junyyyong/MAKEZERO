@@ -362,15 +362,17 @@
 /*
  * The drawn stopwatch, number and all.
  *
- * Nudged up because the crown sits above the dial: the dial's centre is 55.4%
- * of the way down the artwork, not half, so centring the picture in the plate
- * would leave the face low. The offset is a percentage of the icon's own
- * height, so it holds at whatever size the plate is drawn.
+ * It used to be lifted so the dial sat dead centre on the plate — the crown
+ * above the dial means the face is 55.4% of the way down the artwork, not
+ * half. Correct, and it looked wrong: the crown carries visual weight of its
+ * own, so a centred dial reads as the whole watch riding high. It hangs a
+ * little below the middle now, by a share of its own height so the drop holds
+ * at any size.
  */
 .intro-watch {
   width: auto;
-  height: 108px;
-  transform: translateY(-5.4%);
+  height: 86px;
+  transform: translateY(4%);
 }
 
 .intro-mark-label {
@@ -436,7 +438,7 @@
     font-size: 42px;
   }
 
-  .intro-watch { height: 78px; }
+  .intro-watch { height: 62px; }
   .intro-mark.endless .intro-mark-label { font-size: 48px; }
 
   .card-plate {
