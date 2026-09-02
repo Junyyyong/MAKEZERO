@@ -18,7 +18,7 @@ const TITLES: Partial<Record<GameMode, string>> = {
 
 const NOTES: Partial<Record<GameMode, string>> = {
   timeAttack: "Clear as much as you can in 60 seconds",
-  endless: "Blocks keep coming. It ends when the board fills",
+  endless: "It ends when the board fills",
   timeless: "Take 2 to 5 blocks that make 10, 20 or 30. Clear them all",
 };
 

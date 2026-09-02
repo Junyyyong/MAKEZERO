@@ -10,6 +10,30 @@
  * screen's height, the picture spans it edge to edge, sits centred, and any
  * overflow is white margin being cropped rather than art.
  */
+/*
+ * The studio's card.
+ *
+ * The colour is a paint, not a picture: a photographed background has one
+ * shape and phones have many, so it would either letterbox on a tall screen or
+ * crop on a wide one. Painted, it reaches every edge of every device, and the
+ * logo is the only thing that has to be an image.
+ */
+.studio-screen {
+  --studio-orange: #e9502e;
+
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--studio-orange);
+}
+
+/* Sized against the screen's width so it is the same size on the page whatever
+   the phone, and capped so it does not swell on a tablet. */
+.studio-logo {
+  width: min(42vw, 210px);
+  height: auto;
+}
+
 .splash-screen {
   position: relative;
   padding: 0;
