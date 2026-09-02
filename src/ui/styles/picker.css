@@ -362,17 +362,20 @@
 /*
  * The drawn stopwatch, number and all.
  *
- * It used to be lifted so the dial sat dead centre on the plate — the crown
- * above the dial means the face is 55.4% of the way down the artwork, not
- * half. Correct, and it looked wrong: the crown carries visual weight of its
- * own, so a centred dial reads as the whole watch riding high. It hangs a
- * little below the middle now, by a share of its own height so the drop holds
- * at any size.
+ * The dial is 55.4% of the way down the artwork rather than half, because of
+ * the crown above it, so where the picture sits and where the *watch* looks
+ * like it sits are two different things. Lifting it until the dial was dead
+ * centre measured right and looked wrong — the crown has weight of its own and
+ * the whole thing read as riding high. This sits between the two, a whisker
+ * above the middle of the picture, which is where it settled by eye.
+ *
+ * A share of its own height rather than a pixel count, so the same nudge
+ * survives the smaller plate on a short screen.
  */
 .intro-watch {
   width: auto;
   height: 86px;
-  transform: translateY(4%);
+  transform: translateY(-0.7%);
 }
 
 .intro-mark-label {
