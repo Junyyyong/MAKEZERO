@@ -27,10 +27,16 @@
   background: var(--studio-orange);
 }
 
-/* Sized against the screen's width so it is the same size on the page whatever
-   the phone, and capped so it does not swell on a tablet. */
+/*
+ * 42% of the screen's width — the proportion the logo has on the studio's own
+ * card — so it is the same size on the page whatever the phone. The cap only
+ * matters on something much wider than a phone, where 42% would be a banner.
+ *
+ * The file is cropped to the drawing, no transparent margin, so this really is
+ * the logo's width and not a box it sits inside.
+ */
 .studio-logo {
-  width: min(42vw, 210px);
+  width: min(42vw, 360px);
   height: auto;
 }
 
