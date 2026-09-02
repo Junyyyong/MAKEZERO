@@ -372,20 +372,10 @@
  * A share of its own height rather than a pixel count, so the same nudge
  * survives the smaller plate on a short screen.
  */
-.intro-watch {
+.intro-mark-art {
   width: auto;
   height: 86px;
   transform: translateY(-0.7%);
-}
-
-.intro-mark-label {
-  display: none;
-  line-height: 1;
-}
-
-/* Endless has no clock to draw — the sign for it is the whole mark. */
-.intro-mark.endless .intro-watch {
-  display: none;
 }
 
 .intro-mark.endless {
@@ -393,13 +383,15 @@
 }
 
 /*
- * Endless's sign carries the whole plate on its own, with no dial around it to
- * fill the space, so it is set half again as big as the stopwatch's face —
- * at 66px it read as a small mark adrift in a large square.
+ * Endless's sign is a wide picture rather than a tall one, and it has no dial
+ * around it to fill the plate, so it is sized across rather than down and set
+ * to carry the square on its own. Nothing above the middle of it either, so it
+ * takes none of the stopwatch's nudge.
  */
-.intro-mark.endless .intro-mark-label {
-  display: block;
-  font-size: 99px;
+.intro-mark.endless .intro-mark-art {
+  width: 98px;
+  height: auto;
+  transform: none;
 }
 
 .intro-note {
@@ -446,8 +438,8 @@
     font-size: 42px;
   }
 
-  .intro-watch { height: 62px; }
-  .intro-mark.endless .intro-mark-label { font-size: 72px; }
+  .intro-mark-art { height: 62px; }
+  .intro-mark.endless .intro-mark-art { width: 70px; }
 
   .card-plate {
     width: 110px;

@@ -22,10 +22,17 @@ const NOTES: Partial<Record<GameMode, string>> = {
   timeless: "Take 2 to 5 blocks that make 10, 20 or 30. Clear them all",
 };
 
+/** The picture on the plate, one per mode. */
+const ART: Partial<Record<GameMode, string>> = {
+  timeAttack: "./stopwatch-60.svg",
+  timeless: "./stopwatch-forever.svg",
+  endless: "./infinity.svg",
+};
+
 export class IntroScreen {
   private readonly title = el<HTMLHeadingElement>("intro-title");
   private readonly mark = el<HTMLDivElement>("intro-mark");
-  private readonly watch = el<HTMLImageElement>("intro-watch");
+  private readonly art = el<HTMLImageElement>("intro-mark-art");
   private readonly note = el<HTMLParagraphElement>("intro-note");
   private readonly stats = el<HTMLElement>("intro-stats");
   private mode: GameMode = "timeAttack";
@@ -43,11 +50,10 @@ export class IntroScreen {
      *
      * Both of the timed ones show it on a stopwatch face: sixty for the run
      * that is over in a minute, and the sign for forever on the one with no
-     * clock at all. Endless is the sign on its own — its clock counts up
-     * rather than down, and nothing is being measured against it, so the watch
-     * is hidden there rather than given a third face.
+     * clock at all. Endless gets the sign without a watch around it — its
+     * clock counts up rather than down, and nothing is measured against it.
      */
-    this.watch.src = mode === "timeAttack" ? "./stopwatch-60.svg" : "./stopwatch-forever.svg";
+    this.art.src = ART[mode] ?? ART.endless!;
     this.mark.classList.toggle("endless", mode === "endless");
     this.note.textContent = NOTES[mode] ?? "";
 
