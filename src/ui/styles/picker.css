@@ -392,9 +392,14 @@
   background: linear-gradient(180deg, var(--hot), var(--hot-deep));
 }
 
+/*
+ * Endless's sign carries the whole plate on its own, with no dial around it to
+ * fill the space, so it is set half again as big as the stopwatch's face —
+ * at 66px it read as a small mark adrift in a large square.
+ */
 .intro-mark.endless .intro-mark-label {
   display: block;
-  font-size: 66px;
+  font-size: 99px;
 }
 
 .intro-note {
@@ -442,7 +447,7 @@
   }
 
   .intro-watch { height: 62px; }
-  .intro-mark.endless .intro-mark-label { font-size: 48px; }
+  .intro-mark.endless .intro-mark-label { font-size: 72px; }
 
   .card-plate {
     width: 110px;
