@@ -4,10 +4,13 @@ const config: CapacitorConfig = {
   appId: "io.github.junyyyong.makezero",
   appName: "TAP to TEN",
   webDir: "dist",
-  // Matches --wood-mid so the window never flashes white behind the WebView.
-  backgroundColor: "#7a4f24",
+  // The window behind the WebView, so launch does not flash a colour the app
+  // never shows. It matches the studio card the app opens on — see
+  // `--studio-orange`. It was the old dark-wood skin's brown, which the game
+  // stopped using when it went to paper.
+  backgroundColor: "#e95532",
   android: {
-    backgroundColor: "#7a4f24",
+    backgroundColor: "#e95532",
   },
 };
 

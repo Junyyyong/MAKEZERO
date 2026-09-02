@@ -3,6 +3,12 @@
     <color name="colorPrimary">#7A4F24</color>
     <color name="colorPrimaryDark">#5F3C1B</color>
     <color name="colorAccent">#F0A91E</color>
-    <!-- Matches the page background so launch never flashes white. -->
-    <color name="splashBackground">#7A4F24</color>
+    <!--
+      The window behind the WebView, which is the very first thing a phone
+      paints. It has to match whatever the app opens on, or launch flashes one
+      colour and then jumps to another — and the app opens on the studio's
+      card. This was still the brown of the dark-wood skin the game had before
+      it went to paper, so every launch flashed brown.
+    -->
+    <color name="splashBackground">#E95532</color>
 </resources>
